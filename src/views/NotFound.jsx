@@ -28,6 +28,7 @@ const NotFound = ({ mode }) => {
           <Typography variant='h4'>Page Not Found ⚠️</Typography>
           <Typography>We couldn&#39;t find the page you are looking for.</Typography>
         </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           alt='error-illustration'
           src='/images/illustrations/characters/3.png'
@@ -37,7 +38,8 @@ const NotFound = ({ mode }) => {
           Back to Home
         </Button>
       </div>
-      <img src={miscBackground} className='absolute bottom-0 z-[-1] is-full max-md:hidden' />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img alt="" src={miscBackground} className='absolute bottom-0 z-[-1] is-full max-md:hidden' />
     </div>
   )
 }

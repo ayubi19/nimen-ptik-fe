@@ -187,6 +187,7 @@ const VerticalNav = props => {
         {backgroundImage && (
           // eslint-disable-next-line lines-around-comment
           /* VerticalNav Background Image */
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             className={classnames(verticalNavClasses.image, styles.root)}
             src={backgroundImage}

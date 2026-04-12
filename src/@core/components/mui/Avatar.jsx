@@ -37,5 +37,6 @@ const CustomAvatar = forwardRef((props, ref) => {
 
   return <Avatar color={color} skin={skin} ref={ref} {...rest} />
 })
+CustomAvatar.displayName = 'CustomAvatar'
 
 export default CustomAvatar

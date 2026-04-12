@@ -16,3 +16,5 @@ export const RouterLink = forwardRef((props, ref) => {
     </Link>
   )
 })
+
+RouterLink.displayName = 'RouterLink'

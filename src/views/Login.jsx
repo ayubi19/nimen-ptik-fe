@@ -72,6 +72,7 @@ const Login = () => {
     <div className='flex bs-full justify-center'>
       <div className='flex bs-full items-center justify-center flex-1 min-bs-[100dvh] relative p-6 max-md:hidden'>
         <div className='plb-12 pis-12'>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={lightIllustration}
             alt='login illustration'
