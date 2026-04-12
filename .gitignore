@@ -1,0 +1,36 @@
+# ── Environment & Secrets ──
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ── Next.js ──
+.next/
+out/
+build/
+
+# ── Node ──
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── IDE & Editor ──
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Logs ──
+*.log
+logs/
+
+# ── Misc ──
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# Generated icon CSS
+src/assets/iconify-icons/generated-icons.css
