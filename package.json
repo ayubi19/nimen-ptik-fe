@@ -33,7 +33,9 @@
     "react-hook-form": "7.54.1",
     "react-perfect-scrollbar": "1.5.8",
     "react-use": "17.6.0",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "@tanstack/react-table": "8.21.3",
+    "@tanstack/match-sorter-utils": "8.19.4"
   },
   "devDependencies": {
     "@iconify/json": "2.2.286",

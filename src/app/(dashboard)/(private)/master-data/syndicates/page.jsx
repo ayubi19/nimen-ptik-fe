@@ -1,14 +1,9 @@
+import SyndicatesView from '@/views/master-data/SyndicatesView'
+
 export const metadata = {
   title: 'Master Data Sindikat | Nimen PTIK'
 }
 
-const Page = () => {
-  return (
-    <div className='flex flex-col gap-6'>
-      <h4 className='text-xl font-semibold'>Master Data Sindikat</h4>
-      <p className='text-sm text-textSecondary'>Halaman ini sedang dalam pengembangan.</p>
-    </div>
-  )
-}
+const Page = () => <SyndicatesView />
 
 export default Page

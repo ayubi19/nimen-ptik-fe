@@ -1,14 +1,9 @@
+import AcademicStatusesView from '@/views/master-data/AcademicStatusesView'
+
 export const metadata = {
   title: 'Master Data Status Akademik | Nimen PTIK'
 }
 
-const Page = () => {
-  return (
-    <div className='flex flex-col gap-6'>
-      <h4 className='text-xl font-semibold'>Master Data Status Akademik</h4>
-      <p className='text-sm text-textSecondary'>Halaman ini sedang dalam pengembangan.</p>
-    </div>
-  )
-}
+const Page = () => <AcademicStatusesView />
 
 export default Page

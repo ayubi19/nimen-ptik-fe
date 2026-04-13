@@ -1,6 +1,32 @@
 // Third-party Imports
 import CredentialProvider from 'next-auth/providers/credentials'
 
+// Refresh access token menggunakan refresh token
+async function refreshAccessToken(token) {
+  try {
+    const res = await fetch(`${process.env.API_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: token.refreshToken })
+    })
+
+    const json = await res.json()
+
+    if (!res.ok || !json.success) {
+      // Refresh token juga expired — paksa logout
+      return { ...token, error: 'RefreshTokenExpired' }
+    }
+
+    return {
+      ...token,
+      accessToken: json.data.access_token,
+      error: null
+    }
+  } catch {
+    return { ...token, error: 'RefreshTokenExpired' }
+  }
+}
+
 export const authOptions = {
   providers: [
     CredentialProvider({
@@ -23,7 +49,6 @@ export const authOptions = {
             throw new Error(json.message || 'Login gagal')
           }
 
-          // Simpan data user + token ke session
           return {
             id: json.data.user.id,
             name: json.data.user.full_name,
@@ -33,6 +58,7 @@ export const authOptions = {
             permissions: json.data.user.permissions,
             accessToken: json.data.access_token,
             refreshToken: json.data.refresh_token,
+            accessTokenExpiry: Date.now() + (14 * 60 * 1000), // 14 menit (1 menit sebelum BE expire 15 menit)
           }
         } catch (e) {
           throw new Error(e.message)
@@ -43,7 +69,7 @@ export const authOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60 // 7 hari — sesuai refresh token expiry
+    maxAge: 7 * 24 * 60 * 60 // 7 hari
   },
 
   pages: {
@@ -52,19 +78,30 @@ export const authOptions = {
 
   callbacks: {
     async jwt({ token, user }) {
-      // Saat login pertama kali, user object tersedia
+      // Login pertama kali
       if (user) {
-        token.id = user.id
-        token.name = user.name
-        token.username = user.username
-        token.email = user.email
-        token.roles = user.roles
-        token.permissions = user.permissions
-        token.accessToken = user.accessToken
-        token.refreshToken = user.refreshToken
+        return {
+          ...token,
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          roles: user.roles,
+          permissions: user.permissions,
+          accessToken: user.accessToken,
+          refreshToken: user.refreshToken,
+          accessTokenExpiry: user.accessTokenExpiry,
+          error: null,
+        }
       }
 
-      return token
+      // Token masih valid
+      if (Date.now() < token.accessTokenExpiry) {
+        return token
+      }
+
+      // Token expired — refresh
+      return refreshAccessToken(token)
     },
 
     async session({ session, token }) {
@@ -77,6 +114,7 @@ export const authOptions = {
         session.user.permissions = token.permissions
         session.user.accessToken = token.accessToken
         session.user.refreshToken = token.refreshToken
+        session.error = token.error
       }
 
       return session
