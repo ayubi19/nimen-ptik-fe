@@ -35,13 +35,13 @@ const VerticalMenu = ({ scrollMenu }) => {
     <ScrollWrapper
       {...(isBreakpointReached
         ? {
-            className: 'bs-full overflow-y-auto overflow-x-hidden',
-            onScroll: container => scrollMenu(container, false)
-          }
+          className: 'bs-full overflow-y-auto overflow-x-hidden',
+          onScroll: container => scrollMenu(container, false)
+        }
         : {
-            options: { wheelPropagation: false, suppressScrollX: true },
-            onScrollY: container => scrollMenu(container, true)
-          })}
+          options: { wheelPropagation: false, suppressScrollX: true },
+          onScrollY: container => scrollMenu(container, true)
+        })}
     >
       <Menu
         popoutMenuOffset={{ mainAxis: 17 }}
@@ -72,6 +72,9 @@ const VerticalMenu = ({ scrollMenu }) => {
         <MenuSection label='Mahasiswa'>
           <MenuItem href='/students/list' icon={<i className='ri-group-line' />}>
             Daftar Mahasiswa
+          </MenuItem>
+          <MenuItem href='/onboarding' icon={<i className='ri-user-add-line' />}>
+            Onboarding
           </MenuItem>
           <MenuItem href='/violation' icon={<i className='ri-error-warning-line' />}>
             Pelanggaran
