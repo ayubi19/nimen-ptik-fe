@@ -2,6 +2,14 @@
 const nextConfig = {
   output: 'standalone',
   basePath: process.env.BASEPATH,
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'cdn.aplikasikorwa.com',
+      },
+    ],
+  },
   redirects: async () => {
     return [
       {

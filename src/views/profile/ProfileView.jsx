@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import Image from 'next/image'
 import { useSession } from 'next-auth/react'
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
@@ -41,7 +42,6 @@ const ProfileView = () => {
     setToast({ open: true, message, severity })
   }, [])
 
-  // Form profil
   const { control: profileControl, handleSubmit: handleProfileSubmit, reset: resetProfile, formState: { errors: profileErrors } } = useForm({
     defaultValues: {
       full_name: '', email: '', birth_place: '', birth_date: '',
@@ -49,7 +49,6 @@ const ProfileView = () => {
     }
   })
 
-  // Form password
   const { control: pwControl, handleSubmit: handlePwSubmit, reset: resetPw, watch, formState: { errors: pwErrors } } = useForm({
     defaultValues: { old_password: '', new_password: '', confirm_password: '' }
   })
@@ -151,10 +150,13 @@ const ProfileView = () => {
               <div className='relative'>
                 <Box className='relative'>
                   {photoUrl ? (
-                    <img
+                    <Image
                       src={photoUrl}
                       alt={profile?.full_name}
-                      className='w-28 h-28 rounded-full object-cover'
+                      width={112}
+                      height={112}
+                      className='rounded-full object-cover'
+                      style={{ width: 112, height: 112 }}
                     />
                   ) : (
                     <CustomAvatar skin='light' color='primary' size={112} className='text-4xl'>

@@ -96,6 +96,13 @@ const VerticalMenu = ({ scrollMenu }) => {
             <MenuItem href='/master-data/academic-statuses'>Status Akademik</MenuItem>
           </SubMenu>
         </MenuSection>
+
+        {/* Administrasi */}
+        <MenuSection label='Administrasi'>
+          <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>
+            Manajemen User
+          </MenuItem>
+        </MenuSection>
       </Menu>
     </ScrollWrapper>
   )
