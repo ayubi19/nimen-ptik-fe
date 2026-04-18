@@ -21,13 +21,16 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
 import Box from '@mui/material/Box'
+import Dialog from '@mui/material/Dialog'
+import DialogContent from '@mui/material/DialogContent'
+import Tooltip from '@mui/material/Tooltip'
 import { useForm, Controller } from 'react-hook-form'
 import CustomAvatar from '@core/components/mui/Avatar'
 import { getInitials } from '@/utils/getInitials'
 import { profileApi } from '@/libs/api/profileApi'
 
 const ProfileView = () => {
-  const { data: session } = useSession()
+  const { data: session, update } = useSession()
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editLoading, setEditLoading] = useState(false)
@@ -36,6 +39,7 @@ const ProfileView = () => {
   const [showOld, setShowOld] = useState(false)
   const [showNew, setShowNew] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [photoPreview, setPhotoPreview] = useState(false) // untuk dialog fullsize
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
 
   const showToast = useCallback((message, severity = 'success') => {
@@ -118,15 +122,26 @@ const ProfileView = () => {
     try {
       const formData = new FormData()
       formData.append('avatar', file)
-      await profileApi.updateAvatar(formData)
+      const res = await profileApi.updateAvatar(formData)
+
+      // Ambil URL foto terbaru dari response atau fetch ulang profile
+      await fetchProfile()
+
+      // Sync session agar avatar di navbar ikut update
+      const newPhotoUrl = res?.data?.data?.photo_url || null
+      if (newPhotoUrl) {
+        await update({ image: newPhotoUrl })
+      }
+
       showToast('Avatar berhasil diperbarui')
-      fetchProfile()
     } catch (err) {
       showToast(err.message || 'Gagal mengupload avatar', 'error')
     } finally {
       setAvatarLoading(false)
+      // Reset input file agar bisa upload file yang sama lagi
+      e.target.value = ''
     }
-  }, [fetchProfile, showToast])
+  }, [fetchProfile, update, showToast])
 
   if (loading) {
     return (
@@ -150,45 +165,67 @@ const ProfileView = () => {
               <div className='relative'>
                 <Box className='relative'>
                   {photoUrl ? (
-                    <Image
-                      src={photoUrl}
-                      alt={profile?.full_name}
-                      width={112}
-                      height={112}
-                      className='rounded-full object-cover'
-                      style={{ width: 112, height: 112 }}
-                    />
+                    <>
+                      {/* Klik foto → buka fullsize */}
+                      <Tooltip title='Lihat foto'>
+                        <div
+                          className='cursor-pointer rounded-full overflow-hidden'
+                          style={{ width: 112, height: 112 }}
+                          onClick={() => setPhotoPreview(true)}
+                        >
+                          <Image
+                            src={photoUrl}
+                            alt={profile?.full_name}
+                            width={112}
+                            height={112}
+                            className='rounded-full object-cover'
+                            style={{ width: 112, height: 112 }}
+                          />
+                        </div>
+                      </Tooltip>
+                    </>
                   ) : (
                     <CustomAvatar skin='light' color='primary' size={112} className='text-4xl'>
                       {getInitials(profile?.full_name || '')}
                     </CustomAvatar>
                   )}
+
+                  {/* Tombol kamera — hanya untuk ganti foto, terpisah dari area klik foto */}
                   {isStudent && (
-                    <label htmlFor='avatar-upload'>
-                      <input
-                        id='avatar-upload'
-                        type='file'
-                        accept='.jpg,.jpeg,.png,.webp'
-                        className='hidden'
-                        onChange={handleAvatarChange}
-                      />
-                      <IconButton
-                        component='span'
-                        size='small'
-                        className='absolute bottom-0 right-0'
-                        sx={{
-                          bgcolor: 'primary.main',
-                          color: 'white',
-                          '&:hover': { bgcolor: 'primary.dark' },
-                          width: 28, height: 28
-                        }}
+                    <Tooltip title='Ganti foto'>
+                      <label
+                        htmlFor='avatar-upload'
+                        className='absolute bottom-0 right-0 cursor-pointer'
+                        style={{ zIndex: 1 }}
                       >
-                        {avatarLoading
-                          ? <CircularProgress size={14} color='inherit' />
-                          : <i className='ri-camera-line text-sm' />
-                        }
-                      </IconButton>
-                    </label>
+                        <input
+                          id='avatar-upload'
+                          type='file'
+                          accept='.jpg,.jpeg,.png,.webp'
+                          className='hidden'
+                          onChange={handleAvatarChange}
+                        />
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: '50%',
+                            bgcolor: 'primary.main',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '2px solid white',
+                            '&:hover': { bgcolor: 'primary.dark' },
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {avatarLoading
+                            ? <CircularProgress size={14} sx={{ color: 'white' }} />
+                            : <i className='ri-camera-line text-white text-sm' />
+                          }
+                        </Box>
+                      </label>
+                    </Tooltip>
                   )}
                 </Box>
               </div>
@@ -455,6 +492,35 @@ const ProfileView = () => {
         </Grid>
       </Grid>
 
+      {/* ── Dialog Foto Fullsize ── */}
+      <Dialog
+        open={photoPreview}
+        onClose={() => setPhotoPreview(false)}
+        maxWidth='sm'
+        fullWidth
+      >
+        <DialogContent className='flex items-center justify-center p-4 relative'>
+          <IconButton
+            onClick={() => setPhotoPreview(false)}
+            className='absolute top-2 right-2'
+            size='small'
+          >
+            <i className='ri-close-line text-xl' />
+          </IconButton>
+          {photoUrl && (
+            <Image
+              src={photoUrl}
+              alt={profile?.full_name || ''}
+              width={480}
+              height={480}
+              className='rounded-lg object-contain'
+              style={{ maxWidth: '100%', maxHeight: '70vh' }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Toast ── */}
       <Snackbar open={toast.open} autoHideDuration={4000}
                 onClose={() => setToast(t => ({ ...t, open: false }))}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
