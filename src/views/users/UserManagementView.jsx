@@ -237,7 +237,7 @@ const UserManagementView = () => {
       cell: ({ row }) => {
         const role = row.original.roles?.[0]
         return role
-          ? <Chip label={ROLE_LABELS[role] || role} color={ROLE_COLORS[role] || 'default'} size='small' variant='tonal' />
+          ? <Chip label={ROLE_LABELS[role] || role} color={ROLE_COLORS[role] || 'default'} size='small' variant='tonal' sx={{ minWidth: 130, justifyContent: 'center' }} />
           : <Typography color='text.disabled' variant='body2'>—</Typography>
       }
     }),

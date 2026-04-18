@@ -57,9 +57,9 @@ const colorSchemes = skin => {
           darkerOpacity: 'rgb(var(--mui-palette-info-mainChannel) / 0.38)'
         },
         success: {
-          main: '#72E128',
-          light: '#8EE753',
-          dark: '#67CB24',
+          main: '#3BC1A8',
+          light: '#249E94',
+          dark: '#0C7779',
           contrastText: '#FFF',
           lighterOpacity: 'rgb(var(--mui-palette-success-mainChannel) / 0.08)',
           lightOpacity: 'rgb(var(--mui-palette-success-mainChannel) / 0.16)',
