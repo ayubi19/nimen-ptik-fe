@@ -1,12 +1,7 @@
 'use client'
 
-// React Imports
 import { useRef, useState } from 'react'
-
-// Next Imports
 import { useRouter } from 'next/navigation'
-
-// MUI Imports
 import { styled } from '@mui/material/styles'
 import Badge from '@mui/material/Badge'
 import Avatar from '@mui/material/Avatar'
@@ -19,17 +14,9 @@ import Typography from '@mui/material/Typography'
 import Divider from '@mui/material/Divider'
 import MenuItem from '@mui/material/MenuItem'
 import Button from '@mui/material/Button'
-
-// Third-party Imports
 import { signOut, useSession } from 'next-auth/react'
-
-// Hook Imports
 import { useSettings } from '@core/hooks/useSettings'
 
-// Util Imports
-
-
-// Styled component for badge content
 const BadgeContentSpan = styled('span')({
   width: 8,
   height: 8,
@@ -40,17 +27,11 @@ const BadgeContentSpan = styled('span')({
 })
 
 const UserDropdown = () => {
-  // States
   const [open, setOpen] = useState(false)
-
-  // Refs
   const anchorRef = useRef(null)
-
-  // Hooks
   const router = useRouter()
   const { data: session } = useSession()
   const { settings } = useSettings()
-
 
   const handleDropdownOpen = () => {
     !open ? setOpen(true) : setOpen(false)
@@ -60,11 +41,9 @@ const UserDropdown = () => {
     if (url) {
       router.push(url)
     }
-
     if (anchorRef.current && anchorRef.current.contains(event?.target)) {
       return
     }
-
     setOpen(false)
   }
 
@@ -124,13 +103,9 @@ const UserDropdown = () => {
                     </div>
                   </div>
                   <Divider className='mlb-1' />
-                  <MenuItem className='gap-3 pli-4' onClick={e => handleDropdownClose(e, '/pages/user-profile')}>
+                  <MenuItem className='gap-3 pli-4' onClick={e => handleDropdownClose(e, '/profile')}>
                     <i className='ri-user-3-line' />
                     <Typography color='text.primary'>My Profile</Typography>
-                  </MenuItem>
-                  <MenuItem className='gap-3 pli-4' onClick={e => handleDropdownClose(e, '/pages/account-settings')}>
-                    <i className='ri-settings-4-line' />
-                    <Typography color='text.primary'>Settings</Typography>
                   </MenuItem>
 
                   <div className='flex items-center plb-1.5 pli-4'>
