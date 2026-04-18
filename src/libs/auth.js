@@ -58,7 +58,8 @@ export const authOptions = {
             permissions: json.data.user.permissions,
             accessToken: json.data.access_token,
             refreshToken: json.data.refresh_token,
-            accessTokenExpiry: Date.now() + (14 * 60 * 1000), // 14 menit (1 menit sebelum BE expire 15 menit)
+            accessTokenExpiry: Date.now() + (14 * 60 * 1000),
+            mustChangePassword: json.data.user.must_change_password ?? false,
           }
         } catch (e) {
           throw new Error(e.message)
@@ -91,6 +92,7 @@ export const authOptions = {
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           accessTokenExpiry: user.accessTokenExpiry,
+          mustChangePassword: user.mustChangePassword,
           error: null,
         }
       }
@@ -114,6 +116,7 @@ export const authOptions = {
         session.user.permissions = token.permissions
         session.user.accessToken = token.accessToken
         session.user.refreshToken = token.refreshToken
+        session.user.mustChangePassword = token.mustChangePassword
         session.error = token.error
       }
 
