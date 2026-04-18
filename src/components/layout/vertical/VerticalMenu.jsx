@@ -1,21 +1,11 @@
 'use client'
 
-// MUI Imports
+import { useSession } from 'next-auth/react'
 import { useTheme } from '@mui/material/styles'
-
-// Third-party Imports
 import PerfectScrollbar from 'react-perfect-scrollbar'
-
-// Component Imports
 import { Menu, SubMenu, MenuItem, MenuSection } from '@menu/vertical-menu'
-
-// Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'
-
-// Styled Component Imports
 import StyledVerticalNavExpandIcon from '@menu/styles/vertical/StyledVerticalNavExpandIcon'
-
-// Style Imports
 import menuItemStyles from '@core/styles/vertical/menuItemStyles'
 import menuSectionStyles from '@core/styles/vertical/menuSectionStyles'
 
@@ -30,18 +20,25 @@ const VerticalMenu = ({ scrollMenu }) => {
   const verticalNavOptions = useVerticalNav()
   const { isBreakpointReached, transitionDuration } = verticalNavOptions
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
+  const { data: session } = useSession()
+
+  const roles = session?.user?.roles?.map(r => r.name) || []
+  const isDeveloper = session?.user?.is_developer || roles.includes('developer')
+  const isAdminNimen = roles.includes('admin_nimen')
+  const isAdminInitiative = roles.includes('admin_initiative')
+  const isStudent = roles.includes('student') || roles.includes('student_pic')
+
+  // Hak akses per level
+  const canManageNimenMasterData = isDeveloper || isAdminNimen
+  const canManageUsers = isDeveloper || isAdminNimen
+  const canManageMasterData = isDeveloper || isAdminNimen || isAdminInitiative
 
   return (
     <ScrollWrapper
       {...(isBreakpointReached
-        ? {
-          className: 'bs-full overflow-y-auto overflow-x-hidden',
-          onScroll: container => scrollMenu(container, false)
-        }
-        : {
-          options: { wheelPropagation: false, suppressScrollX: true },
-          onScrollY: container => scrollMenu(container, true)
-        })}
+        ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
+        : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
+      )}
     >
       <Menu
         popoutMenuOffset={{ mainAxis: 17 }}
@@ -88,21 +85,39 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </MenuSection>
 
-        {/* Master Data */}
-        <MenuSection label='Master Data'>
-          <SubMenu label='Master Data' icon={<i className='ri-database-2-line' />}>
-            <MenuItem href='/master-data/syndicates'>Sindikat</MenuItem>
-            <MenuItem href='/master-data/batches'>Angkatan</MenuItem>
-            <MenuItem href='/master-data/academic-statuses'>Status Akademik</MenuItem>
-          </SubMenu>
-        </MenuSection>
+        {/* Master Data — hanya admin & developer */}
+        {canManageMasterData && (
+          <MenuSection label='Master Data'>
+            <SubMenu label='Master Data' icon={<i className='ri-database-2-line' />}>
+              <MenuItem href='/master-data/syndicates'>Sindikat</MenuItem>
+              <MenuItem href='/master-data/batches'>Angkatan</MenuItem>
+              <MenuItem href='/master-data/academic-statuses'>Status Akademik</MenuItem>
+            </SubMenu>
+          </MenuSection>
+        )}
 
-        {/* Administrasi */}
-        <MenuSection label='Administrasi'>
-          <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>
-            Manajemen User
-          </MenuItem>
-        </MenuSection>
+        {/* NIMEN Master Data — hanya admin_nimen & developer */}
+        {canManageNimenMasterData && (
+          <MenuSection label='Master Data NIMEN'>
+            <SubMenu label='Struktur Nilai' icon={<i className='ri-node-tree' />}>
+              <MenuItem href='/nimen/master-data/categories'>Kategori</MenuItem>
+              <MenuItem href='/nimen/master-data/variables'>Variabel</MenuItem>
+              <MenuItem href='/nimen/master-data/indicators'>Indikator</MenuItem>
+            </SubMenu>
+            <MenuItem href='/nimen/batch-config' icon={<i className='ri-settings-3-line' />}>
+              Konfigurasi Angkatan
+            </MenuItem>
+          </MenuSection>
+        )}
+
+        {/* Administrasi — hanya admin & developer */}
+        {canManageUsers && (
+          <MenuSection label='Administrasi'>
+            <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>
+              Manajemen User
+            </MenuItem>
+          </MenuSection>
+        )}
       </Menu>
     </ScrollWrapper>
   )
