@@ -1,7 +1,5 @@
-// Third-party Imports
 import CredentialProvider from 'next-auth/providers/credentials'
 
-// Refresh access token menggunakan refresh token
 async function refreshAccessToken(token) {
   try {
     const res = await fetch(`${process.env.API_URL}/api/v1/auth/refresh`, {
@@ -13,7 +11,6 @@ async function refreshAccessToken(token) {
     const json = await res.json()
 
     if (!res.ok || !json.success) {
-      // Refresh token juga expired — paksa logout
       return { ...token, error: 'RefreshTokenExpired' }
     }
 
@@ -56,10 +53,10 @@ export const authOptions = {
             email: json.data.user.email,
             roles: json.data.user.roles,
             permissions: json.data.user.permissions,
+            mustChangePassword: json.data.user.must_change_password,
             accessToken: json.data.access_token,
             refreshToken: json.data.refresh_token,
             accessTokenExpiry: Date.now() + (14 * 60 * 1000),
-            mustChangePassword: json.data.user.must_change_password ?? false,
           }
         } catch (e) {
           throw new Error(e.message)
@@ -70,7 +67,7 @@ export const authOptions = {
 
   session: {
     strategy: 'jwt',
-    maxAge: 7 * 24 * 60 * 60 // 7 hari
+    maxAge: 7 * 24 * 60 * 60
   },
 
   pages: {
@@ -78,8 +75,7 @@ export const authOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user }) {
-      // Login pertama kali
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         return {
           ...token,
@@ -89,20 +85,22 @@ export const authOptions = {
           email: user.email,
           roles: user.roles,
           permissions: user.permissions,
+          mustChangePassword: user.mustChangePassword,
           accessToken: user.accessToken,
           refreshToken: user.refreshToken,
           accessTokenExpiry: user.accessTokenExpiry,
-          mustChangePassword: user.mustChangePassword,
           error: null,
         }
       }
 
-      // Token masih valid
+      if (trigger === 'update' && session?.mustChangePassword === false) {
+        token.mustChangePassword = false
+      }
+
       if (Date.now() < token.accessTokenExpiry) {
         return token
       }
 
-      // Token expired — refresh
       return refreshAccessToken(token)
     },
 
@@ -114,9 +112,9 @@ export const authOptions = {
         session.user.email = token.email
         session.user.roles = token.roles
         session.user.permissions = token.permissions
+        session.user.mustChangePassword = token.mustChangePassword
         session.user.accessToken = token.accessToken
         session.user.refreshToken = token.refreshToken
-        session.user.mustChangePassword = token.mustChangePassword
         session.error = token.error
       }
 
