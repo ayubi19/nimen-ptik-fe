@@ -51,6 +51,7 @@ export const authOptions = {
             name: json.data.user.full_name,
             username: json.data.user.username,
             email: json.data.user.email,
+            image: json.data.user.photo_url || null,
             roles: json.data.user.roles,
             permissions: json.data.user.permissions,
             mustChangePassword: json.data.user.must_change_password,
@@ -76,6 +77,7 @@ export const authOptions = {
 
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      // Login pertama kali
       if (user) {
         return {
           ...token,
@@ -83,6 +85,7 @@ export const authOptions = {
           name: user.name,
           username: user.username,
           email: user.email,
+          image: user.image,
           roles: user.roles,
           permissions: user.permissions,
           mustChangePassword: user.mustChangePassword,
@@ -93,14 +96,22 @@ export const authOptions = {
         }
       }
 
-      if (trigger === 'update' && session?.mustChangePassword === false) {
-        token.mustChangePassword = false
+      // Handle update() dari client
+      if (trigger === 'update') {
+        if (session?.mustChangePassword === false) {
+          token.mustChangePassword = false
+        }
+        if (session?.image !== undefined) {
+          token.image = session.image
+        }
       }
 
+      // Token masih valid
       if (Date.now() < token.accessTokenExpiry) {
         return token
       }
 
+      // Token expired — refresh
       return refreshAccessToken(token)
     },
 
@@ -110,6 +121,7 @@ export const authOptions = {
         session.user.name = token.name
         session.user.username = token.username
         session.user.email = token.email
+        session.user.image = token.image
         session.user.roles = token.roles
         session.user.permissions = token.permissions
         session.user.mustChangePassword = token.mustChangePassword
