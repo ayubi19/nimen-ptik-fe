@@ -15,6 +15,16 @@ const RenderExpandIcon = ({ open, transitionDuration }) => (
   </StyledVerticalNavExpandIcon>
 )
 
+// Decode JWT payload tanpa library tambahan
+const decodeJwt = (token) => {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(base64))
+  } catch {
+    return {}
+  }
+}
+
 const VerticalMenu = ({ scrollMenu }) => {
   const theme = useTheme()
   const verticalNavOptions = useVerticalNav()
@@ -22,22 +32,24 @@ const VerticalMenu = ({ scrollMenu }) => {
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
   const { data: session } = useSession()
 
-  const roles = session?.user?.roles?.map(r => r.name) || []
-  const isDeveloper = session?.user?.is_developer || roles.includes('developer')
-  const isAdminNimen = roles.includes('admin_nimen')
-  const isAdminInitiative = roles.includes('admin_initiative')
-  const isStudent = roles.includes('student') || roles.includes('student_pic')
+  // Decode JWT untuk ambil is_developer (developer tidak punya role di DB)
+  const jwtPayload = session?.user?.accessToken ? decodeJwt(session.user.accessToken) : {}
+  const isDeveloper = jwtPayload?.is_developer === true
 
-  // Hak akses per level
+  // Roles dari session untuk user non-developer
+  const roleNames = session?.user?.roles?.map(r => r.name) || []
+  const isAdminNimen = roleNames.includes('admin_nimen')
+  const isAdminInitiative = roleNames.includes('admin_initiative')
+
   const canManageNimenMasterData = isDeveloper || isAdminNimen
-  const canManageUsers = isDeveloper || isAdminNimen
   const canManageMasterData = isDeveloper || isAdminNimen || isAdminInitiative
+  const canManageUsers = isDeveloper || isAdminNimen
 
   return (
     <ScrollWrapper
       {...(isBreakpointReached
-        ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
-        : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
+          ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
+          : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
       )}
     >
       <Menu
@@ -85,7 +97,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </MenuSection>
 
-        {/* Master Data — hanya admin & developer */}
+        {/* Master Data — admin & developer */}
         {canManageMasterData && (
           <MenuSection label='Master Data'>
             <SubMenu label='Master Data' icon={<i className='ri-database-2-line' />}>
@@ -96,7 +108,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {/* NIMEN Master Data — hanya admin_nimen & developer */}
+        {/* NIMEN Master Data — admin_nimen & developer */}
         {canManageNimenMasterData && (
           <MenuSection label='Master Data NIMEN'>
             <SubMenu label='Struktur Nilai' icon={<i className='ri-node-tree' />}>
@@ -110,7 +122,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {/* Administrasi — hanya admin & developer */}
+        {/* Administrasi — admin & developer */}
         {canManageUsers && (
           <MenuSection label='Administrasi'>
             <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>
