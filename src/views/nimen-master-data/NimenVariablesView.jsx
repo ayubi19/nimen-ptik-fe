@@ -128,8 +128,6 @@ const NimenVariablesView = () => {
         description: values.description || null,
         ...(editData && { is_active: values.is_active })
       }
-      console.log('PAYLOAD:', JSON.stringify(payload))
-      console.log('EDIT ID:', editData?.id)
       if (editData) {
         await nimenVariableApi.update(editData.id, payload)
         showToast('Variabel berhasil diperbarui')
