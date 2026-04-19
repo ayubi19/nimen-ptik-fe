@@ -54,6 +54,7 @@ const NimenIndicatorsView = () => {
   const [loading, setLoading] = useState(false)
   const [variables, setVariables] = useState([])
   const [categories, setCategories] = useState([])
+  const [categoryFilter, setCategoryFilter] = useState('')
   const [globalFilter, setGlobalFilter] = useState('')
   const [variableFilter, setVariableFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -91,16 +92,23 @@ const NimenIndicatorsView = () => {
     nimenCategoryApi.getAll({ page_size: 100, is_active: true })
       .then(res => setCategories(res.data.data.data || []))
       .catch(() => {})
-    nimenVariableApi.getAll({ page_size: 200, is_active: true })
+    nimenVariableApi.getAll({ page_size: 100, is_active: true })
       .then(res => setVariables(res.data.data.data || []))
       .catch(() => {})
   }, [])
+
+  // Filter variabel berdasarkan kategori yang dipilih
+  const filteredVariables = useMemo(() => {
+    if (!categoryFilter) return variables
+    return variables.filter(v => v.category_id === parseInt(categoryFilter))
+  }, [variables, categoryFilter])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const params = { page: page + 1, page_size: pageSize }
       if (globalFilter) params.search = globalFilter
+      if (categoryFilter) params.category_id = categoryFilter
       if (variableFilter) params.variable_id = variableFilter
       if (statusFilter !== '') params.is_active = statusFilter
       const res = await nimenIndicatorApi.getAll(params)
@@ -111,7 +119,7 @@ const NimenIndicatorsView = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, globalFilter, variableFilter, statusFilter, showToast])
+  }, [page, pageSize, globalFilter, categoryFilter, variableFilter, statusFilter, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -190,7 +198,14 @@ const NimenIndicatorsView = () => {
   const columns = useMemo(() => [
     columnHelper.accessor('name', {
       header: 'Nama Indikator',
-      cell: ({ row }) => <Typography className='font-medium' color='text.primary'>{row.original.name}</Typography>
+      cell: ({ row }) => (
+        <div>
+          <Typography className='font-medium' color='text.primary'>{row.original.name}</Typography>
+          {row.original.description && (
+            <Typography variant='caption' color='text.secondary'>{row.original.description}</Typography>
+          )}
+        </div>
+      )
     }),
     columnHelper.accessor('variable', {
       header: 'Variabel / Kategori',
@@ -260,15 +275,42 @@ const NimenIndicatorsView = () => {
     <>
       <Card>
         <CardHeader title='Indikator Nilai NIMEN' sx={{ pb: 0 }}
-          action={<Button variant='contained' startIcon={<i className='ri-add-line' />} onClick={handleOpenCreate}>Tambah Indikator</Button>}
+                    action={<Button variant='contained' startIcon={<i className='ri-add-line' />} onClick={handleOpenCreate}>Tambah Indikator</Button>}
         />
         <div className='flex flex-wrap justify-between gap-4 p-6'>
           <div className='flex flex-wrap items-center gap-4'>
             <FormControl size='small' sx={{ minWidth: 180 }}>
+              <InputLabel>Kategori</InputLabel>
+              <Select label='Kategori' value={categoryFilter} onChange={e => {
+                setCategoryFilter(e.target.value)
+                setVariableFilter('')
+                setPage(0)
+              }}>
+                <MenuItem value=''>Semua</MenuItem>
+                {categories.map(c => (
+                  <MenuItem key={c.id} value={c.id}>
+                    <div className='flex items-center gap-2'>
+                      <i className={c.type === 'PLUS' ? 'ri-add-circle-line text-success-main' : 'ri-indeterminate-circle-line text-error-main'} style={{ fontSize: 14 }} />
+                      {c.name}
+                    </div>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size='small' sx={{ minWidth: 220 }}>
               <InputLabel>Variabel</InputLabel>
               <Select label='Variabel' value={variableFilter} onChange={e => { setVariableFilter(e.target.value); setPage(0) }}>
                 <MenuItem value=''>Semua</MenuItem>
-                {variables.map(v => <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>)}
+                {filteredVariables.map(v => (
+                  <MenuItem key={v.id} value={v.id}>
+                    <div className='flex flex-col'>
+                      <Typography variant='body2' fontWeight={600}>{v.name}</Typography>
+                      {v.description && (
+                        <Typography variant='caption' color='text.secondary'>{v.description}</Typography>
+                      )}
+                    </div>
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             <FormControl size='small' sx={{ minWidth: 140 }}>
@@ -281,9 +323,9 @@ const NimenIndicatorsView = () => {
             </FormControl>
           </div>
           <DebouncedInput value={globalFilter} onChange={val => { setGlobalFilter(val); setPage(0) }}
-            placeholder='Cari indikator...'
-            InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-            sx={{ minWidth: 240 }}
+                          placeholder='Cari indikator...'
+                          InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
+                          sx={{ minWidth: 240 }}
           />
         </div>
         <Divider />
@@ -291,28 +333,28 @@ const NimenIndicatorsView = () => {
           <table className={tableStyles.table}>
             <thead>{table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}</thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={columns.length} className='text-center py-10'><CircularProgress size={32} /></td></tr>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <tr><td colSpan={columns.length} className='text-center py-10'><Typography color='text.secondary'>Tidak ada data ditemukan</Typography></td></tr>
-              ) : (
-                table.getRowModel().rows.map(row => (
-                  <tr key={row.id}>{row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>
-                ))
-              )}
+            {loading ? (
+              <tr><td colSpan={columns.length} className='text-center py-10'><CircularProgress size={32} /></td></tr>
+            ) : table.getRowModel().rows.length === 0 ? (
+              <tr><td colSpan={columns.length} className='text-center py-10'><Typography color='text.secondary'>Tidak ada data ditemukan</Typography></td></tr>
+            ) : (
+              table.getRowModel().rows.map(row => (
+                <tr key={row.id}>{row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>
+              ))
+            )}
             </tbody>
           </table>
         </div>
         <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
-          onPageChange={(_, p) => setPage(p)} onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
-          rowsPerPageOptions={[10, 25, 50]} labelRowsPerPage='Baris per halaman:'
-          labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+                         onPageChange={(_, p) => setPage(p)} onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                         rowsPerPageOptions={[10, 25, 50]} labelRowsPerPage='Baris per halaman:'
+                         labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
         />
       </Card>
 
       {/* Drawer Form */}
       <Drawer open={drawerOpen} anchor='right' variant='temporary' onClose={handleCloseDrawer}
-        ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 440 } } }}>
+              ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 440 } } }}>
         <div className='flex items-center justify-between pli-6 plb-5'>
           <Typography variant='h5'>{editData ? 'Edit Indikator' : 'Tambah Indikator'}</Typography>
           <IconButton onClick={handleCloseDrawer}><i className='ri-close-line text-2xl' /></IconButton>
@@ -323,33 +365,38 @@ const NimenIndicatorsView = () => {
 
             {/* Pilih variabel */}
             <Controller name='variable_id' control={control} rules={{ required: 'Variabel wajib dipilih' }}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.variable_id}>
-                  <InputLabel>Variabel</InputLabel>
-                  <Select {...field} label='Variabel'>
-                    {variables.map(v => (
-                      <MenuItem key={v.id} value={v.id}>
-                        <div className='flex items-center gap-2'>
-                          {v.category && (
-                            <i className={v.category.type === 'PLUS' ? 'ri-add-circle-line text-success-main' : 'ri-indeterminate-circle-line text-error-main'} />
-                          )}
-                          {v.name}
-                          {v.category && <Typography variant='caption' color='text.secondary'>• {v.category.name}</Typography>}
-                        </div>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.variable_id && <Typography variant='caption' color='error'>{errors.variable_id.message}</Typography>}
-                </FormControl>
-              )}
+                        render={({ field }) => (
+                          <FormControl fullWidth error={!!errors.variable_id}>
+                            <InputLabel>Variabel</InputLabel>
+                            <Select {...field} label='Variabel'>
+                              {variables.map(v => (
+                                <MenuItem key={v.id} value={v.id}>
+                                  <div className='flex flex-col'>
+                                    <div className='flex items-center gap-2'>
+                                      {v.category && (
+                                        <i className={v.category.type === 'PLUS' ? 'ri-add-circle-line text-success-main' : 'ri-indeterminate-circle-line text-error-main'} />
+                                      )}
+                                      <Typography variant='body2' fontWeight={600}>{v.name}</Typography>
+                                      {v.category && <Typography variant='caption' color='text.secondary'>• {v.category.name}</Typography>}
+                                    </div>
+                                    {v.description && (
+                                      <Typography variant='caption' color='text.secondary' sx={{ ml: 3 }}>{v.description}</Typography>
+                                    )}
+                                  </div>
+                                </MenuItem>
+                              ))}
+                            </Select>
+                            {errors.variable_id && <Typography variant='caption' color='error'>{errors.variable_id.message}</Typography>}
+                          </FormControl>
+                        )}
             />
 
             {/* Nama indikator */}
             <Controller name='name' control={control} rules={{ required: 'Nama wajib diisi', minLength: { value: 2, message: 'Min 2 karakter' } }}
-              render={({ field }) => (
-                <TextField {...field} fullWidth label='Nama Indikator' placeholder='Contoh: Ketua Senat PMIK'
-                  error={!!errors.name} helperText={errors.name?.message} />
-              )}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth multiline rows={3} label='Nama Indikator' placeholder='Contoh: Tidak melaksanakan perintah dinas'
+                                     error={!!errors.name} helperText={errors.name?.message} />
+                        )}
             />
 
             {/* Nilai — toggle prefix + input angka */}
@@ -361,26 +408,26 @@ const NimenIndicatorsView = () => {
                   <ToggleButton value='MINUS' color='error' sx={{ px: 2, fontWeight: 700 }}>−</ToggleButton>
                 </ToggleButtonGroup>
                 <Controller name='value_abs' control={control}
-                  rules={{
-                    required: 'Nilai wajib diisi',
-                    validate: v => (parseFloat(v) > 0) || 'Nilai harus lebih dari 0'
-                  }}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth label='Angka nilai' type='number'
-                      inputProps={{ min: 0.01, step: 0.01 }}
-                      placeholder='0.30'
-                      error={!!errors.value_abs} helperText={errors.value_abs?.message}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position='start'>
-                            <Typography fontWeight={700} color={valueSign === 'PLUS' ? 'success.main' : 'error.main'}>
-                              {valueSign === 'PLUS' ? '+' : '−'}
-                            </Typography>
-                          </InputAdornment>
-                        )
-                      }}
-                    />
-                  )}
+                            rules={{
+                              required: 'Nilai wajib diisi',
+                              validate: v => (parseFloat(v) > 0) || 'Nilai harus lebih dari 0'
+                            }}
+                            render={({ field }) => (
+                              <TextField {...field} fullWidth label='Angka nilai' type='number'
+                                         inputProps={{ min: 0.01, step: 0.01 }}
+                                         placeholder='0.30'
+                                         error={!!errors.value_abs} helperText={errors.value_abs?.message}
+                                         InputProps={{
+                                           startAdornment: (
+                                             <InputAdornment position='start'>
+                                               <Typography fontWeight={700} color={valueSign === 'PLUS' ? 'success.main' : 'error.main'}>
+                                                 {valueSign === 'PLUS' ? '+' : '−'}
+                                               </Typography>
+                                             </InputAdornment>
+                                           )
+                                         }}
+                              />
+                            )}
                 />
               </div>
               {previewValue !== null && (
@@ -394,51 +441,51 @@ const NimenIndicatorsView = () => {
 
             {/* Deskripsi */}
             <Controller name='description' control={control}
-              render={({ field }) => (
-                <TextField {...field} fullWidth multiline rows={2} label='Deskripsi (opsional)' />
-              )}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth multiline rows={2} label='Deskripsi (opsional)' />
+                        )}
             />
 
             {/* Self submission rule */}
             <div className='flex flex-col gap-3 p-4 rounded-lg border border-divider'>
               <Controller name='has_cooldown' control={control}
-                render={({ field }) => (
-                  <FormControlLabel
-                    control={<Switch {...field} checked={field.value} />}
-                    label={
-                      <div>
-                        <Typography variant='body2' fontWeight={600}>Izinkan Pengajuan Mandiri</Typography>
-                        <Typography variant='caption' color='text.secondary'>Mahasiswa bisa submit dokumen sendiri tanpa sprint</Typography>
-                      </div>
-                    }
-                  />
-                )}
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Switch {...field} checked={field.value} />}
+                              label={
+                                <div>
+                                  <Typography variant='body2' fontWeight={600}>Izinkan Pengajuan Mandiri</Typography>
+                                  <Typography variant='caption' color='text.secondary'>Mahasiswa bisa submit dokumen sendiri tanpa sprint</Typography>
+                                </div>
+                              }
+                            />
+                          )}
               />
               {hasCooldown && (
                 <Controller name='cooldown_days' control={control}
-                  rules={{ required: 'Wajib diisi', min: { value: 1, message: 'Min 1 hari' } }}
-                  render={({ field }) => (
-                    <TextField {...field} fullWidth size='small' label='Jeda pengajuan (hari)'
-                      type='number' inputProps={{ min: 1 }} placeholder='Contoh: 90 untuk donor darah'
-                      error={!!errors.cooldown_days} helperText={errors.cooldown_days?.message}
-                      InputProps={{ endAdornment: <InputAdornment position='end'>hari</InputAdornment> }}
-                    />
-                  )}
+                            rules={{ required: 'Wajib diisi', min: { value: 1, message: 'Min 1 hari' } }}
+                            render={({ field }) => (
+                              <TextField {...field} fullWidth size='small' label='Jeda pengajuan (hari)'
+                                         type='number' inputProps={{ min: 1 }} placeholder='Contoh: 90 untuk donor darah'
+                                         error={!!errors.cooldown_days} helperText={errors.cooldown_days?.message}
+                                         InputProps={{ endAdornment: <InputAdornment position='end'>hari</InputAdornment> }}
+                              />
+                            )}
                 />
               )}
             </div>
 
             {editData && (
               <Controller name='is_active' control={control}
-                render={({ field }) => (
-                  <FormControlLabel control={<Switch {...field} checked={field.value} />} label='Status Aktif' />
-                )}
+                          render={({ field }) => (
+                            <FormControlLabel control={<Switch {...field} checked={field.value} />} label='Status Aktif' />
+                          )}
               />
             )}
 
             <div className='flex gap-4 mt-2'>
               <Button fullWidth type='submit' variant='contained' disabled={formLoading}
-                startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+                      startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
                 {formLoading ? 'Menyimpan...' : 'Simpan'}
               </Button>
               <Button fullWidth variant='tonal' color='secondary' onClick={handleCloseDrawer} disabled={formLoading}>Batal</Button>
@@ -455,7 +502,7 @@ const NimenIndicatorsView = () => {
         <DialogActions className='pli-5 plb-4'>
           <Button onClick={() => setDeleteOpen(false)} variant='tonal' color='secondary' disabled={deleteLoading}>Batal</Button>
           <Button onClick={handleDelete} variant='contained' color='error' disabled={deleteLoading}
-            startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+                  startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
             {deleteLoading ? 'Menghapus...' : 'Hapus'}
           </Button>
         </DialogActions>
