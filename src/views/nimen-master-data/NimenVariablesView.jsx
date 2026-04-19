@@ -128,6 +128,8 @@ const NimenVariablesView = () => {
         description: values.description || null,
         ...(editData && { is_active: values.is_active })
       }
+      console.log('PAYLOAD:', JSON.stringify(payload))
+      console.log('EDIT ID:', editData?.id)
       if (editData) {
         await nimenVariableApi.update(editData.id, payload)
         showToast('Variabel berhasil diperbarui')
@@ -212,7 +214,7 @@ const NimenVariablesView = () => {
     <>
       <Card>
         <CardHeader title='Variabel Nilai NIMEN' sx={{ pb: 0 }}
-          action={<Button variant='contained' startIcon={<i className='ri-add-line' />} onClick={handleOpenCreate}>Tambah Variabel</Button>}
+                    action={<Button variant='contained' startIcon={<i className='ri-add-line' />} onClick={handleOpenCreate}>Tambah Variabel</Button>}
         />
         <div className='flex flex-wrap justify-between gap-4 p-6'>
           <div className='flex flex-wrap items-center gap-4'>
@@ -233,9 +235,9 @@ const NimenVariablesView = () => {
             </FormControl>
           </div>
           <DebouncedInput value={globalFilter} onChange={val => { setGlobalFilter(val); setPage(0) }}
-            placeholder='Cari variabel...'
-            InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-            sx={{ minWidth: 240 }}
+                          placeholder='Cari variabel...'
+                          InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
+                          sx={{ minWidth: 240 }}
           />
         </div>
         <Divider />
@@ -243,27 +245,27 @@ const NimenVariablesView = () => {
           <table className={tableStyles.table}>
             <thead>{table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}</thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={columns.length} className='text-center py-10'><CircularProgress size={32} /></td></tr>
-              ) : table.getRowModel().rows.length === 0 ? (
-                <tr><td colSpan={columns.length} className='text-center py-10'><Typography color='text.secondary'>Tidak ada data ditemukan</Typography></td></tr>
-              ) : (
-                table.getRowModel().rows.map(row => (
-                  <tr key={row.id}>{row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>
-                ))
-              )}
+            {loading ? (
+              <tr><td colSpan={columns.length} className='text-center py-10'><CircularProgress size={32} /></td></tr>
+            ) : table.getRowModel().rows.length === 0 ? (
+              <tr><td colSpan={columns.length} className='text-center py-10'><Typography color='text.secondary'>Tidak ada data ditemukan</Typography></td></tr>
+            ) : (
+              table.getRowModel().rows.map(row => (
+                <tr key={row.id}>{row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>
+              ))
+            )}
             </tbody>
           </table>
         </div>
         <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
-          onPageChange={(_, p) => setPage(p)} onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
-          rowsPerPageOptions={[10, 25, 50]} labelRowsPerPage='Baris per halaman:'
-          labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+                         onPageChange={(_, p) => setPage(p)} onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                         rowsPerPageOptions={[10, 25, 50]} labelRowsPerPage='Baris per halaman:'
+                         labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
         />
       </Card>
 
       <Drawer open={drawerOpen} anchor='right' variant='temporary' onClose={handleCloseDrawer}
-        ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 420 } } }}>
+              ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 420 } } }}>
         <div className='flex items-center justify-between pli-6 plb-5'>
           <Typography variant='h5'>{editData ? 'Edit Variabel' : 'Tambah Variabel'}</Typography>
           <IconButton onClick={handleCloseDrawer}><i className='ri-close-line text-2xl' /></IconButton>
@@ -272,44 +274,44 @@ const NimenVariablesView = () => {
         <div className='p-6'>
           <form onSubmit={handleSubmit(handleSubmitForm)} className='flex flex-col gap-5'>
             <Controller name='category_id' control={control} rules={{ required: 'Kategori wajib dipilih' }}
-              render={({ field }) => (
-                <FormControl fullWidth error={!!errors.category_id}>
-                  <InputLabel>Kategori</InputLabel>
-                  <Select {...field} label='Kategori'>
-                    {categories.map(c => (
-                      <MenuItem key={c.id} value={c.id}>
-                        <div className='flex items-center gap-2'>
-                          <i className={c.type === 'PLUS' ? 'ri-add-circle-line text-success-main' : 'ri-indeterminate-circle-line text-error-main'} />
-                          {c.name}
-                        </div>
-                      </MenuItem>
-                    ))}
-                  </Select>
-                  {errors.category_id && <Typography variant='caption' color='error'>{errors.category_id.message}</Typography>}
-                </FormControl>
-              )}
+                        render={({ field }) => (
+                          <FormControl fullWidth error={!!errors.category_id}>
+                            <InputLabel>Kategori</InputLabel>
+                            <Select {...field} label='Kategori'>
+                              {categories.map(c => (
+                                <MenuItem key={c.id} value={c.id}>
+                                  <div className='flex items-center gap-2'>
+                                    <i className={c.type === 'PLUS' ? 'ri-add-circle-line text-success-main' : 'ri-indeterminate-circle-line text-error-main'} />
+                                    {c.name}
+                                  </div>
+                                </MenuItem>
+                              ))}
+                            </Select>
+                            {errors.category_id && <Typography variant='caption' color='error'>{errors.category_id.message}</Typography>}
+                          </FormControl>
+                        )}
             />
             <Controller name='name' control={control} rules={{ required: 'Nama wajib diisi', minLength: { value: 2, message: 'Min 2 karakter' } }}
-              render={({ field }) => (
-                <TextField {...field} fullWidth label='Nama Variabel' placeholder='Contoh: Kepemimpinan'
-                  error={!!errors.name} helperText={errors.name?.message} />
-              )}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth label='Nama Variabel' placeholder='Contoh: Kepemimpinan'
+                                     error={!!errors.name} helperText={errors.name?.message} />
+                        )}
             />
             <Controller name='description' control={control}
-              render={({ field }) => (
-                <TextField {...field} fullWidth multiline rows={3} label='Deskripsi (opsional)' placeholder='Deskripsi singkat variabel ini...' />
-              )}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth multiline rows={3} label='Deskripsi (opsional)' placeholder='Deskripsi singkat variabel ini...' />
+                        )}
             />
             {editData && (
               <Controller name='is_active' control={control}
-                render={({ field }) => (
-                  <FormControlLabel control={<Switch {...field} checked={field.value} />} label='Status Aktif' />
-                )}
+                          render={({ field }) => (
+                            <FormControlLabel control={<Switch {...field} checked={field.value} />} label='Status Aktif' />
+                          )}
               />
             )}
             <div className='flex gap-4 mt-2'>
               <Button fullWidth type='submit' variant='contained' disabled={formLoading}
-                startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+                      startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
                 {formLoading ? 'Menyimpan...' : 'Simpan'}
               </Button>
               <Button fullWidth variant='tonal' color='secondary' onClick={handleCloseDrawer} disabled={formLoading}>Batal</Button>
@@ -326,7 +328,7 @@ const NimenVariablesView = () => {
         <DialogActions className='pli-5 plb-4'>
           <Button onClick={() => setDeleteOpen(false)} variant='tonal' color='secondary' disabled={deleteLoading}>Batal</Button>
           <Button onClick={handleDelete} variant='contained' color='error' disabled={deleteLoading}
-            startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+                  startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
             {deleteLoading ? 'Menghapus...' : 'Hapus'}
           </Button>
         </DialogActions>
