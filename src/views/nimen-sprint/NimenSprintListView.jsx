@@ -46,8 +46,8 @@ const DebouncedInput = ({ value: initialValue, onChange, debounce = 400, ...prop
 
 const STATUS_CONFIG = {
   DRAFT_ADMIN:           { label: 'Draft Admin',          color: 'secondary' },
-  SENT_TO_COORDINATOR:   { label: 'Menunggu Koordinator', color: 'warning'   },
-  COORDINATOR_SUBMITTED: { label: 'Revisi Masuk',         color: 'info'      },
+  DRAFT_PEJABAT:   { label: 'Menunggu Koordinator', color: 'warning'   },
+  REVIEW_SUBMITTED: { label: 'Revisi Masuk',         color: 'info'      },
   ACTIVE:                { label: 'Aktif',                color: 'success'   },
   APPROVAL_PENDING:      { label: 'Approval Pending',     color: 'warning'   },
   CLOSED:                { label: 'Selesai',              color: 'secondary' },

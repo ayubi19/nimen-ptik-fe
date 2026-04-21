@@ -46,8 +46,8 @@ import { getInitials } from '@/utils/getInitials'
 
 const STATUS_CONFIG = {
   DRAFT_ADMIN:             { label: 'Draft Admin',          color: 'secondary', step: 0 },
-  SENT_TO_COORDINATOR:     { label: 'Menunggu Koordinator', color: 'warning',   step: 1 },
-  COORDINATOR_SUBMITTED:   { label: 'Revisi Masuk',         color: 'info',      step: 2 },
+  DRAFT_PEJABAT:     { label: 'Menunggu Koordinator', color: 'warning',   step: 1 },
+  REVIEW_SUBMITTED:   { label: 'Revisi Masuk',         color: 'info',      step: 2 },
   ACTIVE:                  { label: 'Aktif',                color: 'success',   step: 3 },
   APPROVAL_PENDING:        { label: 'Approval Pending',     color: 'warning',   step: 3 },
   CLOSED:                  { label: 'Selesai',              color: 'secondary', step: 4 },
@@ -95,6 +95,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
   const [finalizeOpen, setFinalizeOpen] = useState(false)
   const [finalizeVersion, setFinalizeVersion] = useState('DRAFT_ORIGINAL')
   const [finalizeLoading, setFinalizeLoading] = useState(false)
+  const [finalizeDiff, setFinalizeDiff] = useState(null)
+  const [finalizeDiffLoading, setFinalizeDiffLoading] = useState(false)
 
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
 
@@ -208,6 +210,20 @@ const NimenSprintDetailView = ({ sprintId }) => {
   }, [sprintId, selectedCoordinatorID, sendNote, fetchSprint, showToast])
 
   // ── Finalize ──
+  const handleOpenFinalize = useCallback(async () => {
+    setFinalizeOpen(true)
+    setFinalizeDiff(null)
+    setFinalizeDiffLoading(true)
+    try {
+      const res = await nimenSprintApi.getFinalizeDiff(sprintId)
+      setFinalizeDiff(res.data.data)
+    } catch (err) {
+      showToast(err.message || 'Gagal memuat diff peserta', 'error')
+    } finally {
+      setFinalizeDiffLoading(false)
+    }
+  }, [sprintId, showToast])
+
   const handleFinalize = useCallback(async () => {
     setFinalizeLoading(true)
     try {
@@ -227,8 +243,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
 
   const statusCfg = STATUS_CONFIG[sprint.status] || { label: sprint.status, color: 'default', step: 0 }
   const isEditable = sprint.status === 'DRAFT_ADMIN'
-  const isSentToCoordinator = sprint.status === 'SENT_TO_COORDINATOR'
-  const isCoordinatorSubmitted = sprint.status === 'COORDINATOR_SUBMITTED'
+  const isDraftPejabat = sprint.status === 'DRAFT_PEJABAT'
+  const isReviewSubmitted = sprint.status === 'REVIEW_SUBMITTED'
   const isCoordinator = sprint.coordinator_id && parseInt(currentUserID) === sprint.coordinator_id
   const quotaUsed = participants.length
   const quotaPercent = Math.min((quotaUsed / sprint.participant_quota) * 100, 100)
@@ -291,14 +307,14 @@ const NimenSprintDetailView = ({ sprintId }) => {
                       </Button>
                     </>
                   )}
-                  {isCoordinatorSubmitted && isAdmin && (
+                  {isReviewSubmitted && isAdmin && (
                     <Button variant='contained' color='success'
                       startIcon={<i className='ri-check-double-line' />}
-                      onClick={() => setFinalizeOpen(true)}>
+                      onClick={handleOpenFinalize}>
                       Finalisasi Sprint
                     </Button>
                   )}
-                  {isSentToCoordinator && isCoordinator && (
+                  {isDraftPejabat && isCoordinator && (
                     <Button variant='contained' color='info'
                       startIcon={<i className='ri-edit-box-line' />}
                       onClick={() => router.push(`/nimen/sprints/${sprintId}/coordinator-review`)}>
@@ -590,21 +606,20 @@ const NimenSprintDetailView = ({ sprintId }) => {
       </Dialog>
 
       {/* ── Dialog Finalisasi ── */}
-      <Dialog open={finalizeOpen} onClose={() => setFinalizeOpen(false)} maxWidth='sm' fullWidth>
+      <Dialog open={finalizeOpen} onClose={() => setFinalizeOpen(false)} maxWidth='md' fullWidth>
         <DialogTitle>Finalisasi Sprint</DialogTitle>
         <Divider />
         <DialogContent className='pt-4'>
           <DialogContentText className='mb-4'>
-            Pilih versi daftar peserta yang akan digunakan untuk sprint ini.
-            Setelah difinalisasi, sprint akan berstatus <strong>AKTIF</strong>.
+            Pilih versi daftar peserta yang akan digunakan. Setelah difinalisasi, sprint berstatus <strong>AKTIF</strong> dan semua peserta menerima notifikasi.
           </DialogContentText>
-          <RadioGroup value={finalizeVersion} onChange={e => setFinalizeVersion(e.target.value)}>
+          <RadioGroup value={finalizeVersion} onChange={e => setFinalizeVersion(e.target.value)} className='mb-4'>
             <FormControlLabel value='DRAFT_ORIGINAL'
               control={<Radio />}
               label={
                 <div>
-                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Admin</Typography>
-                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang dibuat admin di awal</Typography>
+                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Admin (awal)</Typography>
+                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang dibuat admin, sebelum review koordinator</Typography>
                 </div>
               }
             />
@@ -618,12 +633,83 @@ const NimenSprintDetailView = ({ sprintId }) => {
               }
             />
           </RadioGroup>
+
+          {/* Diff Peserta */}
+          {finalizeDiffLoading && (
+            <Box className='flex justify-center py-6'><CircularProgress size={28} /></Box>
+          )}
+          {!finalizeDiffLoading && finalizeDiff && (() => {
+            const listToShow = finalizeVersion === 'DRAFT_ORIGINAL'
+              ? finalizeDiff.original_participants
+              : finalizeDiff.coordinator_participants
+            const hasChanges = finalizeDiff.coordinator_participants?.some(p => p.change_type !== 'UNCHANGED')
+            return (
+              <Box>
+                {hasChanges && (
+                  <Alert severity='info' className='mb-3' icon={<i className='ri-git-diff-line' />}>
+                    Koordinator melakukan perubahan pada daftar peserta.
+                    {finalizeVersion === 'COORDINATOR_DRAFT'
+                      ? ' Preview di bawah sudah mencerminkan perubahan koordinator.'
+                      : ' Preview di bawah menggunakan daftar admin (awal).'}
+                  </Alert>
+                )}
+                <Typography variant='subtitle2' color='text.secondary' className='mb-2'>
+                  Preview peserta final ({listToShow?.length ?? 0} orang)
+                </Typography>
+                <Table size='small'>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Nama</TableCell>
+                      <TableCell>NIM</TableCell>
+                      {finalizeVersion === 'COORDINATOR_DRAFT' && <TableCell>Perubahan</TableCell>}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {listToShow?.filter(p => p.change_type !== 'REMOVED').map(p => (
+                      <TableRow key={p.student_id}
+                        sx={p.change_type === 'ADDED' ? { bgcolor: 'success.lighter' } : {}}>
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            <Avatar sx={{ width: 28, height: 28, fontSize: 11 }}>
+                              {getInitials(p.full_name)}
+                            </Avatar>
+                            <Typography variant='body2' fontWeight={600}>{p.full_name}</Typography>
+                          </div>
+                        </TableCell>
+                        <TableCell><Typography variant='body2'>{p.nim}</Typography></TableCell>
+                        {finalizeVersion === 'COORDINATOR_DRAFT' && (
+                          <TableCell>
+                            {p.change_type === 'ADDED' && <Chip label='Ditambah' color='success' size='small' variant='tonal' icon={<i className='ri-add-line' />} />}
+                            {p.change_type === 'UNCHANGED' && <Typography variant='caption' color='text.secondary'>—</Typography>}
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                    {finalizeVersion === 'COORDINATOR_DRAFT' && finalizeDiff.coordinator_participants?.filter(p => p.change_type === 'REMOVED').map(p => (
+                      <TableRow key={`removed-${p.student_id}`} sx={{ bgcolor: 'error.lighter', opacity: 0.6 }}>
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            <Avatar sx={{ width: 28, height: 28, fontSize: 11 }}>
+                              {getInitials(p.full_name)}
+                            </Avatar>
+                            <Typography variant='body2' sx={{ textDecoration: 'line-through' }}>{p.full_name}</Typography>
+                          </div>
+                        </TableCell>
+                        <TableCell><Typography variant='body2' sx={{ textDecoration: 'line-through' }}>{p.nim}</Typography></TableCell>
+                        <TableCell><Chip label='Dihapus' color='error' size='small' variant='tonal' icon={<i className='ri-subtract-line' />} /></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            )
+          })()}
         </DialogContent>
         <Divider />
         <DialogActions className='p-4 gap-2'>
           <Button variant='tonal' color='secondary' onClick={() => setFinalizeOpen(false)} disabled={finalizeLoading}>Batal</Button>
           <Button variant='contained' color='success' onClick={handleFinalize}
-            disabled={finalizeLoading}
+            disabled={finalizeLoading || finalizeDiffLoading}
             startIcon={finalizeLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-check-double-line' />}>
             {finalizeLoading ? 'Memfinalisasi...' : 'Finalisasi Sprint'}
           </Button>

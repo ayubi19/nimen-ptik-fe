@@ -52,13 +52,28 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [sprintRes, participantRes, availableRes] = await Promise.all([
-        nimenSprintApi.getById(sprintId),
-        nimenSprintApi.getParticipants(sprintId),
+      const [reviewRes, availableRes] = await Promise.all([
+        nimenSprintApi.getCoordinatorReview(sprintId),
         nimenSprintApi.getAvailableStudents(sprintId),
       ])
-      setSprint(sprintRes.data.data)
-      setParticipants(participantRes.data.data || [])
+      const reviewData = reviewRes.data.data
+      setSprint({
+        sprint_number: reviewData.sprint_number,
+        title: reviewData.title,
+        event_date: reviewData.event_date,
+        participant_quota: reviewData.participant_quota,
+      })
+      // Map coordinator review participants ke format lokal
+      setParticipants(reviewData.participants.map(p => ({
+        id: p.student_id,
+        student_id: p.student_id,
+        student: {
+          id: p.student_id,
+          full_name: p.full_name,
+          student_profile: { nim: p.nim },
+        },
+        change_type: p.change_type, // "ADDED" | "REMOVED" | ""
+      })))
       setAvailableStudents(availableRes.data.data || [])
     } catch (err) {
       showToast(err.message || 'Gagal memuat data', 'error')
@@ -100,9 +115,9 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
   const handleSubmit = useCallback(async () => {
     setSubmitLoading(true)
     try {
-      const studentIDs = participants.map(p => p.student_id)
+      const participantIDs = participants.map(p => p.student_id)
       await nimenSprintApi.coordinatorSubmit(sprintId, {
-        student_ids: studentIDs,
+        participant_ids: participantIDs,
         note: note,
       })
       showToast('Revisi peserta berhasil disubmit ke admin')
@@ -179,6 +194,7 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
                   <TableCell>Nama</TableCell>
                   <TableCell>NIM</TableCell>
                   <TableCell>Sindikat</TableCell>
+                  <TableCell align='center'>Status</TableCell>
                   <TableCell align='center' width={100}>Ganti</TableCell>
                 </TableRow>
               </TableHead>
@@ -187,7 +203,8 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
                   const student = p.student
                   const profile = student?.student_profile
                   return (
-                    <TableRow key={p.id || idx}>
+                    <TableRow key={p.id || idx}
+                      sx={p.change_type === 'ADDED' ? { bgcolor: 'success.lighter' } : {}}>
                       <TableCell>
                         <Typography variant='body2' color='text.secondary'>{idx + 1}</Typography>
                       </TableCell>
@@ -201,6 +218,12 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
                       </TableCell>
                       <TableCell><Typography variant='body2'>{profile?.nim || '-'}</Typography></TableCell>
                       <TableCell><Typography variant='body2'>{profile?.syndicate?.name || '-'}</Typography></TableCell>
+                      <TableCell align='center'>
+                        {p.change_type === 'ADDED'
+                          ? <Chip label='Baru ditambah' color='success' size='small' variant='tonal' />
+                          : <Typography variant='caption' color='text.secondary'>—</Typography>
+                        }
+                      </TableCell>
                       <TableCell align='center'>
                         <Button size='small' variant='tonal' color='warning'
                           startIcon={<i className='ri-swap-line' />}

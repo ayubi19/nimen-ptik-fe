@@ -30,18 +30,26 @@ export const nimenSprintApi = {
   generateParticipants: (id, data) =>
     apiClient.post(`/nimen/sprints/${id}/generate-participants`, data),
 
-  // P3b — Koordinator flow
+  // P2 — Kirim ke koordinator
   getCoordinators: (id) =>
     apiClient.get(`/nimen/sprints/${id}/coordinators`),
 
   sendToCoordinator: (id, data) =>
     apiClient.post(`/nimen/sprints/${id}/send-to-coordinator`, data),
 
+  // P3a — Koordinator review
+  getCoordinatorReview: (id) =>
+    apiClient.get(`/nimen/sprints/${id}/coordinator-review`),
+
   getAvailableStudents: (id) =>
     apiClient.get(`/nimen/sprints/${id}/available-students`),
 
   coordinatorSubmit: (id, data) =>
     apiClient.post(`/nimen/sprints/${id}/coordinator-submit`, data),
+
+  // P3b — Admin finalisasi
+  getFinalizeDiff: (id) =>
+    apiClient.get(`/nimen/sprints/${id}/finalize-diff`),
 
   finalize: (id, data) =>
     apiClient.post(`/nimen/sprints/${id}/finalize`, data),
