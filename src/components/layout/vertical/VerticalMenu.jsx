@@ -15,14 +15,11 @@ const RenderExpandIcon = ({ open, transitionDuration }) => (
   </StyledVerticalNavExpandIcon>
 )
 
-// Decode JWT payload tanpa library tambahan
 const decodeJwt = (token) => {
   try {
     const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
     return JSON.parse(atob(base64))
-  } catch {
-    return {}
-  }
+  } catch { return {} }
 }
 
 const VerticalMenu = ({ scrollMenu }) => {
@@ -32,11 +29,8 @@ const VerticalMenu = ({ scrollMenu }) => {
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
   const { data: session } = useSession()
 
-  // Decode JWT untuk ambil is_developer (developer tidak punya role di DB)
   const jwtPayload = session?.user?.accessToken ? decodeJwt(session.user.accessToken) : {}
   const isDeveloper = jwtPayload?.is_developer === true
-
-  // Roles dari session untuk user non-developer
   const roleNames = session?.user?.roles?.map(r => r.name) || []
   const isAdminNimen = roleNames.includes('admin_nimen')
   const isAdminInitiative = roleNames.includes('admin_initiative')
@@ -48,8 +42,8 @@ const VerticalMenu = ({ scrollMenu }) => {
   return (
     <ScrollWrapper
       {...(isBreakpointReached
-          ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
-          : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
+        ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
+        : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
       )}
     >
       <Menu
@@ -59,45 +53,30 @@ const VerticalMenu = ({ scrollMenu }) => {
         renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-fill' /> }}
         menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
       >
-        {/* Dashboard */}
-        <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>
-          Dashboard
-        </MenuItem>
+        <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>Dashboard</MenuItem>
 
-        {/* Akademik */}
         <MenuSection label='Akademik'>
-          <MenuItem href='/nimen' icon={<i className='ri-medal-line' />}>
-            NIMEN
-          </MenuItem>
+          <MenuItem href='/nimen' icon={<i className='ri-medal-line' />}>NIMEN</MenuItem>
+          {canManageNimenMasterData && (
+            <MenuItem href='/nimen/sprints' icon={<i className='ri-file-list-3-line' />}>Sprint</MenuItem>
+          )}
           <SubMenu label='Inisiatif' icon={<i className='ri-lightbulb-line' />}>
             <MenuItem href='/initiative'>Semua Inisiatif</MenuItem>
           </SubMenu>
-          <MenuItem href='/ranking' icon={<i className='ri-bar-chart-line' />}>
-            Peringkat
-          </MenuItem>
+          <MenuItem href='/ranking' icon={<i className='ri-bar-chart-line' />}>Peringkat</MenuItem>
         </MenuSection>
 
-        {/* Mahasiswa */}
         <MenuSection label='Mahasiswa'>
-          <MenuItem href='/students/list' icon={<i className='ri-group-line' />}>
-            Daftar Mahasiswa
-          </MenuItem>
-          <MenuItem href='/onboarding' icon={<i className='ri-user-add-line' />}>
-            Onboarding
-          </MenuItem>
-          <MenuItem href='/violation' icon={<i className='ri-error-warning-line' />}>
-            Pelanggaran
-          </MenuItem>
+          <MenuItem href='/students/list' icon={<i className='ri-group-line' />}>Daftar Mahasiswa</MenuItem>
+          <MenuItem href='/onboarding' icon={<i className='ri-user-add-line' />}>Onboarding</MenuItem>
+          <MenuItem href='/students/organization' icon={<i className='ri-organization-chart' />}>Struktur Organisasi</MenuItem>
+          <MenuItem href='/violation' icon={<i className='ri-error-warning-line' />}>Pelanggaran</MenuItem>
         </MenuSection>
 
-        {/* Jadwal */}
         <MenuSection label='Jadwal'>
-          <MenuItem href='/schedule' icon={<i className='ri-calendar-line' />}>
-            Jadwal Kegiatan
-          </MenuItem>
+          <MenuItem href='/schedule' icon={<i className='ri-calendar-line' />}>Jadwal Kegiatan</MenuItem>
         </MenuSection>
 
-        {/* Master Data — admin & developer */}
         {canManageMasterData && (
           <MenuSection label='Master Data'>
             <SubMenu label='Master Data' icon={<i className='ri-database-2-line' />}>
@@ -108,7 +87,6 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {/* NIMEN Master Data — admin_nimen & developer */}
         {canManageNimenMasterData && (
           <MenuSection label='Master Data NIMEN'>
             <SubMenu label='Struktur Nilai' icon={<i className='ri-node-tree' />}>
@@ -122,12 +100,9 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {/* Administrasi — admin & developer */}
         {canManageUsers && (
           <MenuSection label='Administrasi'>
-            <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>
-              Manajemen User
-            </MenuItem>
+            <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>Manajemen User</MenuItem>
           </MenuSection>
         )}
       </Menu>
