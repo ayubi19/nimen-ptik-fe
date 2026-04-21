@@ -57,6 +57,7 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         <MenuSection label='Akademik'>
           <MenuItem href='/nimen' icon={<i className='ri-medal-line' />}>NIMEN</MenuItem>
+          <MenuItem href='/nimen/my-sprints' icon={<i className='ri-calendar-check-line' />}>Sprint Saya</MenuItem>
           {canManageNimenMasterData && (
             <MenuItem href='/nimen/sprints' icon={<i className='ri-file-list-3-line' />}>Sprint</MenuItem>
           )}
