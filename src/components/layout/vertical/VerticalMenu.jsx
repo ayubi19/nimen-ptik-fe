@@ -98,6 +98,9 @@ const VerticalMenu = ({ scrollMenu }) => {
             <MenuItem href='/nimen/batch-config' icon={<i className='ri-settings-3-line' />}>
               Konfigurasi Angkatan
             </MenuItem>
+            <MenuItem href='/nimen/position-values' icon={<i className='ri-medal-2-line' />}>
+              Nilai Jabatan Bulanan
+            </MenuItem>
           </MenuSection>
         )}
 
