@@ -35,15 +35,19 @@ const VerticalMenu = ({ scrollMenu }) => {
   const isAdminNimen = roleNames.includes('admin_nimen')
   const isAdminInitiative = roleNames.includes('admin_initiative')
 
+  const isStudent = roleNames.includes('student') || roleNames.includes('student_pic')
+  const hasPosition = roleNames.includes('student_pic') // mahasiswa dengan jabatan
+
   const canManageNimenMasterData = isDeveloper || isAdminNimen
   const canManageMasterData = isDeveloper || isAdminNimen || isAdminInitiative
   const canManageUsers = isDeveloper || isAdminNimen
+  const canManageStudents = isDeveloper || isAdminNimen
 
   return (
     <ScrollWrapper
       {...(isBreakpointReached
-        ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
-        : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
+          ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
+          : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
       )}
     >
       <Menu
@@ -57,8 +61,14 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         <MenuSection label='Akademik'>
           <MenuItem href='/nimen' icon={<i className='ri-medal-line' />}>NIMEN</MenuItem>
-          <MenuItem href='/nimen/my-sprints' icon={<i className='ri-calendar-check-line' />}>Sprint Saya</MenuItem>
-          <MenuItem href='/nimen/self-submissions/my' icon={<i className='ri-file-add-line' />}>Pengajuan Nilai Saya</MenuItem>
+          {/* Menu khusus mahasiswa */}
+          {(isStudent || hasPosition) && (
+            <MenuItem href='/nimen/my-sprints' icon={<i className='ri-calendar-check-line' />}>Sprint Saya</MenuItem>
+          )}
+          {(isStudent || hasPosition) && (
+            <MenuItem href='/nimen/self-submissions/my' icon={<i className='ri-file-add-line' />}>Pengajuan Nilai Saya</MenuItem>
+          )}
+          {/* Menu khusus admin */}
           {canManageNimenMasterData && (
             <MenuItem href='/nimen/sprints' icon={<i className='ri-file-list-3-line' />}>Sprint</MenuItem>
           )}
@@ -71,12 +81,14 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/ranking' icon={<i className='ri-bar-chart-line' />}>Peringkat</MenuItem>
         </MenuSection>
 
-        <MenuSection label='Mahasiswa'>
-          <MenuItem href='/students/list' icon={<i className='ri-group-line' />}>Daftar Mahasiswa</MenuItem>
-          <MenuItem href='/onboarding' icon={<i className='ri-user-add-line' />}>Onboarding</MenuItem>
-          <MenuItem href='/students/organization' icon={<i className='ri-organization-chart' />}>Struktur Organisasi</MenuItem>
-          <MenuItem href='/violation' icon={<i className='ri-error-warning-line' />}>Pelanggaran</MenuItem>
-        </MenuSection>
+        {canManageStudents && (
+          <MenuSection label='Mahasiswa'>
+            <MenuItem href='/students/list' icon={<i className='ri-group-line' />}>Daftar Mahasiswa</MenuItem>
+            <MenuItem href='/onboarding' icon={<i className='ri-user-add-line' />}>Onboarding</MenuItem>
+            <MenuItem href='/students/organization' icon={<i className='ri-organization-chart' />}>Struktur Organisasi</MenuItem>
+            <MenuItem href='/violation' icon={<i className='ri-error-warning-line' />}>Pelanggaran</MenuItem>
+          </MenuSection>
+        )}
 
         <MenuSection label='Jadwal'>
           <MenuItem href='/schedule' icon={<i className='ri-calendar-line' />}>Jadwal Kegiatan</MenuItem>

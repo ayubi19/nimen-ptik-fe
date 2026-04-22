@@ -13,6 +13,7 @@ import IconButton from '@mui/material/IconButton'
 import InputAdornment from '@mui/material/InputAdornment'
 import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
+import Divider from '@mui/material/Divider'
 
 // Third-party Imports
 import { signIn } from 'next-auth/react'
@@ -149,6 +150,23 @@ const Login = () => {
               {isLoading ? 'Memproses...' : 'Login'}
             </Button>
           </form>
+
+          <Divider className='gap-2'>
+            <span className='text-sm text-textSecondary'>atau</span>
+          </Divider>
+
+          <Button
+            fullWidth
+            variant='tonal'
+            color='secondary'
+            startIcon={<i className='ri-telegram-line text-[22px]' style={{ color: '#229ED9' }} />}
+            component='a'
+            href={`https://t.me/${process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME}`}
+            target='_blank'
+            rel='noopener noreferrer'
+          >
+            Daftar sebagai Mahasiswa
+          </Button>
         </div>
       </div>
     </div>
