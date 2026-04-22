@@ -58,8 +58,12 @@ const VerticalMenu = ({ scrollMenu }) => {
         <MenuSection label='Akademik'>
           <MenuItem href='/nimen' icon={<i className='ri-medal-line' />}>NIMEN</MenuItem>
           <MenuItem href='/nimen/my-sprints' icon={<i className='ri-calendar-check-line' />}>Sprint Saya</MenuItem>
+          <MenuItem href='/nimen/self-submissions/my' icon={<i className='ri-file-add-line' />}>Pengajuan Nilai Saya</MenuItem>
           {canManageNimenMasterData && (
             <MenuItem href='/nimen/sprints' icon={<i className='ri-file-list-3-line' />}>Sprint</MenuItem>
+          )}
+          {canManageNimenMasterData && (
+            <MenuItem href='/nimen/self-submissions' icon={<i className='ri-file-check-line' />}>Pengajuan Mandiri</MenuItem>
           )}
           <SubMenu label='Inisiatif' icon={<i className='ri-lightbulb-line' />}>
             <MenuItem href='/initiative'>Semua Inisiatif</MenuItem>
