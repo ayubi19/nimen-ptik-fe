@@ -31,7 +31,7 @@ const VerticalMenu = ({ scrollMenu }) => {
 
   const jwtPayload = session?.user?.accessToken ? decodeJwt(session.user.accessToken) : {}
   const isDeveloper = jwtPayload?.is_developer === true
-  const roleNames = session?.user?.roles?.map(r => r.name) || []
+  const roleNames = session?.user?.roles || []
 
   const isAdminNimen      = roleNames.includes('admin_nimen')
   const isAdminInitiative  = roleNames.includes('admin_initiative')
@@ -60,22 +60,26 @@ const VerticalMenu = ({ scrollMenu }) => {
         {/* ── Dashboard — semua role ── */}
         <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>Dashboard</MenuItem>
 
-        {/* ── Akademik — semua role, tapi isinya berbeda ── */}
+        {/* ── Akademik ── */}
         <MenuSection label='Akademik'>
+
+          {/* NIMEN — semua role */}
           <MenuItem href='/nimen' icon={<i className='ri-medal-line' />}>NIMEN</MenuItem>
 
-          {/* Hanya mahasiswa (biasa & pejabat) */}
+          {/* Sprint Saya & Pengajuan Nilai Saya — hanya mahasiswa (biasa & pejabat) */}
           {isStudent && (
             <MenuItem href='/nimen/my-sprints' icon={<i className='ri-calendar-check-line' />}>Sprint Saya</MenuItem>
           )}
           {isStudent && (
             <MenuItem href='/nimen/self-submissions/my' icon={<i className='ri-file-add-line' />}>Pengajuan Nilai Saya</MenuItem>
           )}
+
+          {/* Review Sprint — hanya mahasiswa pejabat */}
           {hasPosition && (
             <MenuItem href='/nimen/sprints/coordinator-review' icon={<i className='ri-edit-box-line' />}>Review Sprint</MenuItem>
           )}
 
-          {/* Hanya admin & developer */}
+          {/* Sprint kelola & Pengajuan Mandiri kelola — hanya admin & developer */}
           {canManageNimenMasterData && (
             <MenuItem href='/nimen/sprints' icon={<i className='ri-file-list-3-line' />}>Sprint</MenuItem>
           )}
@@ -83,7 +87,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             <MenuItem href='/nimen/self-submissions' icon={<i className='ri-file-check-line' />}>Pengajuan Mandiri</MenuItem>
           )}
 
-          {/* Semua role */}
+          {/* Inisiatif & Peringkat — semua role */}
           <SubMenu label='Inisiatif' icon={<i className='ri-lightbulb-line' />}>
             <MenuItem href='/initiative'>Semua Inisiatif</MenuItem>
           </SubMenu>
@@ -105,7 +109,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/schedule' icon={<i className='ri-calendar-line' />}>Jadwal Kegiatan</MenuItem>
         </MenuSection>
 
-        {/* ── Master Data — admin & developer ── */}
+        {/* ── Master Data — hanya admin & developer ── */}
         {canManageMasterData && (
           <MenuSection label='Master Data'>
             <SubMenu label='Master Data' icon={<i className='ri-database-2-line' />}>
@@ -116,7 +120,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {/* ── Master Data NIMEN — admin & developer ── */}
+        {/* ── Master Data NIMEN — hanya admin & developer ── */}
         {canManageNimenMasterData && (
           <MenuSection label='Master Data NIMEN'>
             <SubMenu label='Struktur Nilai' icon={<i className='ri-node-tree' />}>
@@ -133,7 +137,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {/* ── Administrasi — admin & developer ── */}
+        {/* ── Administrasi — hanya admin & developer ── */}
         {isAdmin && (
           <MenuSection label='Administrasi'>
             <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>Manajemen User</MenuItem>

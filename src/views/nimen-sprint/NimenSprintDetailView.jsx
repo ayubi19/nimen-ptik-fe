@@ -110,7 +110,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
   // Role checks
   const jwtPayload = session?.user?.accessToken ? decodeJwt(session.user.accessToken) : {}
   const isDeveloper = jwtPayload?.is_developer === true
-  const roleNames = session?.user?.roles?.map(r => r.name) || []
+  const roleNames = session?.user?.roles || []
   const isAdminNimen = roleNames.includes('admin_nimen')
   const isAdmin = isDeveloper || isAdminNimen
   const currentUserID = session?.user?.id
