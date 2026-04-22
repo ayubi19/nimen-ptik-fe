@@ -42,6 +42,8 @@ import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import Stepper from '@mui/material/Stepper'
 import { nimenSprintApi } from '@/libs/api/nimenSprintApi'
+import { nimenAttachmentApi, nimenParticipantDocApi } from '@/libs/api/nimenDocumentApi'
+import DocumentManager from '@/components/nimen/DocumentManager'
 import { getInitials } from '@/utils/getInitials'
 
 const STATUS_CONFIG = {
@@ -74,6 +76,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
   const { data: session } = useSession()
   const [sprint, setSprint] = useState(null)
   const [participants, setParticipants] = useState([])
+  const [attachments, setAttachments] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Generator state
@@ -114,12 +117,14 @@ const NimenSprintDetailView = ({ sprintId }) => {
 
   const fetchSprint = useCallback(async () => {
     try {
-      const [sprintRes, participantRes] = await Promise.all([
+      const [sprintRes, participantRes, attachRes] = await Promise.all([
         nimenSprintApi.getById(sprintId),
         nimenSprintApi.getParticipants(sprintId),
+        nimenAttachmentApi.getAll(sprintId),
       ])
       setSprint(sprintRes.data.data)
       setParticipants(participantRes.data.data || [])
+      setAttachments(attachRes.data.data || [])
     } catch (err) {
       showToast(err.message || 'Gagal memuat data', 'error')
     } finally {
@@ -314,6 +319,13 @@ const NimenSprintDetailView = ({ sprintId }) => {
                       Finalisasi Sprint
                     </Button>
                   )}
+                  {sprint.status === 'ACTIVE' && isAdmin && (
+                    <Button variant='contained' color='warning'
+                      startIcon={<i className='ri-shield-check-line' />}
+                      onClick={() => router.push(`/nimen/sprints/${sprintId}/approval`)}>
+                      Approval Nilai
+                    </Button>
+                  )}
                   {isDraftPejabat && isCoordinator && (
                     <Button variant='contained' color='info'
                       startIcon={<i className='ri-edit-box-line' />}
@@ -364,6 +376,41 @@ const NimenSprintDetailView = ({ sprintId }) => {
               <Typography variant='body1' fontWeight={600}>
                 {new Date(sprint.submission_deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
               </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Dokumen Penunjang Sprint */}
+        <Grid item xs={12} md={8}>
+          <Card className='h-full'>
+            <CardHeader
+              title='Dokumen Penunjang Sprint'
+              subheader='Dokumen referensi yang dilampirkan untuk peserta dan koordinator'
+              action={
+                isAdmin && (
+                  <Typography variant='caption' color='text.secondary' sx={{ pr: 1 }}>
+                    {attachments.length}/10 file
+                  </Typography>
+                )
+              }
+            />
+            <Divider />
+            <CardContent>
+              <DocumentManager
+                documents={attachments}
+                onUpload={isAdmin ? async (file) => {
+                  await nimenAttachmentApi.upload(sprintId, file)
+                  fetchSprint()
+                } : undefined}
+                onDelete={isAdmin ? async (id) => {
+                  await nimenAttachmentApi.delete(sprintId, id)
+                  fetchSprint()
+                } : undefined}
+                onGetPresignedURL={async (id) => nimenAttachmentApi.getPresignedURL(sprintId, id)}
+                canUpload={isAdmin}
+                canDelete={isAdmin}
+                emptyText='Belum ada dokumen penunjang yang dilampirkan.'
+              />
             </CardContent>
           </Card>
         </Grid>

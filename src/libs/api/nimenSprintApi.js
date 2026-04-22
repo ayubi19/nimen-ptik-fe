@@ -53,4 +53,14 @@ export const nimenSprintApi = {
 
   finalize: (id, data) =>
     apiClient.post(`/nimen/sprints/${id}/finalize`, data),
+
+  // Fase 5 — Approval
+  getApprovalSummary: (id) =>
+    apiClient.get(`/nimen/sprints/${id}/approval-summary`),
+
+  bulkApprove: (id) =>
+    apiClient.post(`/nimen/sprints/${id}/bulk-approve`),
+
+  approveParticipant: (id, data) =>
+    apiClient.post(`/nimen/sprints/${id}/approve-participant`, data),
 }
