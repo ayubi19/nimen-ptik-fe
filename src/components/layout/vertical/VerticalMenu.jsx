@@ -32,22 +32,22 @@ const VerticalMenu = ({ scrollMenu }) => {
   const jwtPayload = session?.user?.accessToken ? decodeJwt(session.user.accessToken) : {}
   const isDeveloper = jwtPayload?.is_developer === true
   const roleNames = session?.user?.roles?.map(r => r.name) || []
-  const isAdminNimen = roleNames.includes('admin_nimen')
-  const isAdminInitiative = roleNames.includes('admin_initiative')
 
-  const isStudent = roleNames.includes('student') || roleNames.includes('student_pic')
-  const hasPosition = roleNames.includes('student_pic') // mahasiswa dengan jabatan
+  const isAdminNimen      = roleNames.includes('admin_nimen')
+  const isAdminInitiative  = roleNames.includes('admin_initiative')
+  const isStudent          = roleNames.includes('student') || roleNames.includes('student_pic')
+  const hasPosition        = jwtPayload?.has_position === true // mahasiswa dengan jabatan aktif
 
+  // Gabungan permission
+  const isAdmin               = isDeveloper || isAdminNimen
   const canManageNimenMasterData = isDeveloper || isAdminNimen
-  const canManageMasterData = isDeveloper || isAdminNimen || isAdminInitiative
-  const canManageUsers = isDeveloper || isAdminNimen
-  const canManageStudents = isDeveloper || isAdminNimen
+  const canManageMasterData      = isDeveloper || isAdminNimen || isAdminInitiative
 
   return (
     <ScrollWrapper
       {...(isBreakpointReached
-          ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
-          : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
+        ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
+        : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
       )}
     >
       <Menu
@@ -57,31 +57,41 @@ const VerticalMenu = ({ scrollMenu }) => {
         renderExpandedMenuItemIcon={{ icon: <i className='ri-circle-fill' /> }}
         menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
       >
+        {/* ── Dashboard — semua role ── */}
         <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>Dashboard</MenuItem>
 
+        {/* ── Akademik — semua role, tapi isinya berbeda ── */}
         <MenuSection label='Akademik'>
           <MenuItem href='/nimen' icon={<i className='ri-medal-line' />}>NIMEN</MenuItem>
-          {/* Menu khusus mahasiswa */}
-          {(isStudent || hasPosition) && (
+
+          {/* Hanya mahasiswa (biasa & pejabat) */}
+          {isStudent && (
             <MenuItem href='/nimen/my-sprints' icon={<i className='ri-calendar-check-line' />}>Sprint Saya</MenuItem>
           )}
-          {(isStudent || hasPosition) && (
+          {isStudent && (
             <MenuItem href='/nimen/self-submissions/my' icon={<i className='ri-file-add-line' />}>Pengajuan Nilai Saya</MenuItem>
           )}
-          {/* Menu khusus admin */}
+          {hasPosition && (
+            <MenuItem href='/nimen/sprints/coordinator-review' icon={<i className='ri-edit-box-line' />}>Review Sprint</MenuItem>
+          )}
+
+          {/* Hanya admin & developer */}
           {canManageNimenMasterData && (
             <MenuItem href='/nimen/sprints' icon={<i className='ri-file-list-3-line' />}>Sprint</MenuItem>
           )}
           {canManageNimenMasterData && (
             <MenuItem href='/nimen/self-submissions' icon={<i className='ri-file-check-line' />}>Pengajuan Mandiri</MenuItem>
           )}
+
+          {/* Semua role */}
           <SubMenu label='Inisiatif' icon={<i className='ri-lightbulb-line' />}>
             <MenuItem href='/initiative'>Semua Inisiatif</MenuItem>
           </SubMenu>
           <MenuItem href='/ranking' icon={<i className='ri-bar-chart-line' />}>Peringkat</MenuItem>
         </MenuSection>
 
-        {canManageStudents && (
+        {/* ── Section Mahasiswa — hanya admin & developer ── */}
+        {isAdmin && (
           <MenuSection label='Mahasiswa'>
             <MenuItem href='/students/list' icon={<i className='ri-group-line' />}>Daftar Mahasiswa</MenuItem>
             <MenuItem href='/onboarding' icon={<i className='ri-user-add-line' />}>Onboarding</MenuItem>
@@ -90,10 +100,12 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
+        {/* ── Jadwal — semua role ── */}
         <MenuSection label='Jadwal'>
           <MenuItem href='/schedule' icon={<i className='ri-calendar-line' />}>Jadwal Kegiatan</MenuItem>
         </MenuSection>
 
+        {/* ── Master Data — admin & developer ── */}
         {canManageMasterData && (
           <MenuSection label='Master Data'>
             <SubMenu label='Master Data' icon={<i className='ri-database-2-line' />}>
@@ -104,6 +116,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
+        {/* ── Master Data NIMEN — admin & developer ── */}
         {canManageNimenMasterData && (
           <MenuSection label='Master Data NIMEN'>
             <SubMenu label='Struktur Nilai' icon={<i className='ri-node-tree' />}>
@@ -120,11 +133,13 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {canManageUsers && (
+        {/* ── Administrasi — admin & developer ── */}
+        {isAdmin && (
           <MenuSection label='Administrasi'>
             <MenuItem href='/users' icon={<i className='ri-shield-user-line' />}>Manajemen User</MenuItem>
           </MenuSection>
         )}
+
       </Menu>
     </ScrollWrapper>
   )
