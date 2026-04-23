@@ -28,8 +28,11 @@ import TableCell from '@mui/material/TableCell'
 import LinearProgress from '@mui/material/LinearProgress'
 import Tooltip from '@mui/material/Tooltip'
 import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
+import ButtonGroup from '@mui/material/ButtonGroup'
 import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
 import { batchApi } from '@/libs/api/masterDataApi'
+import { exportBatchPDF, exportBatchXLSX } from '@/utils/exportUtils'
 import { getInitials } from '@/utils/getInitials'
 
 const MEDAL_COLORS = { 1: '#FFD700', 2: '#C0C0C0', 3: '#CD7F32' }
@@ -107,7 +110,38 @@ const RankingView = () => {
     }
   }, [])
 
+  const [exportLoading, setExportLoading] = useState('')
+
   const selectedBatch = batches.find(b => b.id === batchID)
+
+  const handleExportPDF = useCallback(async () => {
+    if (!batchID || rows.length === 0) return
+    setExportLoading('pdf')
+    try {
+      // Fetch semua data tanpa pagination untuk export
+      const res = await nimenRankingApi.getRankings({ batch_id: batchID, page: 1, page_size: 9999 })
+      const allRows = res.data.data?.data || []
+      await exportBatchPDF(allRows, {
+        name: selectedBatch?.name || batchID,
+        max_value: allRows[0]?.max_value || 95,
+      })
+    } catch (e) { console.error(e) }
+    finally { setExportLoading('') }
+  }, [batchID, rows, selectedBatch])
+
+  const handleExportXLSX = useCallback(async () => {
+    if (!batchID || rows.length === 0) return
+    setExportLoading('xlsx')
+    try {
+      const res = await nimenRankingApi.getRankings({ batch_id: batchID, page: 1, page_size: 9999 })
+      const allRows = res.data.data?.data || []
+      await exportBatchXLSX(allRows, {
+        name: selectedBatch?.name || batchID,
+        max_value: allRows[0]?.max_value || 95,
+      })
+    } catch (e) { console.error(e) }
+    finally { setExportLoading('') }
+  }, [batchID, rows, selectedBatch])
 
   return (
     <>
@@ -116,9 +150,33 @@ const RankingView = () => {
           title='Peringkat NIMEN'
           subheader='Ranking mahasiswa berdasarkan total nilai aktif per angkatan'
           action={
-            <Typography variant='caption' color='text.secondary' sx={{ pr: 1 }}>
-              {total} mahasiswa
-            </Typography>
+            <div className='flex items-center gap-2 pr-1'>
+              <Typography variant='caption' color='text.secondary'>
+                {total} mahasiswa
+              </Typography>
+              {rows.length > 0 && (
+                <ButtonGroup variant='tonal' size='small' disabled={!!exportLoading}>
+                  <Tooltip title='Export PDF'>
+                    <Button color='error'
+                      startIcon={exportLoading === 'pdf'
+                        ? <CircularProgress size={12} color='inherit' />
+                        : <i className='ri-file-pdf-line' />}
+                      onClick={handleExportPDF}>
+                      PDF
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title='Export Excel'>
+                    <Button color='success'
+                      startIcon={exportLoading === 'xlsx'
+                        ? <CircularProgress size={12} color='inherit' />
+                        : <i className='ri-file-excel-line' />}
+                      onClick={handleExportXLSX}>
+                      Excel
+                    </Button>
+                  </Tooltip>
+                </ButtonGroup>
+              )}
+            </div>
           }
         />
         <div className='flex flex-wrap items-center gap-4 px-6 pb-4'>

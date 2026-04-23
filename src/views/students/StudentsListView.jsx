@@ -278,7 +278,7 @@ const StudentsListView = () => {
         </div>
       )
     })
-  ], [handleOpenEdit])
+  ], [handleOpenEdit, router])
 
   const table = useReactTable({
     data, columns, manualPagination: true, manualFiltering: true,

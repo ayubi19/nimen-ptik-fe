@@ -13,6 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import ButtonGroup from '@mui/material/ButtonGroup'
 import Table from '@mui/material/Table'
 import TableHead from '@mui/material/TableHead'
 import TableBody from '@mui/material/TableBody'
@@ -20,8 +21,10 @@ import TableRow from '@mui/material/TableRow'
 import TableCell from '@mui/material/TableCell'
 import LinearProgress from '@mui/material/LinearProgress'
 import Alert from '@mui/material/Alert'
+import Tooltip from '@mui/material/Tooltip'
 import { studentsApi } from '@/libs/api/studentsApi'
 import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
+import { exportStudentPDF, exportStudentXLSX } from '@/utils/exportUtils'
 import { getInitials } from '@/utils/getInitials'
 
 const SOURCE_CONFIG = {
@@ -48,6 +51,7 @@ const StudentProfileView = ({ studentId }) => {
   const [history, setHistory] = useState([])
   const [ranking, setRanking] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [exportLoading, setExportLoading] = useState('')
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
@@ -82,6 +86,20 @@ const StudentProfileView = ({ studentId }) => {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
+  const handleExportPDF = useCallback(async () => {
+    setExportLoading('pdf')
+    try { await exportStudentPDF(student, history, ranking) }
+    catch (e) { console.error(e) }
+    finally { setExportLoading('') }
+  }, [student, history, ranking])
+
+  const handleExportXLSX = useCallback(async () => {
+    setExportLoading('xlsx')
+    try { await exportStudentXLSX(student, history, ranking) }
+    catch (e) { console.error(e) }
+    finally { setExportLoading('') }
+  }, [student, history, ranking])
+
   if (loading) return <Box className='flex justify-center py-20'><CircularProgress /></Box>
   if (!student) return (
     <Alert severity='error'>Mahasiswa tidak ditemukan.</Alert>
@@ -101,13 +119,35 @@ const StudentProfileView = ({ studentId }) => {
   return (
     <Grid container spacing={6}>
 
-      {/* Tombol kembali */}
+      {/* Tombol kembali + export */}
       <Grid item xs={12}>
-        <Button variant='tonal' color='secondary' size='small'
-          startIcon={<i className='ri-arrow-left-line' />}
-          onClick={() => router.back()}>
-          Kembali
-        </Button>
+        <div className='flex items-center justify-between gap-4 flex-wrap'>
+          <Button variant='tonal' color='secondary' size='small'
+            startIcon={<i className='ri-arrow-left-line' />}
+            onClick={() => router.back()}>
+            Kembali
+          </Button>
+          <ButtonGroup variant='tonal' size='small' disabled={!!exportLoading}>
+            <Tooltip title='Export PDF'>
+              <Button color='error'
+                startIcon={exportLoading === 'pdf'
+                  ? <CircularProgress size={14} color='inherit' />
+                  : <i className='ri-file-pdf-line' />}
+                onClick={handleExportPDF}>
+                PDF
+              </Button>
+            </Tooltip>
+            <Tooltip title='Export Excel'>
+              <Button color='success'
+                startIcon={exportLoading === 'xlsx'
+                  ? <CircularProgress size={14} color='inherit' />
+                  : <i className='ri-file-excel-line' />}
+                onClick={handleExportXLSX}>
+                Excel
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
+        </div>
       </Grid>
 
       {/* Kolom kiri — Info mahasiswa */}
