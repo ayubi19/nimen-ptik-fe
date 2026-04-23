@@ -90,7 +90,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
   // Send to coordinator state
   const [sendOpen, setSendOpen] = useState(false)
   const [coordinators, setCoordinators] = useState([])
-  const [selectedCoordinatorID, setSelectedCoordinatorID] = useState('')
+  const [selectedCoordinatorIDs, setSelectedCoordinatorIDs] = useState([])
+  const [coordinatorSearch, setCoordinatorSearch] = useState('')
   const [sendNote, setSendNote] = useState('')
   const [sendLoading, setSendLoading] = useState(false)
 
@@ -192,27 +193,28 @@ const NimenSprintDetailView = ({ sprintId }) => {
   }, [sprintId, showToast])
 
   const handleSendToCoordinator = useCallback(async () => {
-    if (!selectedCoordinatorID) {
-      showToast('Pilih koordinator terlebih dahulu', 'error')
+    if (selectedCoordinatorIDs.length === 0) {
+      showToast('Pilih minimal 1 koordinator', 'error')
       return
     }
     setSendLoading(true)
     try {
       await nimenSprintApi.sendToCoordinator(sprintId, {
-        coordinator_id: parseInt(selectedCoordinatorID),
+        coordinator_ids: selectedCoordinatorIDs,
         note: sendNote,
       })
-      showToast('Sprint berhasil dikirim ke koordinator')
+      showToast(`Sprint berhasil dikirim ke ${selectedCoordinatorIDs.length} koordinator`)
       setSendOpen(false)
       setSendNote('')
-      setSelectedCoordinatorID('')
+      setSelectedCoordinatorIDs([])
+      setCoordinatorSearch('')
       fetchSprint()
     } catch (err) {
       showToast(err.message || 'Gagal mengirim ke koordinator', 'error')
     } finally {
       setSendLoading(false)
     }
-  }, [sprintId, selectedCoordinatorID, sendNote, fetchSprint, showToast])
+  }, [sprintId, selectedCoordinatorIDs, sendNote, fetchSprint, showToast])
 
   // ── Finalize ──
   const handleOpenFinalize = useCallback(async () => {
@@ -250,7 +252,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
   const isEditable = sprint.status === 'DRAFT_ADMIN'
   const isDraftPejabat = sprint.status === 'DRAFT_PEJABAT'
   const isReviewSubmitted = sprint.status === 'REVIEW_SUBMITTED'
-  const isCoordinator = sprint.coordinator_id && parseInt(currentUserID) === sprint.coordinator_id
+  const isCoordinator = sprint.coordinators?.some(c => c.id === parseInt(currentUserID)) ||
+    (sprint.coordinator_id && parseInt(currentUserID) === sprint.coordinator_id)
   const quotaUsed = participants.length
   const quotaPercent = Math.min((quotaUsed / sprint.participant_quota) * 100, 100)
 
@@ -289,10 +292,15 @@ const NimenSprintDetailView = ({ sprintId }) => {
                     <i className='ri-calendar-line mr-1' />
                     {new Date(sprint.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
                   </Typography>
-                  {sprint.coordinator && (
+                  {(sprint.coordinators?.length > 0 || sprint.coordinator) && (
                     <Typography variant='body2' color='text.secondary' className='mt-1'>
                       <i className='ri-user-star-line mr-1' />
-                      Koordinator: <strong>{sprint.coordinator.full_name}</strong>
+                      Koordinator:{' '}
+                      <strong>
+                        {sprint.coordinators?.length > 0
+                          ? sprint.coordinators.map(c => c.full_name).join(', ')
+                          : sprint.coordinator?.full_name}
+                      </strong>
                     </Typography>
                   )}
                 </div>
@@ -602,52 +610,100 @@ const NimenSprintDetailView = ({ sprintId }) => {
       </Dialog>
 
       {/* ── Dialog Kirim ke Koordinator ── */}
-      <Dialog open={sendOpen} onClose={() => setSendOpen(false)} maxWidth='sm' fullWidth>
+      <Dialog open={sendOpen} onClose={() => { setSendOpen(false); setCoordinatorSearch('') }} maxWidth='sm' fullWidth>
         <DialogTitle>Kirim ke Koordinator</DialogTitle>
         <Divider />
-        <DialogContent className='flex flex-col gap-5 pt-4'>
+        <DialogContent className='flex flex-col gap-4 pt-4'>
           <Typography variant='body2' color='text.secondary'>
             Pilih koordinator angkatan yang akan mereview daftar peserta sprint ini.
+            Maksimal <strong>5 koordinator</strong> — yang pertama submit review akan menjadi reviewer sah.
           </Typography>
-          <FormControl fullWidth>
-            <InputLabel>Koordinator</InputLabel>
-            <Select label='Koordinator' value={selectedCoordinatorID}
-              onChange={e => setSelectedCoordinatorID(e.target.value)}>
-              {coordinators.map(c => (
-                <MenuItem key={c.user_id} value={c.user_id}>
-                  <div className='flex items-center justify-between w-full gap-2'>
-                    <div>
+
+          {/* Search */}
+          <TextField
+            fullWidth size='small'
+            placeholder='Cari nama atau NIM koordinator...'
+            value={coordinatorSearch}
+            onChange={e => setCoordinatorSearch(e.target.value)}
+            InputProps={{ startAdornment: <i className='ri-search-line mr-2 opacity-50' /> }}
+          />
+
+          {/* Daftar koordinator */}
+          <div className='flex flex-col gap-2' style={{ maxHeight: 300, overflowY: 'auto' }}>
+            {coordinators
+              .filter(c => {
+                if (!coordinatorSearch) return true
+                const q = coordinatorSearch.toLowerCase()
+                return c.full_name.toLowerCase().includes(q) || c.nim.toLowerCase().includes(q)
+              })
+              .map(c => {
+                const isSelected = selectedCoordinatorIDs.includes(c.user_id)
+                const isDisabled = !isSelected && selectedCoordinatorIDs.length >= 5
+                return (
+                  <div key={c.user_id}
+                    onClick={() => {
+                      if (isDisabled) return
+                      setSelectedCoordinatorIDs(prev =>
+                        isSelected ? prev.filter(id => id !== c.user_id) : [...prev, c.user_id]
+                      )
+                    }}
+                    className='flex items-center gap-3 p-3 border rounded-lg cursor-pointer'
+                    style={{
+                      borderColor: isSelected ? '#7367f0' : undefined,
+                      backgroundColor: isSelected ? '#7367f010' : undefined,
+                      opacity: isDisabled ? 0.4 : 1,
+                      cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    }}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: 4, border: '2px solid',
+                      borderColor: isSelected ? '#7367f0' : '#ccc',
+                      backgroundColor: isSelected ? '#7367f0' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      flexShrink: 0,
+                    }}>
+                      {isSelected && <i className='ri-check-line text-white text-[12px]' />}
+                    </div>
+                    <div className='flex-1'>
                       <Typography variant='body2' fontWeight={600}>{c.full_name}</Typography>
                       <Typography variant='caption' color='text.secondary'>{c.nim} • {c.position_name}</Typography>
                     </div>
                     {!c.has_telegram && (
-                      <Chip label='Belum daftar Telegram' color='warning' size='small' variant='tonal' />
+                      <Chip label='Belum Telegram' color='warning' size='small' variant='tonal' />
                     )}
                   </div>
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+                )
+              })}
+          </div>
+
+          {/* Summary selected */}
+          {selectedCoordinatorIDs.length > 0 && (
+            <Alert severity='info' icon={<i className='ri-group-line' />}>
+              <strong>{selectedCoordinatorIDs.length} koordinator</strong> dipilih
+              {selectedCoordinatorIDs.some(id => coordinators.find(c => c.user_id === id && !c.has_telegram)) && (
+                <span> — beberapa belum daftar Telegram, notifikasi tidak akan terkirim ke mereka</span>
+              )}
+            </Alert>
+          )}
+
           <TextField
-            fullWidth multiline rows={3}
+            fullWidth multiline rows={2}
             label='Catatan untuk koordinator (opsional)'
             placeholder='Contoh: Mohon perhatikan sindikat III dan IV'
             value={sendNote}
             onChange={e => setSendNote(e.target.value)}
           />
-          {coordinators.find(c => c.user_id === parseInt(selectedCoordinatorID) && !c.has_telegram) && (
-            <Alert severity='warning'>
-              Koordinator yang dipilih belum mendaftarkan Telegram. Notifikasi tidak akan dikirim.
-            </Alert>
-          )}
         </DialogContent>
         <Divider />
         <DialogActions className='p-4 gap-2'>
-          <Button variant='tonal' color='secondary' onClick={() => setSendOpen(false)} disabled={sendLoading}>Batal</Button>
+          <Button variant='tonal' color='secondary'
+            onClick={() => { setSendOpen(false); setCoordinatorSearch('') }}
+            disabled={sendLoading}>
+            Batal
+          </Button>
           <Button variant='contained' color='warning' onClick={handleSendToCoordinator}
-            disabled={sendLoading || !selectedCoordinatorID}
+            disabled={sendLoading || selectedCoordinatorIDs.length === 0}
             startIcon={sendLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-send-plane-line' />}>
-            {sendLoading ? 'Mengirim...' : 'Kirim ke Koordinator'}
+            {sendLoading ? 'Mengirim...' : `Kirim ke ${selectedCoordinatorIDs.length || ''} Koordinator`}
           </Button>
         </DialogActions>
       </Dialog>

@@ -17,11 +17,13 @@ import TableRow from '@mui/material/TableRow'
 import TableCell from '@mui/material/TableCell'
 import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
+import Tooltip from '@mui/material/Tooltip'
 import { nimenSprintApi } from '@/libs/api/nimenSprintApi'
 
 const CoordinatorSprintListView = () => {
   const router = useRouter()
-  const [sprints, setSprints] = useState([])
+  const [pendingSprints, setPendingSprints] = useState([])   // DRAFT_PEJABAT — perlu review
+  const [doneSprints, setDoneSprints] = useState([])         // REVIEW_SUBMITTED — sudah disubmit koordinator lain
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
 
@@ -32,9 +34,12 @@ const CoordinatorSprintListView = () => {
   const fetchSprints = useCallback(async () => {
     setLoading(true)
     try {
-      // Ambil sprint dengan status DRAFT_PEJABAT yang koordinatornya adalah user ini
-      const res = await nimenSprintApi.getAll({ status: 'DRAFT_PEJABAT', as_coordinator: true })
-      setSprints(res.data.data.data || [])
+      const [pendingRes, doneRes] = await Promise.all([
+        nimenSprintApi.getAll({ status: 'DRAFT_PEJABAT', as_coordinator: true }),
+        nimenSprintApi.getAll({ status: 'REVIEW_SUBMITTED', as_coordinator: true }),
+      ])
+      setPendingSprints(pendingRes.data.data?.data || [])
+      setDoneSprints(doneRes.data.data?.data || [])
     } catch (err) {
       showToast(err.message || 'Gagal memuat data', 'error')
     } finally {
@@ -44,83 +49,117 @@ const CoordinatorSprintListView = () => {
 
   useEffect(() => { fetchSprints() }, [fetchSprints])
 
+  const SprintTable = ({ sprints, isDone }) => (
+    <Table>
+      <TableHead>
+        <TableRow>
+          <TableCell>No. Sprint</TableCell>
+          <TableCell>Kegiatan</TableCell>
+          <TableCell>Angkatan</TableCell>
+          <TableCell>Tanggal</TableCell>
+          <TableCell>Kuota</TableCell>
+          <TableCell align='center'>Aksi</TableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {sprints.map(sprint => (
+          <TableRow key={sprint.id}>
+            <TableCell>
+              <Typography variant='body2' fontWeight={600} color='primary.main'>
+                {sprint.sprint_number}
+              </Typography>
+            </TableCell>
+            <TableCell>
+              <Typography variant='body2' fontWeight={600}>{sprint.title}</Typography>
+              {sprint.location && (
+                <Typography variant='caption' color='text.secondary'>
+                  <i className='ri-map-pin-line mr-1' />{sprint.location}
+                </Typography>
+              )}
+            </TableCell>
+            <TableCell>
+              <Chip label={sprint.batch?.name || '-'} size='small' color='primary' variant='tonal' />
+            </TableCell>
+            <TableCell>
+              <Typography variant='body2'>
+                {new Date(sprint.event_date).toLocaleDateString('id-ID', {
+                  day: '2-digit', month: 'short', year: 'numeric'
+                })}
+              </Typography>
+            </TableCell>
+            <TableCell>
+              <Chip label={`${sprint.participant_quota} peserta`} size='small' variant='tonal' />
+            </TableCell>
+            <TableCell align='center'>
+              {isDone ? (
+                <Tooltip title='Sudah disubmit oleh koordinator lain — kamu hanya bisa melihat'>
+                  <span>
+                    <Button variant='tonal' size='small' color='secondary'
+                      startIcon={<i className='ri-eye-line' />}
+                      onClick={() => router.push(`/nimen/sprints/${sprint.id}/coordinator-review`)}>
+                      Lihat
+                    </Button>
+                  </span>
+                </Tooltip>
+              ) : (
+                <Button variant='contained' size='small' color='warning'
+                  startIcon={<i className='ri-edit-box-line' />}
+                  onClick={() => router.push(`/nimen/sprints/${sprint.id}/coordinator-review`)}>
+                  Review Peserta
+                </Button>
+              )}
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  )
+
   return (
     <>
-      <Card>
+      {/* Sprint yang perlu direview */}
+      <Card className='mb-6'>
         <CardHeader
           title='Sprint Perlu Direview'
-          subheader='Daftar sprint yang dikirim admin kepadamu untuk direview daftar pesertanya'
+          subheader='Sprint yang dikirim admin kepadamu — kamu bisa mengubah daftar peserta sebelum submit'
+          action={
+            pendingSprints.length > 0 &&
+            <Chip label={pendingSprints.length} color='warning' size='small' />
+          }
         />
         <Divider />
         {loading ? (
-          <Box className='flex justify-center py-16'><CircularProgress /></Box>
-        ) : sprints.length === 0 ? (
-          <Box className='flex flex-col items-center justify-center py-16 gap-3' sx={{ color: 'text.secondary' }}>
-            <i className='ri-checkbox-circle-line text-6xl opacity-30' />
-            <Typography variant='body1'>Tidak ada sprint yang perlu direview saat ini</Typography>
-            <Typography variant='body2'>Admin akan mengirim notifikasi Telegram saat ada sprint baru</Typography>
+          <Box className='flex justify-center py-10'><CircularProgress /></Box>
+        ) : pendingSprints.length === 0 ? (
+          <Box className='flex flex-col items-center py-10 gap-2' sx={{ color: 'text.secondary' }}>
+            <i className='ri-checkbox-circle-line text-5xl opacity-30' />
+            <Typography variant='body2'>Tidak ada sprint yang perlu direview saat ini</Typography>
+            <Typography variant='caption'>Admin akan mengirim notifikasi Telegram saat ada sprint baru</Typography>
           </Box>
         ) : (
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>No. Sprint</TableCell>
-                <TableCell>Kegiatan</TableCell>
-                <TableCell>Angkatan</TableCell>
-                <TableCell>Tanggal Kegiatan</TableCell>
-                <TableCell>Kuota</TableCell>
-                <TableCell align='center'>Aksi</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sprints.map(sprint => (
-                <TableRow key={sprint.id}>
-                  <TableCell>
-                    <Typography variant='body2' fontWeight={600} color='primary.main'>
-                      {sprint.sprint_number}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2' fontWeight={600}>{sprint.title}</Typography>
-                    {sprint.location && (
-                      <Typography variant='caption' color='text.secondary'>
-                        <i className='ri-map-pin-line mr-1' />{sprint.location}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={sprint.batch?.name || '-'} size='small' color='primary' variant='tonal' />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant='body2'>
-                      {new Date(sprint.event_date).toLocaleDateString('id-ID', {
-                        day: '2-digit', month: 'short', year: 'numeric'
-                      })}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={`${sprint.participant_quota} peserta`} size='small' variant='tonal' />
-                  </TableCell>
-                  <TableCell align='center'>
-                    <Button
-                      variant='contained'
-                      size='small'
-                      color='warning'
-                      startIcon={<i className='ri-edit-box-line' />}
-                      onClick={() => router.push(`/nimen/sprints/${sprint.id}/coordinator-review`)}
-                    >
-                      Review Peserta
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <SprintTable sprints={pendingSprints} isDone={false} />
         )}
       </Card>
 
-      <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(t => ({ ...t, open: false }))} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-        <Alert severity={toast.severity} variant='filled' onClose={() => setToast(t => ({ ...t, open: false }))}>{toast.message}</Alert>
+      {/* Sprint yang sudah disubmit koordinator lain */}
+      {doneSprints.length > 0 && (
+        <Card>
+          <CardHeader
+            title='Sudah Direview'
+            subheader='Sprint ini sudah disubmit oleh salah satu koordinator — kamu hanya bisa melihat hasilnya'
+          />
+          <Divider />
+          <SprintTable sprints={doneSprints} isDone={true} />
+        </Card>
+      )}
+
+      <Snackbar open={toast.open} autoHideDuration={4000}
+        onClose={() => setToast(t => ({ ...t, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert severity={toast.severity} variant='filled'
+          onClose={() => setToast(t => ({ ...t, open: false }))}>
+          {toast.message}
+        </Alert>
       </Snackbar>
     </>
   )
