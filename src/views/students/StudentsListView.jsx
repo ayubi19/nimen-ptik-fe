@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -56,6 +57,7 @@ const DebouncedInput = ({ value: initialValue, onChange, debounce = 400, ...prop
 }
 
 const StudentsListView = () => {
+  const router = useRouter()
   const [data, setData] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -249,6 +251,11 @@ const StudentsListView = () => {
       header: 'Aksi',
       cell: ({ row }) => (
         <div className='flex items-center gap-0.5'>
+          <Tooltip title='Lihat Profil & Nilai'>
+            <IconButton size='small' color='primary' onClick={() => router.push(`/students/${row.original.id}`)}>
+              <i className='ri-user-line' />
+            </IconButton>
+          </Tooltip>
           <Tooltip title='Detail'>
             <IconButton size='small' onClick={() => { setDetailData(row.original); setDetailOpen(true) }}>
               <i className='ri-eye-line text-[22px]' />
