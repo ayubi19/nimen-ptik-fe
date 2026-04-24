@@ -71,7 +71,7 @@ const BatchesView = () => {
   }, [])
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: { name: '', year: new Date().getFullYear(), is_active: true }
+    defaultValues: { name: '', year: new Date().getFullYear(), program_type: 'S1', is_active: true }
   })
 
   const fetchData = useCallback(async () => {
@@ -94,7 +94,7 @@ const BatchesView = () => {
 
   const handleOpenEdit = useCallback((row) => {
     setEditData(row)
-    reset({ name: row.name, year: row.year, is_active: row.is_active })
+    reset({ name: row.name, year: row.year, program_type: row.program_type || 'S1', is_active: row.is_active })
     setDrawerOpen(true)
   }, [reset])
 
@@ -106,6 +106,17 @@ const BatchesView = () => {
     columnHelper.accessor('year', {
       header: 'Tahun',
       cell: ({ row }) => <Chip label={row.original.year} size='small' color='primary' variant='tonal' />
+    }),
+    columnHelper.accessor('program_type', {
+      header: 'Jenjang',
+      cell: ({ row }) => (
+        <Chip
+          label={row.original.program_type || 'S1'}
+          size='small'
+          color={row.original.program_type === 'S2' ? 'info' : 'success'}
+          variant='tonal'
+        />
+      )
     }),
     columnHelper.accessor('is_active', {
       header: 'Status',
@@ -140,7 +151,7 @@ const BatchesView = () => {
 
   const handleOpenCreate = useCallback(() => {
     setEditData(null)
-    reset({ name: '', year: new Date().getFullYear(), is_active: true })
+    reset({ name: '', year: new Date().getFullYear(), program_type: 'S1', is_active: true })
     setDrawerOpen(true)
   }, [reset])
 
@@ -152,7 +163,7 @@ const BatchesView = () => {
   const handleSubmitForm = useCallback(async (values) => {
     setFormLoading(true)
     try {
-      const payload = { name: values.name, year: parseInt(values.year), ...(editData && { is_active: values.is_active }) }
+      const payload = { name: values.name, year: parseInt(values.year), program_type: values.program_type, ...(editData && { is_active: values.is_active }) }
       if (editData) {
         await batchApi.update(editData.id, payload)
         showToast('Angkatan berhasil diperbarui')
@@ -266,6 +277,18 @@ const BatchesView = () => {
                                      error={!!errors.year} helperText={errors.year?.message} />
                         )}
             />
+            <Controller name='program_type' control={control}
+                        rules={{ required: 'Jenjang wajib dipilih' }}
+                        render={({ field }) => (
+                          <FormControl fullWidth error={!!errors.program_type}>
+                            <InputLabel>Jenjang Program</InputLabel>
+                            <Select {...field} label='Jenjang Program'>
+                              <MenuItem value='S1'>S1 — 4 Tahun</MenuItem>
+                              <MenuItem value='S2'>S2 — 1 Tahun</MenuItem>
+                            </Select>
+                          </FormControl>
+                        )}
+            />
             {editData && (
               <Controller name='is_active' control={control}
                           render={({ field }) => (
@@ -290,7 +313,7 @@ const BatchesView = () => {
         <DialogTitle>Hapus Angkatan</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Hapus angkatan <strong>{deleteTarget?.name} ({deleteTarget?.year})</strong>? Tidak dapat dibatalkan.
+            Hapus angkatan <strong>{deleteTarget?.name} ({deleteTarget?.year} — {deleteTarget?.program_type || 'S1'})</strong>? Tidak dapat dibatalkan.
           </DialogContentText>
         </DialogContent>
         <DialogActions className='pli-5 plb-4'>
