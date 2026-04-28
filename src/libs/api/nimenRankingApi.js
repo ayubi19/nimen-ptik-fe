@@ -6,4 +6,7 @@ export const nimenRankingApi = {
 
   getValueHistory: (studentId) =>
     apiClient.get(`/nimen/rankings/student/${studentId}`),
+
+  getBatchEntries: (batchId, params) =>
+    apiClient.get(`/nimen/rankings/batch/${batchId}/entries`, { params }),
 }

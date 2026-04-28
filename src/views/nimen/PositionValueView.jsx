@@ -141,11 +141,21 @@ const PositionValueView = () => {
               <FormControl fullWidth size='small'>
                 <InputLabel>Angkatan</InputLabel>
                 <Select label='Angkatan' value={batchID}
-                        onChange={e => { setBatchID(e.target.value); setPreview(null) }}>
+                        onChange={e => { setBatchID(e.target.value); setPreview(null) }}
+                        renderValue={(val) => {
+                          const b = batches.find(x => x.id === parseInt(val))
+                          if (!b) return ''
+                          return `${b.name} · ke-${b.batch_number} (${b.year}) · ${b.program_type || 'S1'}`
+                        }}>
                   {batches.map(b => (
                     <MenuItem key={b.id} value={b.id}>
-                      <div className='flex items-center gap-2'>
-                        <span>{b.name} · Angkatan ke-{b.batch_number} ({b.year})</span>
+                      <div className='flex items-center justify-between w-full gap-2'>
+                        <div>
+                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                          <Typography variant='caption' color='text.secondary'>
+                            Angkatan ke-{b.batch_number} · {b.year}
+                          </Typography>
+                        </div>
                         <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
                               color={b.program_type === 'S2' ? 'info' : 'success'} />
                       </div>
@@ -223,6 +233,16 @@ const PositionValueView = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Tidak ada pejabat sama sekali */}
+          {preview && preview.items?.length === 0 && (
+            <Alert severity='warning' icon={<i className='ri-user-unfollow-line' />} className='mb-4'>
+              <strong>Tidak ditemukan pejabat aktif.</strong> Angkatan{' '}
+              <strong>{preview.batch_name}</strong> belum memiliki mahasiswa dengan jabatan aktif
+              pada periode ini. Pastikan struktur organisasi angkatan telah dikonfigurasi melalui
+              menu <strong>Struktur Organisasi</strong>.
+            </Alert>
+          )}
 
           {/* All granted message */}
           {preview.all_granted && (
