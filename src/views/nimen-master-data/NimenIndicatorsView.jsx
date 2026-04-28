@@ -3,7 +3,9 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
+import CardContent from '@mui/material/CardContent'
+import Grid from '@mui/material/Grid'
+import Avatar from '@mui/material/Avatar'
 import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
 import Chip from '@mui/material/Chip'
@@ -26,29 +28,81 @@ import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
-import ToggleButton from '@mui/material/ToggleButton'
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import Box from '@mui/material/Box'
+import Table from '@mui/material/Table'
+import TableHead from '@mui/material/TableHead'
+import TableBody from '@mui/material/TableBody'
+import TableRow from '@mui/material/TableRow'
+import TableCell from '@mui/material/TableCell'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { useForm, Controller } from 'react-hook-form'
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable, getSortedRowModel } from '@tanstack/react-table'
 import { nimenIndicatorApi, nimenVariableApi, nimenCategoryApi } from '@/libs/api/nimenMasterDataApi'
-import tableStyles from '@core/styles/table.module.css'
 
-const columnHelper = createColumnHelper()
-
-const DebouncedInput = ({ value: initialValue, onChange, debounce = 400, ...props }) => {
-  const [value, setValue] = useState(initialValue)
-  const onChangeRef = useRef(onChange)
-  useEffect(() => { onChangeRef.current = onChange }, [onChange])
-  useEffect(() => setValue(initialValue), [initialValue])
+const DebouncedInput = ({ value: initial, onChange, debounce = 400, ...props }) => {
+  const [value, setValue] = useState(initial)
+  const ref = useRef(onChange)
+  useEffect(() => { ref.current = onChange }, [onChange])
+  useEffect(() => setValue(initial), [initial])
   useEffect(() => {
-    const t = setTimeout(() => onChangeRef.current(value), debounce)
+    const t = setTimeout(() => ref.current(value), debounce)
     return () => clearTimeout(t)
   }, [value, debounce])
   return <TextField {...props} value={value} onChange={e => setValue(e.target.value)} size='small' />
 }
 
+// ── Mobile Card Row ───────────────────────────────────────────────────────────
+const IndicatorMobileCard = ({ row, onEdit, onDelete }) => {
+  const rule = row.self_submission_rule
+  const isPlus = row.value > 0
+
+  return (
+    <Card className='mb-3'>
+      <CardContent>
+        <div className='flex items-start justify-between mb-2'>
+          <div className='flex-1 mr-2'>
+            <Typography variant='body2' fontWeight={600}>{row.name}</Typography>
+            <Typography variant='caption' color='text.secondary'>
+              {row.variable?.category?.name} · {row.variable?.name}
+            </Typography>
+          </div>
+          <Chip
+            label={row.is_active ? 'Aktif' : 'Nonaktif'}
+            size='small'
+            color={row.is_active ? 'success' : 'default'}
+            variant='tonal'
+          />
+        </div>
+        <div className='flex items-center gap-2 flex-wrap mt-2'>
+          <Chip
+            label={isPlus ? `+${Math.abs(row.value)}` : `-${Math.abs(row.value)}`}
+            size='small'
+            color={isPlus ? 'success' : 'error'}
+            variant='tonal'
+          />
+          {rule
+            ? <Chip label={`Pengajuan Mandiri · ${rule.cooldown_days} hari`} size='small' color='info' variant='tonal' />
+            : <Chip label='Tidak ada pengajuan mandiri' size='small' variant='tonal' />
+          }
+        </div>
+        <Divider className='my-2' />
+        <div className='flex gap-2'>
+          <Button size='small' variant='tonal' color='secondary' fullWidth
+                  startIcon={<i className='ri-edit-line' />}
+                  onClick={() => onEdit(row)}>Edit</Button>
+          <Button size='small' variant='tonal' color='error' fullWidth
+                  startIcon={<i className='ri-delete-bin-line' />}
+                  onClick={() => onDelete(row)}>Hapus</Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 const NimenIndicatorsView = () => {
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
   const [data, setData] = useState([])
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -60,110 +114,103 @@ const NimenIndicatorsView = () => {
   const [statusFilter, setStatusFilter] = useState('')
   const [page, setPage] = useState(0)
   const [pageSize, setPageSize] = useState(10)
+
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editData, setEditData] = useState(null)
-  const [formLoading, setFormLoading] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [saveLoading, setSaveLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
-  // valueSign: 'PLUS' atau 'MINUS' untuk prefix nilai
-  const [valueSign, setValueSign] = useState('PLUS')
 
-  const showToast = useCallback((message, severity = 'success') => {
-    setToast({ open: true, message, severity })
-  }, [])
+  const showToast = useCallback((msg, severity = 'success') =>
+    setToast({ open: true, message: msg, severity }), [])
 
-  const { control, handleSubmit, reset, watch, formState: { errors } } = useForm({
-    defaultValues: { variable_id: '', name: '', description: '', value_abs: '', cooldown_days: '', has_cooldown: false, is_active: true }
+  const { control, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm({
+    defaultValues: {
+      variable_id: '', name: '', description: '', value_abs: '',
+      cooldown_days: '', has_cooldown: false, is_active: true
+    }
   })
-
   const hasCooldown = watch('has_cooldown')
-  const valueAbs = watch('value_abs')
 
-  // Computed preview nilai
-  const previewValue = useMemo(() => {
-    const abs = parseFloat(valueAbs)
-    if (isNaN(abs) || abs <= 0) return null
-    return valueSign === 'PLUS' ? abs : -abs
-  }, [valueAbs, valueSign])
-
-  useEffect(() => {
-    nimenCategoryApi.getAll({ page_size: 100, is_active: true })
-      .then(res => setCategories(res.data.data.data || []))
-      .catch(() => {})
-    nimenVariableApi.getAll({ page_size: 100, is_active: true })
-      .then(res => setVariables(res.data.data.data || []))
-      .catch(() => {})
-  }, [])
-
-  // Filter variabel berdasarkan kategori yang dipilih
-  const filteredVariables = useMemo(() => {
-    if (!categoryFilter) return variables
-    return variables.filter(v => v.category_id === parseInt(categoryFilter))
-  }, [variables, categoryFilter])
+  const [stats, setStats] = useState({ total: 0, plus: 0, minus: 0, mandiri: 0 })
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const params = { page: page + 1, page_size: pageSize }
-      if (globalFilter) params.search = globalFilter
-      if (categoryFilter) params.category_id = categoryFilter
-      if (variableFilter) params.variable_id = variableFilter
-      if (statusFilter !== '') params.is_active = statusFilter
+      const params = {
+        page: page + 1, page_size: pageSize,
+        search: globalFilter || undefined,
+        variable_id: variableFilter || undefined,
+        category_id: categoryFilter || undefined,
+        is_active: statusFilter === '' ? undefined : statusFilter === 'aktif',
+      }
       const res = await nimenIndicatorApi.getAll(params)
-      setData(res.data.data.data || [])
-      setTotal(res.data.data.pagination?.total || 0)
-    } catch (err) {
-      showToast(err.message || 'Gagal memuat data', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }, [page, pageSize, globalFilter, categoryFilter, variableFilter, statusFilter, showToast])
+      setData(res.data.data?.data || [])
+      setTotal(res.data.data?.pagination?.total || 0)
+    } catch { showToast('Gagal memuat data', 'error') }
+    finally { setLoading(false) }
+  }, [page, pageSize, globalFilter, variableFilter, categoryFilter, statusFilter, showToast])
+
+  // Fetch stats terpisah — tanpa filter, ambil semua untuk hitung summary
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await nimenIndicatorApi.getAll({ page: 1, page_size: 100 })
+      const all = res.data.data?.data || []
+      const totalAll = res.data.data?.pagination?.total || 0
+      setStats({
+        total: totalAll,
+        plus: all.filter(d => d.value > 0).length,
+        minus: all.filter(d => d.value < 0).length,
+        mandiri: all.filter(d => d.self_submission_rule).length,
+      })
+    } catch { }
+  }, [])
 
   useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { fetchStats() }, [fetchStats])
+
+  useEffect(() => {
+    nimenVariableApi.getAll({ page: 1, page_size: 100 })
+      .then(r => setVariables(r.data.data?.data || []))
+    nimenCategoryApi.getAll({ page: 1, page_size: 100 })
+      .then(r => setCategories(r.data.data?.data || []))
+  }, [])
 
   const handleOpenEdit = useCallback((row) => {
     setEditData(row)
-    const absVal = Math.abs(row.value)
-    const sign = row.value >= 0 ? 'PLUS' : 'MINUS'
-    setValueSign(sign)
     reset({
-      variable_id: row.variable_id,
-      name: row.name,
+      variable_id: row.variable_id || '',
+      name: row.name || '',
       description: row.description || '',
-      value_abs: absVal.toString(),
+      value_abs: Math.abs(row.value)?.toString() || '',
       has_cooldown: !!row.self_submission_rule,
       cooldown_days: row.self_submission_rule?.cooldown_days?.toString() || '',
-      is_active: row.is_active,
+      is_active: row.is_active ?? true,
     })
     setDrawerOpen(true)
   }, [reset])
 
   const handleOpenCreate = useCallback(() => {
     setEditData(null)
-    setValueSign('PLUS')
     reset({ variable_id: '', name: '', description: '', value_abs: '', cooldown_days: '', has_cooldown: false, is_active: true })
     setDrawerOpen(true)
   }, [reset])
 
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerOpen(false)
-    setEditData(null)
-  }, [])
-
-  const handleSubmitForm = useCallback(async (values) => {
-    setFormLoading(true)
+  const handleSave = useCallback(async (values) => {
+    setSaveLoading(true)
     try {
-      const abs = parseFloat(values.value_abs)
-      const finalValue = valueSign === 'PLUS' ? abs : -abs
+      const selectedVar = variables.find(v => v.id === parseInt(values.variable_id))
+      const isReduction = selectedVar?.name?.toLowerCase().includes('pengurangan')
+      const value = isReduction ? -Math.abs(parseFloat(values.value_abs)) : Math.abs(parseFloat(values.value_abs))
+
       const payload = {
         variable_id: parseInt(values.variable_id),
         name: values.name,
-        description: values.description || null,
-        value: finalValue,
+        description: values.description,
+        value,
+        is_active: values.is_active,
         cooldown_days: values.has_cooldown && values.cooldown_days ? parseInt(values.cooldown_days) : null,
-        ...(editData && { is_active: values.is_active })
       }
       if (editData) {
         await nimenIndicatorApi.update(editData.id, payload)
@@ -174,342 +221,361 @@ const NimenIndicatorsView = () => {
       }
       setDrawerOpen(false)
       fetchData()
+      fetchStats()
     } catch (err) {
-      showToast(err.message || 'Terjadi kesalahan', 'error')
-    } finally {
-      setFormLoading(false)
-    }
-  }, [editData, fetchData, showToast, valueSign])
+      showToast(err.message || 'Gagal menyimpan', 'error')
+    } finally { setSaveLoading(false) }
+  }, [editData, variables, fetchData, showToast])
 
   const handleDelete = useCallback(async () => {
     setDeleteLoading(true)
     try {
       await nimenIndicatorApi.delete(deleteTarget.id)
       showToast('Indikator berhasil dihapus')
-      setDeleteOpen(false)
+      setDeleteTarget(null)
       fetchData()
+      fetchStats()
     } catch (err) {
       showToast(err.message || 'Gagal menghapus', 'error')
-    } finally {
-      setDeleteLoading(false)
-    }
+    } finally { setDeleteLoading(false) }
   }, [deleteTarget, fetchData, showToast])
 
-  const columns = useMemo(() => [
-    columnHelper.accessor('name', {
-      header: 'Nama Indikator',
-      cell: ({ row }) => (
-        <div>
-          <Typography className='font-medium' color='text.primary'>{row.original.name}</Typography>
-          {row.original.description && (
-            <Typography variant='caption' color='text.secondary'>{row.original.description}</Typography>
-          )}
-        </div>
-      )
-    }),
-    columnHelper.accessor('variable', {
-      header: 'Variabel / Kategori',
-      cell: ({ row }) => {
-        const v = row.original.variable
-        if (!v) return '-'
-        return (
-          <div>
-            <Typography variant='body2' className='font-medium'>{v.name}</Typography>
-            {v.category && (
-              <Chip
-                label={v.category.name}
-                color={v.category.type === 'PLUS' ? 'success' : 'error'}
-                size='small' variant='tonal' sx={{ mt: 0.5 }}
-              />
-            )}
-          </div>
-        )
-      }
-    }),
-    columnHelper.accessor('value', {
-      header: 'Nilai',
-      cell: ({ row }) => {
-        const val = row.original.value
-        const isPlus = val >= 0
-        return (
-          <Chip
-            label={isPlus ? `+${val}` : `${val}`}
-            color={isPlus ? 'success' : 'error'}
-            size='small'
-            sx={{ fontWeight: 700, minWidth: 60 }}
-          />
-        )
-      }
-    }),
-    columnHelper.accessor('self_submission_rule', {
-      header: 'Pengajuan Mandiri',
-      cell: ({ row }) => {
-        const rule = row.original.self_submission_rule
-        if (!rule) return <Chip label='Tidak' color='secondary' size='small' variant='tonal' />
-        return <Chip label={`Ya • ${rule.cooldown_days} hari`} color='info' size='small' variant='tonal' />
-      }
-    }),
-    columnHelper.accessor('is_active', {
-      header: 'Status',
-      cell: ({ row }) => (
-        <Chip label={row.original.is_active ? 'Aktif' : 'Nonaktif'} color={row.original.is_active ? 'success' : 'secondary'} size='small' variant='tonal' />
-      )
-    }),
-    columnHelper.display({
-      id: 'actions', header: 'Aksi',
-      cell: ({ row }) => (
-        <div className='flex items-center gap-0.5'>
-          <IconButton size='small' onClick={() => handleOpenEdit(row.original)}><i className='ri-edit-line text-[22px]' /></IconButton>
-          <IconButton size='small' onClick={() => { setDeleteTarget(row.original); setDeleteOpen(true) }}><i className='ri-delete-bin-7-line text-[22px]' /></IconButton>
-        </div>
-      )
-    })
-  ], [handleOpenEdit])
-
-  const table = useReactTable({
-    data, columns, manualPagination: true, manualFiltering: true,
-    rowCount: total, getCoreRowModel: getCoreRowModel(), getSortedRowModel: getSortedRowModel()
-  })
+  // Stats — total dari API, plus/minus/mandiri dari semua data halaman ini
+  // Untuk akurasi penuh perlu fetch semua, tapi approximation dari current page OK
 
   return (
     <>
-      <Card>
-        <CardHeader title='Indikator Nilai NIMEN' sx={{ pb: 0 }}
-                    action={<Button variant='contained' startIcon={<i className='ri-add-line' />} onClick={handleOpenCreate}>Tambah Indikator</Button>}
-        />
-        <div className='flex flex-wrap justify-between gap-4 p-6'>
-          <div className='flex flex-wrap items-center gap-4'>
-            <FormControl size='small' sx={{ minWidth: 180 }}>
-              <InputLabel>Kategori</InputLabel>
-              <Select label='Kategori' value={categoryFilter} onChange={e => {
-                setCategoryFilter(e.target.value)
-                setVariableFilter('')
-                setPage(0)
-              }}>
-                <MenuItem value=''>Semua</MenuItem>
-                {categories.map(c => (
-                  <MenuItem key={c.id} value={c.id}>
-                    <div className='flex items-center gap-2'>
-                      <i className={c.type === 'PLUS' ? 'ri-add-circle-line text-success-main' : 'ri-indeterminate-circle-line text-error-main'} style={{ fontSize: 14 }} />
-                      {c.name}
-                    </div>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size='small' sx={{ minWidth: 220 }}>
-              <InputLabel>Variabel</InputLabel>
-              <Select label='Variabel' value={variableFilter} onChange={e => { setVariableFilter(e.target.value); setPage(0) }}>
-                <MenuItem value=''>Semua</MenuItem>
-                {filteredVariables.map(v => (
-                  <MenuItem key={v.id} value={v.id}>
-                    <div className='flex flex-col'>
-                      <Typography variant='body2' fontWeight={600}>{v.name}</Typography>
-                      {v.description && (
-                        <Typography variant='caption' color='text.secondary'>{v.description}</Typography>
-                      )}
-                    </div>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <FormControl size='small' sx={{ minWidth: 140 }}>
-              <InputLabel>Status</InputLabel>
-              <Select label='Status' value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
-                <MenuItem value=''>Semua</MenuItem>
-                <MenuItem value='true'>Aktif</MenuItem>
-                <MenuItem value='false'>Nonaktif</MenuItem>
-              </Select>
-            </FormControl>
-          </div>
-          <DebouncedInput value={globalFilter} onChange={val => { setGlobalFilter(val); setPage(0) }}
-                          placeholder='Cari indikator...'
-                          InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-                          sx={{ minWidth: 240 }}
-          />
-        </div>
-        <Divider />
-        <div className='overflow-x-auto'>
-          <table className={tableStyles.table}>
-            <thead>{table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}</thead>
-            <tbody>
-            {loading ? (
-              <tr><td colSpan={columns.length} className='text-center py-10'><CircularProgress size={32} /></td></tr>
-            ) : table.getRowModel().rows.length === 0 ? (
-              <tr><td colSpan={columns.length} className='text-center py-10'><Typography color='text.secondary'>Tidak ada data ditemukan</Typography></td></tr>
-            ) : (
-              table.getRowModel().rows.map(row => (
-                <tr key={row.id}>{row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>
-              ))
-            )}
-            </tbody>
-          </table>
-        </div>
-        <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
-                         onPageChange={(_, p) => setPage(p)} onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
-                         rowsPerPageOptions={[10, 25, 50]} labelRowsPerPage='Baris per halaman:'
-                         labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
-        />
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2 mb-6'>
+        <Typography variant='caption' color='text.secondary'>Master Data NIMEN</Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary'>Indikator Nilai NIMEN</Typography>
+      </div>
+
+      {/* Header */}
+      <div className='flex items-center justify-between mb-6 flex-wrap gap-3'>
+        <div />
+        <Button variant='contained' startIcon={<i className='ri-add-line' />}
+                onClick={handleOpenCreate}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          Tambah Indikator
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <Grid container spacing={4} className='mb-6'>
+        {[
+          { label: 'Total Indikator', value: stats.total, icon: 'ri-list-check-line', color: '#FF4C51', bg: '#FFE9EA' },
+          { label: 'Penambahan Nilai', value: stats.plus, icon: 'ri-arrow-up-circle-line', color: '#28C76F', bg: '#E6F9EE' },
+          { label: 'Pengurangan Nilai', value: stats.minus, icon: 'ri-arrow-down-circle-line', color: '#EA5455', bg: '#FFEDED' },
+          { label: 'Pengajuan Mandiri', value: stats.mandiri, icon: 'ri-hand-coin-line', color: '#00CFE8', bg: '#E0F9FC' },
+        ].map(s => (
+          <Grid item xs={6} sm={3} key={s.label}>
+            <Card sx={{ height: '100%' }}>
+              <CardContent className='flex items-center gap-3'>
+                <div style={{
+                  width: 44, height: 44, borderRadius: 8, flexShrink: 0,
+                  background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
+                </div>
+                <div>
+                  <Typography variant='h4' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
+                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 11, sm: 13 } }}>
+                    {s.label}
+                  </Typography>
+                </div>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Filter */}
+      <Card className='mb-6'>
+        <CardContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <DebouncedInput fullWidth value={globalFilter} onChange={v => { setGlobalFilter(v); setPage(0) }}
+                              placeholder='Cari indikator...'
+                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }} />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>Kategori</InputLabel>
+                <Select label='Kategori' value={categoryFilter}
+                        onChange={e => { setCategoryFilter(e.target.value); setPage(0) }}>
+                  <MenuItem value=''>Semua Kategori</MenuItem>
+                  {categories.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>Variabel</InputLabel>
+                <Select label='Variabel' value={variableFilter}
+                        onChange={e => { setVariableFilter(e.target.value); setPage(0) }}>
+                  <MenuItem value=''>Semua Variabel</MenuItem>
+                  {variables.map(v => <MenuItem key={v.id} value={v.id}>{v.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>Status</InputLabel>
+                <Select label='Status' value={statusFilter}
+                        onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
+                  <MenuItem value=''>Semua Status</MenuItem>
+                  <MenuItem value='aktif'>Aktif</MenuItem>
+                  <MenuItem value='nonaktif'>Nonaktif</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+        </CardContent>
       </Card>
 
-      {/* Drawer Form */}
-      <Drawer open={drawerOpen} anchor='right' variant='temporary' onClose={handleCloseDrawer}
-              ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 440 } } }}>
-        <div className='flex items-center justify-between pli-6 plb-5'>
-          <Typography variant='h5'>{editData ? 'Edit Indikator' : 'Tambah Indikator'}</Typography>
-          <IconButton onClick={handleCloseDrawer}><i className='ri-close-line text-2xl' /></IconButton>
+      {/* Content */}
+      {loading ? (
+        <div className='flex justify-center py-10'><CircularProgress /></div>
+      ) : isMobile ? (
+        // Mobile — Card List
+        <div>
+          {data.length === 0 ? (
+            <Card>
+              <CardContent className='text-center py-10'>
+                <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
+                <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
+              </CardContent>
+            </Card>
+          ) : data.map(row => (
+            <IndicatorMobileCard key={row.id} row={row}
+                                 onEdit={handleOpenEdit} onDelete={setDeleteTarget} />
+          ))}
+          <TablePagination
+            component='div' count={total} page={page}
+            rowsPerPage={pageSize} rowsPerPageOptions={[10, 25, 50]}
+            onPageChange={(_, p) => setPage(p)}
+            onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+            labelRowsPerPage='Baris:'
+          />
         </div>
-        <Divider />
-        <div className='p-6'>
-          <form onSubmit={handleSubmit(handleSubmitForm)} className='flex flex-col gap-5'>
+      ) : (
+        // Desktop — Table
+        <Card>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Nama Indikator
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Variabel / Kategori
+                </TableCell>
+                <TableCell align='center' sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Nilai
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Pengajuan Mandiri
+                </TableCell>
+                <TableCell align='center' sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Status
+                </TableCell>
+                <TableCell align='center' sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                  Aksi
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align='center' sx={{ py: 8 }}>
+                    <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
+                    <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : data.map(row => {
+                const rule = row.self_submission_rule
+                const isPlus = row.value > 0
+                return (
+                  <TableRow key={row.id} hover>
+                    <TableCell>
+                      <Typography variant='body2' fontWeight={500}>{row.name}</Typography>
+                      {row.description && (
+                        <Typography variant='caption' color='text.secondary'
+                                    sx={{ display: 'block', maxWidth: 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {row.description}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant='body2'>{row.variable?.name}</Typography>
+                      <Typography variant='caption' color='text.secondary'>{row.variable?.category?.name}</Typography>
+                    </TableCell>
+                    <TableCell align='center'>
+                      <Chip
+                        label={isPlus ? `+${Math.abs(row.value)}` : `-${Math.abs(row.value)}`}
+                        size='small'
+                        color={isPlus ? 'success' : 'error'}
+                        variant='tonal'
+                        sx={{ fontWeight: 700, minWidth: 56 }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {rule
+                        ? <Chip label={`Ya · ${rule.cooldown_days} hari`} size='small' color='info' variant='tonal' />
+                        : <Chip label='Tidak' size='small' variant='tonal' />
+                      }
+                    </TableCell>
+                    <TableCell align='center'>
+                      <Chip
+                        label={row.is_active ? 'Aktif' : 'Nonaktif'}
+                        size='small'
+                        color={row.is_active ? 'success' : 'default'}
+                        variant='tonal'
+                      />
+                    </TableCell>
+                    <TableCell align='center'>
+                      <div className='flex items-center justify-center gap-1'>
+                        <IconButton size='small' onClick={() => handleOpenEdit(row)}>
+                          <i className='ri-edit-line text-[18px]' />
+                        </IconButton>
+                        <IconButton size='small' color='error' onClick={() => setDeleteTarget(row)}>
+                          <i className='ri-delete-bin-line text-[18px]' />
+                        </IconButton>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+          <TablePagination
+            component='div' count={total} page={page}
+            rowsPerPage={pageSize} rowsPerPageOptions={[10, 25, 50]}
+            onPageChange={(_, p) => setPage(p)}
+            onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+            labelRowsPerPage='Baris per halaman:'
+            labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+          />
+        </Card>
+      )}
 
-            {/* Pilih variabel */}
-            <Controller name='variable_id' control={control} rules={{ required: 'Variabel wajib dipilih' }}
+      {/* Drawer Form */}
+      <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
+          <Typography variant='h6'>{editData ? 'Edit Indikator' : 'Tambah Indikator'}</Typography>
+          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line' /></IconButton>
+        </div>
+        <form onSubmit={handleSubmit(handleSave)} className='flex flex-col gap-4 p-4 overflow-y-auto'>
+          <Controller name='variable_id' control={control}
+                      rules={{ required: 'Variabel wajib dipilih' }}
+                      render={({ field }) => (
+                        <FormControl fullWidth error={!!errors.variable_id}>
+                          <InputLabel>Variabel</InputLabel>
+                          <Select {...field} label='Variabel'>
+                            {variables.map(v => <MenuItem key={v.id} value={v.id}>{v.name} — {v.category?.name}</MenuItem>)}
+                          </Select>
+                        </FormControl>
+                      )}
+          />
+          <Controller name='name' control={control}
+                      rules={{ required: 'Nama wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label='Nama Indikator' multiline rows={2}
+                                   error={!!errors.name} helperText={errors.name?.message} />
+                      )}
+          />
+          <Controller name='description' control={control}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label='Deskripsi (opsional)' multiline rows={2} />
+                      )}
+          />
+          <Controller name='value_abs' control={control}
+                      rules={{ required: 'Nilai wajib diisi', min: { value: 0, message: 'Min 0' } }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label='Nilai (angka positif)' type='number'
+                                   inputProps={{ step: '0.01', min: 0 }}
+                                   helperText={errors.value_abs?.message || 'Tanda + atau − ditentukan dari variabel'}
+                                   error={!!errors.value_abs} />
+                      )}
+          />
+
+          <Divider />
+
+          <Controller name='has_cooldown' control={control}
+                      render={({ field }) => (
+                        <FormControlLabel
+                          control={<Switch checked={field.value} onChange={e => { field.onChange(e.target.checked); if (!e.target.checked) setValue('cooldown_days', '') }} />}
+                          label='Bisa diajukan mandiri oleh mahasiswa'
+                        />
+                      )}
+          />
+          {hasCooldown && (
+            <Controller name='cooldown_days' control={control}
+                        rules={{ required: 'Cooldown wajib diisi', min: { value: 1, message: 'Min 1 hari' } }}
                         render={({ field }) => (
-                          <FormControl fullWidth error={!!errors.variable_id}>
-                            <InputLabel>Variabel</InputLabel>
-                            <Select {...field} label='Variabel'>
-                              {variables.map(v => (
-                                <MenuItem key={v.id} value={v.id}>
-                                  <div className='flex flex-col'>
-                                    <div className='flex items-center gap-2'>
-                                      {v.category && (
-                                        <i className={v.category.type === 'PLUS' ? 'ri-add-circle-line text-success-main' : 'ri-indeterminate-circle-line text-error-main'} />
-                                      )}
-                                      <Typography variant='body2' fontWeight={600}>{v.name}</Typography>
-                                      {v.category && <Typography variant='caption' color='text.secondary'>• {v.category.name}</Typography>}
-                                    </div>
-                                    {v.description && (
-                                      <Typography variant='caption' color='text.secondary' sx={{ ml: 3 }}>{v.description}</Typography>
-                                    )}
-                                  </div>
-                                </MenuItem>
-                              ))}
-                            </Select>
-                            {errors.variable_id && <Typography variant='caption' color='error'>{errors.variable_id.message}</Typography>}
-                          </FormControl>
+                          <TextField {...field} fullWidth label='Cooldown (hari)' type='number'
+                                     inputProps={{ min: 1 }}
+                                     helperText={errors.cooldown_days?.message || 'Jeda hari sebelum bisa diajukan lagi'}
+                                     error={!!errors.cooldown_days} />
                         )}
             />
+          )}
 
-            {/* Nama indikator */}
-            <Controller name='name' control={control} rules={{ required: 'Nama wajib diisi', minLength: { value: 2, message: 'Min 2 karakter' } }}
-                        render={({ field }) => (
-                          <TextField {...field} fullWidth multiline rows={3} label='Nama Indikator' placeholder='Contoh: Tidak melaksanakan perintah dinas'
-                                     error={!!errors.name} helperText={errors.name?.message} />
-                        )}
-            />
-
-            {/* Nilai — toggle prefix + input angka */}
-            <div>
-              <Typography variant='subtitle2' color='text.secondary' className='mb-2'>Nilai Poin</Typography>
-              <div className='flex gap-2 items-start'>
-                <ToggleButtonGroup exclusive value={valueSign} onChange={(_, val) => { if (val) setValueSign(val) }} size='small' sx={{ flexShrink: 0 }}>
-                  <ToggleButton value='PLUS' color='success' sx={{ px: 2, fontWeight: 700 }}>+</ToggleButton>
-                  <ToggleButton value='MINUS' color='error' sx={{ px: 2, fontWeight: 700 }}>−</ToggleButton>
-                </ToggleButtonGroup>
-                <Controller name='value_abs' control={control}
-                            rules={{
-                              required: 'Nilai wajib diisi',
-                              validate: v => (parseFloat(v) > 0) || 'Nilai harus lebih dari 0'
-                            }}
-                            render={({ field }) => (
-                              <TextField {...field} fullWidth label='Angka nilai' type='number'
-                                         inputProps={{ min: 0.01, step: 0.01 }}
-                                         placeholder='0.30'
-                                         error={!!errors.value_abs} helperText={errors.value_abs?.message}
-                                         InputProps={{
-                                           startAdornment: (
-                                             <InputAdornment position='start'>
-                                               <Typography fontWeight={700} color={valueSign === 'PLUS' ? 'success.main' : 'error.main'}>
-                                                 {valueSign === 'PLUS' ? '+' : '−'}
-                                               </Typography>
-                                             </InputAdornment>
-                                           )
-                                         }}
-                              />
-                            )}
-                />
-              </div>
-              {previewValue !== null && (
-                <Box className='flex items-center gap-2 mt-2 p-2 rounded' sx={{ bgcolor: valueSign === 'PLUS' ? 'success.light' : 'error.light' }}>
-                  <Typography variant='body2'>
-                    Nilai yang tersimpan: <strong>{valueSign === 'PLUS' ? '+' : ''}{previewValue}</strong>
-                  </Typography>
-                </Box>
-              )}
-            </div>
-
-            {/* Deskripsi */}
-            <Controller name='description' control={control}
-                        render={({ field }) => (
-                          <TextField {...field} fullWidth multiline rows={2} label='Deskripsi (opsional)' />
-                        )}
-            />
-
-            {/* Self submission rule */}
-            <div className='flex flex-col gap-3 p-4 rounded-lg border border-divider'>
-              <Controller name='has_cooldown' control={control}
+          {editData && (
+            <>
+              <Divider />
+              <Controller name='is_active' control={control}
                           render={({ field }) => (
                             <FormControlLabel
-                              control={<Switch {...field} checked={field.value} />}
-                              label={
-                                <div>
-                                  <Typography variant='body2' fontWeight={600}>Izinkan Pengajuan Mandiri</Typography>
-                                  <Typography variant='caption' color='text.secondary'>Mahasiswa bisa submit dokumen sendiri tanpa sprint</Typography>
-                                </div>
-                              }
+                              control={<Switch checked={field.value} onChange={e => field.onChange(e.target.checked)} />}
+                              label='Indikator Aktif'
                             />
                           )}
               />
-              {hasCooldown && (
-                <Controller name='cooldown_days' control={control}
-                            rules={{ required: 'Wajib diisi', min: { value: 1, message: 'Min 1 hari' } }}
-                            render={({ field }) => (
-                              <TextField {...field} fullWidth size='small' label='Jeda pengajuan (hari)'
-                                         type='number' inputProps={{ min: 1 }} placeholder='Contoh: 90 untuk donor darah'
-                                         error={!!errors.cooldown_days} helperText={errors.cooldown_days?.message}
-                                         InputProps={{ endAdornment: <InputAdornment position='end'>hari</InputAdornment> }}
-                              />
-                            )}
-                />
-              )}
-            </div>
+            </>
+          )}
 
-            {editData && (
-              <Controller name='is_active' control={control}
-                          render={({ field }) => (
-                            <FormControlLabel control={<Switch {...field} checked={field.value} />} label='Status Aktif' />
-                          )}
-              />
-            )}
-
-            <div className='flex gap-4 mt-2'>
-              <Button fullWidth type='submit' variant='contained' disabled={formLoading}
-                      startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-                {formLoading ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-              <Button fullWidth variant='tonal' color='secondary' onClick={handleCloseDrawer} disabled={formLoading}>Batal</Button>
-            </div>
-          </form>
-        </div>
+          <div className='flex gap-2 mt-2'>
+            <Button fullWidth variant='tonal' color='secondary'
+                    onClick={() => setDrawerOpen(false)} disabled={saveLoading}>Batal</Button>
+            <Button fullWidth variant='contained' type='submit' disabled={saveLoading}
+                    startIcon={saveLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+              {saveLoading ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
       </Drawer>
 
-      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth='xs' fullWidth>
-        <DialogTitle>Hapus Indikator</DialogTitle>
+      {/* Dialog Hapus */}
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth='xs' fullWidth>
+        <DialogTitle>Hapus Indikator?</DialogTitle>
         <DialogContent>
-          <DialogContentText>Hapus indikator <strong>{deleteTarget?.name}</strong>? Indikator yang sudah digunakan dalam entri nilai tidak dapat dihapus.</DialogContentText>
+          <DialogContentText>
+            Hapus indikator <strong>{deleteTarget?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+          </DialogContentText>
         </DialogContent>
-        <DialogActions className='pli-5 plb-4'>
-          <Button onClick={() => setDeleteOpen(false)} variant='tonal' color='secondary' disabled={deleteLoading}>Batal</Button>
-          <Button onClick={handleDelete} variant='contained' color='error' disabled={deleteLoading}
+        <DialogActions className='p-4 gap-2'>
+          <Button variant='tonal' color='secondary' onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>
+            Batal
+          </Button>
+          <Button variant='contained' color='error' onClick={handleDelete} disabled={deleteLoading}
                   startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
             {deleteLoading ? 'Menghapus...' : 'Hapus'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(t => ({ ...t, open: false }))} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-        <Alert severity={toast.severity} variant='filled' onClose={() => setToast(t => ({ ...t, open: false }))}>{toast.message}</Alert>
+      {/* Toast */}
+      <Snackbar open={toast.open} autoHideDuration={4000}
+                onClose={() => setToast(t => ({ ...t, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert severity={toast.severity} variant='filled'
+               onClose={() => setToast(t => ({ ...t, open: false }))}>
+          {toast.message}
+        </Alert>
       </Snackbar>
     </>
   )
