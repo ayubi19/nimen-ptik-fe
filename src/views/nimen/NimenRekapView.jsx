@@ -31,6 +31,11 @@ import { batchApi } from '@/libs/api/masterDataApi'
 import { studentsApi } from '@/libs/api/studentsApi'
 import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
 import { getInitials } from '@/utils/getInitials'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import dayjs from 'dayjs'
+import 'dayjs/locale/id'
 
 const SOURCE_CONFIG = {
   SPRINT:          { label: 'Sprint',            bg: '#E6F9EE', text: '#1B7A47', icon: 'ri-run-line' },
@@ -213,8 +218,8 @@ const NimenRekapView = () => {
   const [batchID, setBatchID]           = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
   const [selectedStudents, setSelectedStudents] = useState([])
-  const [dateFrom, setDateFrom]         = useState('')
-  const [dateTo, setDateTo]             = useState('')
+  const [dateFrom, setDateFrom]         = useState(null)
+  const [dateTo, setDateTo]             = useState(null)
   const [students, setStudents]         = useState([])
   const [studentsLoading, setStudentsLoading] = useState(false)
   const [entries, setEntries]           = useState([])
@@ -276,8 +281,8 @@ const NimenRekapView = () => {
       const params = {}
       if (sourceFilter) params.source_type = sourceFilter
       if (selectedStudents.length === 1) params.student_id = selectedStudents[0].id
-      if (dateFrom) params.date_from = dateFrom
-      if (dateTo) params.date_to = dateTo
+      if (dateFrom) params.date_from = dayjs(dateFrom).format('YYYY-MM-DD')
+      if (dateTo) params.date_to = dayjs(dateTo).format('YYYY-MM-DD')
 
       const res = await nimenRankingApi.getBatchEntries(batchID, params)
       let data = res.data.data || []
@@ -406,220 +411,230 @@ const NimenRekapView = () => {
 
   // ── ADMIN VIEW ──────────────────────────────────────────────────────────────
   return (
-    <>
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Rekap Nilai</Typography>
-      </div>
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='id'>
+      <>
+        <div className='flex items-center gap-2 mb-6'>
+          <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
+          <i className='ri-arrow-right-s-line text-sm opacity-50' />
+          <Typography variant='caption' fontWeight={500} color='text.primary'>Rekap Nilai</Typography>
+        </div>
 
-      {/* Filter Card */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Typography variant='subtitle1' fontWeight={600} className='mb-4'>Filter Rekap Nilai</Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Angkatan</InputLabel>
-                <Select
-                  label='Angkatan'
-                  value={batchID}
-                  onChange={e => { setBatchID(e.target.value); setHasLoaded(false) }}
-                  renderValue={val => {
-                    const b = batches.find(x => x.id === parseInt(val))
-                    if (!b) return ''
-                    return (
-                      <div className='flex items-center justify-between gap-2'>
-                        <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'}
-                              sx={{ flexShrink: 0 }} />
-                      </div>
-                    )
-                  }}>
-                  {batches.map(b => (
-                    <MenuItem key={b.id} value={b.id}>
-                      <div className='flex items-center justify-between w-full gap-2'>
+        {/* Filter Card */}
+        <Card className='mb-6'>
+          <CardContent>
+            <Typography variant='subtitle1' fontWeight={600} className='mb-4'>Filter Rekap Nilai</Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size='small'>
+                  <InputLabel>Angkatan</InputLabel>
+                  <Select
+                    label='Angkatan'
+                    value={batchID}
+                    onChange={e => { setBatchID(e.target.value); setHasLoaded(false) }}
+                    renderValue={val => {
+                      const b = batches.find(x => x.id === parseInt(val))
+                      if (!b) return ''
+                      return (
+                        <div className='flex items-center justify-between gap-2'>
+                          <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
+                          <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
+                                color={b.program_type === 'S2' ? 'info' : 'success'}
+                                sx={{ flexShrink: 0 }} />
+                        </div>
+                      )
+                    }}>
+                    {batches.map(b => (
+                      <MenuItem key={b.id} value={b.id}>
+                        <div className='flex items-center justify-between w-full gap-2'>
+                          <div>
+                            <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                            <Typography variant='caption' color='text.secondary'>
+                              Angkatan ke-{b.batch_number} · {b.year}
+                            </Typography>
+                          </div>
+                          <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
+                                color={b.program_type === 'S2' ? 'info' : 'success'} />
+                        </div>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth size='small'>
+                  <InputLabel>Sumber Nilai</InputLabel>
+                  <Select label='Sumber Nilai' value={sourceFilter}
+                          onChange={e => setSourceFilter(e.target.value)}>
+                    <MenuItem value=''>Semua Sumber</MenuItem>
+                    <MenuItem value='SPRINT'>Sprint</MenuItem>
+                    <MenuItem value='AUTOMATIC'>Nilai Jabatan</MenuItem>
+                    <MenuItem value='SELF_SUBMISSION'>Pengajuan Mandiri</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <Autocomplete
+                  multiple
+                  size='small'
+                  options={students}
+                  loading={studentsLoading}
+                  getOptionLabel={s => s.full_name || ''}
+                  isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                  value={selectedStudents}
+                  onChange={(_, val) => setSelectedStudents(val)}
+                  disabled={!batchID}
+                  renderOption={(props, option) => (
+                    <li {...props} key={option.id}>
+                      <div className='flex items-center gap-2'>
+                        <Avatar sx={{ width: 28, height: 28, fontSize: 10 }}>
+                          {getInitials(option.full_name || '')}
+                        </Avatar>
                         <div>
-                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                          <Typography variant='body2' fontWeight={500}>{option.full_name}</Typography>
                           <Typography variant='caption' color='text.secondary'>
-                            Angkatan ke-{b.batch_number} · {b.year}
+                            {option.student_profile?.nim || '—'}
                           </Typography>
                         </div>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'} />
                       </div>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+                    </li>
+                  )}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const tagProps = getTagProps({ index })
+                      return (
+                        <Chip
+                          {...tagProps}
+                          key={option.id}
+                          label={option.full_name}
+                          size='small'
+                          color='primary'
+                          variant='tonal'
+                        />
+                      )
+                    })
+                  }
+                  renderInput={params => (
+                    <TextField {...params} label='Nama Mahasiswa'
+                               placeholder={batchID ? 'Pilih satu atau lebih mahasiswa...' : 'Pilih angkatan dulu'}
+                               InputProps={{
+                                 ...params.InputProps,
+                                 endAdornment: (
+                                   <>
+                                     {studentsLoading ? <CircularProgress size={14} /> : null}
+                                     {params.InputProps.endAdornment}
+                                   </>
+                                 ),
+                               }}
+                    />
+                  )}
+                />
+              </Grid>
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Sumber Nilai</InputLabel>
-                <Select label='Sumber Nilai' value={sourceFilter}
-                        onChange={e => setSourceFilter(e.target.value)}>
-                  <MenuItem value=''>Semua Sumber</MenuItem>
-                  <MenuItem value='SPRINT'>Sprint</MenuItem>
-                  <MenuItem value='AUTOMATIC'>Nilai Jabatan</MenuItem>
-                  <MenuItem value='SELF_SUBMISSION'>Pengajuan Mandiri</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+              <Grid item xs={12} md={6}>
+                <DatePicker
+                  label='Dari Tanggal'
+                  value={dateFrom}
+                  onChange={val => setDateFrom(val)}
+                  format='DD/MM/YYYY'
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <DatePicker
+                  label='Sampai Tanggal'
+                  value={dateTo}
+                  onChange={val => setDateTo(val)}
+                  minDate={dateFrom || undefined}
+                  format='DD/MM/YYYY'
+                  slotProps={{ textField: { fullWidth: true, size: 'small' } }}
+                />
+              </Grid>
 
-            <Grid item xs={12}>
-              <Autocomplete
-                multiple
-                size='small'
-                options={students}
-                loading={studentsLoading}
-                getOptionLabel={s => s.full_name || ''}
-                isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                value={selectedStudents}
-                onChange={(_, val) => setSelectedStudents(val)}
-                disabled={!batchID}
-                renderOption={(props, option) => (
-                  <li {...props} key={option.id}>
-                    <div className='flex items-center gap-2'>
-                      <Avatar sx={{ width: 28, height: 28, fontSize: 10 }}>
-                        {getInitials(option.full_name || '')}
-                      </Avatar>
+              <Grid item xs={12}>
+                <Button fullWidth variant='contained' onClick={handleTampilkan}
+                        disabled={loading || !batchID}
+                        startIcon={loading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-search-line' />}>
+                  {loading ? 'Memuat...' : 'Tampilkan'}
+                </Button>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+
+        {/* Empty state awal */}
+        {!hasLoaded && !loading && (
+          <Card>
+            <CardContent className='text-center py-16'>
+              <i className='ri-bar-chart-grouped-line text-6xl opacity-20 block mb-3' />
+              <Typography variant='body1' color='text.secondary'>
+                Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Info + Stats */}
+        {hasLoaded && (
+          <>
+            {infoMsg && (
+              <Alert severity='info' icon={<i className='ri-information-line' />} className='mb-4'>
+                {infoMsg}
+              </Alert>
+            )}
+
+            <Grid container spacing={4} className='mb-6'>
+              {[
+                { label: 'Mahasiswa',      value: new Set(entries.map(e => e.student_id)).size, icon: 'ri-group-line',  color: '#FF4C51', bg: '#FFE9EA' },
+                { label: 'Jenis Kegiatan', value: grouped.length,                               icon: 'ri-stack-line', color: '#7367F0', bg: '#F3EDFF' },
+              ].map(s => (
+                <Grid item xs={6} key={s.label}>
+                  <Card sx={{ height: '100%' }}>
+                    <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
+                      </div>
                       <div>
-                        <Typography variant='body2' fontWeight={500}>{option.full_name}</Typography>
-                        <Typography variant='caption' color='text.secondary'>
-                          {option.student_profile?.nim || '—'}
+                        <Typography variant='h4' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
+                        <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 10, sm: 12 } }}>
+                          {s.label}
                         </Typography>
                       </div>
-                    </div>
-                  </li>
-                )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => {
-                    const tagProps = getTagProps({ index })
-                    return (
-                      <Chip
-                        {...tagProps}
-                        key={option.id}
-                        label={option.full_name}
-                        size='small'
-                        color='primary'
-                        variant='tonal'
-                      />
-                    )
-                  })
-                }
-                renderInput={params => (
-                  <TextField {...params} label='Nama Mahasiswa'
-                             placeholder={batchID ? 'Pilih satu atau lebih mahasiswa...' : 'Pilih angkatan dulu'}
-                             InputProps={{
-                               ...params.InputProps,
-                               endAdornment: (
-                                 <>
-                                   {studentsLoading ? <CircularProgress size={14} /> : null}
-                                   {params.InputProps.endAdornment}
-                                 </>
-                               ),
-                             }}
-                  />
-                )}
-              />
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
             </Grid>
+          </>
+        )}
 
-            <Grid item xs={12} md={6}>
-              <TextField fullWidth size='small' type='date' label='Dari Tanggal'
-                         value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                         InputLabelProps={{ shrink: true }} />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField fullWidth size='small' type='date' label='Sampai Tanggal'
-                         value={dateTo} onChange={e => setDateTo(e.target.value)}
-                         InputLabelProps={{ shrink: true }}
-                         inputProps={{ min: dateFrom || undefined }} />
-            </Grid>
+        {/* Empty result */}
+        {hasLoaded && entries.length === 0 && (
+          <Card>
+            <CardContent className='text-center py-12'>
+              <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
+              <Typography variant='body2' color='text.secondary'>
+                Tidak ada entri nilai yang ditemukan untuk filter yang dipilih.
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
 
-            <Grid item xs={12}>
-              <Button fullWidth variant='contained' onClick={handleTampilkan}
-                      disabled={loading || !batchID}
-                      startIcon={loading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-search-line' />}>
-                {loading ? 'Memuat...' : 'Tampilkan'}
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+        {/* Grouped per indikator dengan pagination */}
+        {hasLoaded && pagedGrouped.map((g, idx) => (
+          <IndicatorSection key={idx} {...g} isMobile={isMobile} />
+        ))}
 
-      {/* Empty state awal */}
-      {!hasLoaded && !loading && (
-        <Card>
-          <CardContent className='text-center py-16'>
-            <i className='ri-bar-chart-grouped-line text-6xl opacity-20 block mb-3' />
-            <Typography variant='body1' color='text.secondary'>
-              Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Info + Stats */}
-      {hasLoaded && (
-        <>
-          {infoMsg && (
-            <Alert severity='info' icon={<i className='ri-information-line' />} className='mb-4'>
-              {infoMsg}
-            </Alert>
-          )}
-
-          <Grid container spacing={4} className='mb-6'>
-            {[
-              { label: 'Mahasiswa',      value: new Set(entries.map(e => e.student_id)).size, icon: 'ri-group-line',  color: '#FF4C51', bg: '#FFE9EA' },
-              { label: 'Jenis Kegiatan', value: grouped.length,                               icon: 'ri-stack-line', color: '#7367F0', bg: '#F3EDFF' },
-            ].map(s => (
-              <Grid item xs={6} key={s.label}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
-                    </div>
-                    <div>
-                      <Typography variant='h4' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                      <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 10, sm: 12 } }}>
-                        {s.label}
-                      </Typography>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </>
-      )}
-
-      {/* Empty result */}
-      {hasLoaded && entries.length === 0 && (
-        <Card>
-          <CardContent className='text-center py-12'>
-            <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
-            <Typography variant='body2' color='text.secondary'>
-              Tidak ada entri nilai yang ditemukan untuk filter yang dipilih.
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Grouped per indikator dengan pagination */}
-      {hasLoaded && pagedGrouped.map((g, idx) => (
-        <IndicatorSection key={idx} {...g} isMobile={isMobile} />
-      ))}
-
-      {hasLoaded && totalPages > 1 && (
-        <div className='flex justify-center mt-4 mb-6'>
-          <Pagination count={totalPages} page={page}
-                      onChange={(_, p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                      color='primary' shape='rounded' />
-        </div>
-      )}
-    </>
+        {hasLoaded && totalPages > 1 && (
+          <div className='flex justify-center mt-4 mb-6'>
+            <Pagination count={totalPages} page={page}
+                        onChange={(_, p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        color='primary' shape='rounded' />
+          </div>
+        )}
+      </>
+    </LocalizationProvider>
   )
 }
 

@@ -86,11 +86,9 @@ const RankingMobileCard = ({ row, onViewHistory }) => {
             <Typography variant='body2' fontWeight={700} color='primary.main'>
               {row.total_value?.toFixed(2)}
             </Typography>
-            <Tooltip title='Riwayat nilai'>
-              <IconButton size='small' onClick={() => onViewHistory(row)}>
-                <i className='ri-history-line text-[18px]' />
-              </IconButton>
-            </Tooltip>
+            <IconButton size='small' onClick={() => onViewHistory(row)}>
+              <i className='ri-history-line text-[18px]' />
+            </IconButton>
           </div>
         </div>
         <LinearProgress
@@ -113,16 +111,16 @@ const RankingView = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  const [batches, setBatches]           = useState([])
-  const [batchID, setBatchID]           = useState('')
-  const [syndicates, setSyndicates]     = useState([])
-  const [syndicateID, setSyndicateID]   = useState('')
-  const [rows, setRows]                 = useState([])
-  const [total, setTotal]               = useState(0)
-  const [loading, setLoading]           = useState(false)
-  const [search, setSearch]             = useState('')
-  const [page, setPage]                 = useState(0)
-  const [pageSize, setPageSize]         = useState(50)
+  const [batches, setBatches]         = useState([])
+  const [batchID, setBatchID]         = useState('')
+  const [syndicates, setSyndicates]   = useState([])
+  const [syndicateID, setSyndicateID] = useState('')
+  const [rows, setRows]               = useState([])
+  const [total, setTotal]             = useState(0)
+  const [loading, setLoading]         = useState(false)
+  const [search, setSearch]           = useState('')
+  const [page, setPage]               = useState(0)
+  const [pageSize, setPageSize]       = useState(10)
   const [exportLoading, setExportLoading] = useState('')
 
   const [historyOpen, setHistoryOpen]       = useState(false)
@@ -136,7 +134,7 @@ const RankingView = () => {
       .then(res => {
         const list = res.data.data || []
         setBatches(list)
-        if (list.length > 0) setBatchID(list[0].id)
+        if (list.length > 0) setBatchID(String(list[0].id))
       })
       .catch(() => {})
   }, [])
@@ -154,13 +152,19 @@ const RankingView = () => {
     if (!batchID) return
     setLoading(true)
     try {
-      const params = { batch_id: batchID, search, page: page + 1, page_size: pageSize }
-      if (syndicateID) params.syndicate_id = syndicateID
+      const params = {
+        batch_id: parseInt(batchID),
+        page: page + 1,
+        page_size: pageSize,
+      }
+      if (syndicateID) params.syndicate_id = parseInt(syndicateID)
+      if (search) params.search = search
       const res = await nimenRankingApi.getRankings(params)
-      setRows(res.data.data.data || [])
-      setTotal(res.data.data.pagination?.total || 0)
+      setRows(res.data.data?.data || [])
+      setTotal(res.data.data?.pagination?.total || 0)
     } catch {
       setRows([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
@@ -182,33 +186,47 @@ const RankingView = () => {
     }
   }, [])
 
-  const selectedBatch = batches.find(b => b.id === batchID)
+  const selectedBatch = batches.find(b => String(b.id) === String(batchID))
+
+  const fetchAllForExport = useCallback(async () => {
+    const PAGE_SIZE = 100
+    let allRows = []
+    let currentPage = 1
+    let hasMore = true
+    while (hasMore) {
+      const params = { batch_id: parseInt(batchID), page: currentPage, page_size: PAGE_SIZE }
+      if (syndicateID) params.syndicate_id = parseInt(syndicateID)
+      if (search) params.search = search
+      const res = await nimenRankingApi.getRankings(params)
+      const data = res.data.data?.data || []
+      allRows = [...allRows, ...data]
+      const totalCount = res.data.data?.pagination?.total || 0
+      hasMore = allRows.length < totalCount && data.length > 0
+      currentPage++
+      if (currentPage > 50) break // safety cap
+    }
+    return allRows
+  }, [batchID, syndicateID, search])
 
   const handleExportPDF = useCallback(async () => {
     if (!batchID || rows.length === 0) return
     setExportLoading('pdf')
     try {
-      const params = { batch_id: batchID, page: 1, page_size: 9999 }
-      if (syndicateID) params.syndicate_id = syndicateID
-      const res = await nimenRankingApi.getRankings(params)
-      const allRows = res.data.data?.data || []
+      const allRows = await fetchAllForExport()
       await exportBatchPDF(allRows, { name: selectedBatch?.name || batchID, max_value: allRows[0]?.max_value || 95 })
     } catch (e) { console.error(e) }
     finally { setExportLoading('') }
-  }, [batchID, syndicateID, rows, selectedBatch])
+  }, [batchID, rows, selectedBatch, fetchAllForExport])
 
   const handleExportXLSX = useCallback(async () => {
     if (!batchID || rows.length === 0) return
     setExportLoading('xlsx')
     try {
-      const params = { batch_id: batchID, page: 1, page_size: 9999 }
-      if (syndicateID) params.syndicate_id = syndicateID
-      const res = await nimenRankingApi.getRankings(params)
-      const allRows = res.data.data?.data || []
+      const allRows = await fetchAllForExport()
       await exportBatchXLSX(allRows, { name: selectedBatch?.name || batchID, max_value: allRows[0]?.max_value || 95 })
     } catch (e) { console.error(e) }
     finally { setExportLoading('') }
-  }, [batchID, syndicateID, rows, selectedBatch])
+  }, [batchID, rows, selectedBatch, fetchAllForExport])
 
   const fmtDate = (d) => d
     ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -223,25 +241,47 @@ const RankingView = () => {
         <Typography variant='caption' fontWeight={500} color='text.primary'>Peringkat</Typography>
       </div>
 
-      {/* Filter + Export */}
+      {/* Filter Card */}
       <Card className='mb-6'>
         <CardContent>
           <Grid container spacing={3} alignItems='center'>
-            {/* Angkatan */}
-            <Grid item xs={12} md={3}>
+            {/* Row 1: Angkatan, Sindikat, Search */}
+            <Grid item xs={12} sm={4}>
               <FormControl fullWidth size='small'>
                 <InputLabel>Angkatan</InputLabel>
                 <Select label='Angkatan' value={batchID}
-                        onChange={e => { setBatchID(e.target.value); setSyndicateID(''); setPage(0) }}>
+                        onChange={e => { setBatchID(e.target.value); setSyndicateID(''); setPage(0) }}
+                        renderValue={val => {
+                          const b = batches.find(x => x.id === val || String(x.id) === String(val))
+                          if (!b) return ''
+                          return (
+                            <div className='flex items-center justify-between gap-2'>
+                              <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
+                              <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
+                                    color={b.program_type === 'S2' ? 'info' : 'success'}
+                                    sx={{ flexShrink: 0 }} />
+                            </div>
+                          )
+                        }}>
                   {batches.map(b => (
-                    <MenuItem key={b.id} value={b.id}>{b.name} ({b.year})</MenuItem>
+                    <MenuItem key={b.id} value={b.id}>
+                      <div className='flex items-center justify-between w-full gap-2'>
+                        <div>
+                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                          <Typography variant='caption' color='text.secondary'>
+                            Angkatan ke-{b.batch_number} · {b.year}
+                          </Typography>
+                        </div>
+                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
+                              color={b.program_type === 'S2' ? 'info' : 'success'} />
+                      </div>
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
 
-            {/* Sindikat */}
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} sm={4}>
               <FormControl fullWidth size='small'>
                 <InputLabel>Sindikat</InputLabel>
                 <Select label='Sindikat' value={syndicateID}
@@ -255,8 +295,7 @@ const RankingView = () => {
               </FormControl>
             </Grid>
 
-            {/* Search */}
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} sm={4}>
               <DebouncedInput fullWidth value={search}
                               onChange={v => { setSearch(v); setPage(0) }}
                               placeholder='Cari nama atau NIM...'
@@ -264,23 +303,30 @@ const RankingView = () => {
               />
             </Grid>
 
-            {/* Export */}
-            <Grid item xs={12} md={2}>
-              {rows.length > 0 && (
-                <ButtonGroup fullWidth variant='tonal' size='small' disabled={!!exportLoading}>
-                  <Tooltip title='Export PDF'>
-                    <Button color='error'
-                            startIcon={exportLoading === 'pdf' ? <CircularProgress size={12} color='inherit' /> : <i className='ri-file-pdf-line' />}
-                            onClick={handleExportPDF}>PDF</Button>
-                  </Tooltip>
-                  <Tooltip title='Export Excel'>
-                    <Button color='success'
-                            startIcon={exportLoading === 'xlsx' ? <CircularProgress size={12} color='inherit' /> : <i className='ri-file-excel-line' />}
-                            onClick={handleExportXLSX}>Excel</Button>
-                  </Tooltip>
-                </ButtonGroup>
-              )}
-            </Grid>
+            {/* Export — rata kanan */}
+            {rows.length > 0 && (
+              <>
+                <Grid item xs={12} sm={8} sx={{ display: { xs: 'none', sm: 'block' } }} />
+                <Grid item xs={12} sm={4}>
+                  <ButtonGroup fullWidth variant='tonal' size='small' disabled={!!exportLoading}>
+                    <Tooltip title='Export PDF'>
+                      <Button color='error'
+                              startIcon={exportLoading === 'pdf'
+                                ? <CircularProgress size={12} color='inherit' />
+                                : <i className='ri-file-pdf-line' />}
+                              onClick={handleExportPDF}>PDF</Button>
+                    </Tooltip>
+                    <Tooltip title='Export Excel'>
+                      <Button color='success'
+                              startIcon={exportLoading === 'xlsx'
+                                ? <CircularProgress size={12} color='inherit' />
+                                : <i className='ri-file-excel-line' />}
+                              onClick={handleExportXLSX}>Excel</Button>
+                    </Tooltip>
+                  </ButtonGroup>
+                </Grid>
+              </>
+            )}
           </Grid>
         </CardContent>
       </Card>
@@ -292,23 +338,31 @@ const RankingView = () => {
           {
             label: syndicateID
               ? (syndicates.find(s => s.id === parseInt(syndicateID))?.name || 'Sindikat')
-              : (selectedBatch?.name || '—'),
+              : `${selectedBatch?.program_type || 'S1'} · ${selectedBatch?.year || '—'}`,
             value: syndicateID ? 'Per Sindikat' : 'Per Angkatan',
             icon: syndicateID ? 'ri-shield-star-line' : 'ri-building-line',
             color: '#7367F0', bg: '#F3EDFF'
           },
         ].map(s => (
           <Grid item xs={6} key={s.label}>
-            <Card>
-              <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
-                </div>
-                <div className='min-w-0'>
-                  <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 11, sm: 13 } }} noWrap>
-                    {s.label}
-                  </Typography>
+            <Card sx={{ height: '100%' }}>
+              <CardContent sx={{ p: '12px !important', height: '100%' }}>
+                <div className='flex items-center gap-2'>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant='h5' fontWeight={600} lineHeight={1.2} noWrap>
+                      {s.value}
+                    </Typography>
+                    <Typography variant='caption' color='text.secondary'
+                                sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.label}
+                    </Typography>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -329,6 +383,7 @@ const RankingView = () => {
           </CardContent>
         </Card>
       ) : isMobile ? (
+        // Mobile — Card List
         <>
           {rows.map(row => (
             <RankingMobileCard key={String(row.student_id)} row={row} onViewHistory={handleViewHistory} />
@@ -336,12 +391,13 @@ const RankingView = () => {
           <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
                            onPageChange={(_, p) => setPage(p)}
                            onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
-                           rowsPerPageOptions={[20, 50, 100]}
+                           rowsPerPageOptions={[10, 25, 50]}
                            labelRowsPerPage='Baris:'
                            labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
           />
         </>
       ) : (
+        // Desktop — Table
         <Card>
           <Table>
             <TableHead>
@@ -355,10 +411,8 @@ const RankingView = () => {
             </TableHead>
             <TableBody>
               {rows.map(row => (
-                <TableRow
-                  key={String(row.student_id)}
-                  hover
-                  sx={MEDAL_COLORS[row.rank_position] ? { bgcolor: `${MEDAL_COLORS[row.rank_position]}11` } : {}}>
+                <TableRow key={String(row.student_id)} hover
+                          sx={MEDAL_COLORS[row.rank_position] ? { bgcolor: `${MEDAL_COLORS[row.rank_position]}11` } : {}}>
                   <TableCell width={60} align='center'>
                     {row.rank_position <= 3 ? (
                       <Typography variant='h6'>{MEDAL_EMOJI[row.rank_position]}</Typography>
@@ -397,7 +451,12 @@ const RankingView = () => {
                     <LinearProgress
                       variant='determinate'
                       value={Math.min((row.total_value / (row.max_value || 95)) * 100, 100)}
-                      color={Math.min((row.total_value / (row.max_value || 95)) * 100, 100) >= 100 ? 'success' : Math.min((row.total_value / (row.max_value || 95)) * 100, 100) >= 70 ? 'primary' : 'warning'}
+                      color={
+                        Math.min((row.total_value / (row.max_value || 95)) * 100, 100) >= 100
+                          ? 'success'
+                          : Math.min((row.total_value / (row.max_value || 95)) * 100, 100) >= 70
+                            ? 'primary' : 'warning'
+                      }
                       sx={{ height: 5, borderRadius: 3 }}
                     />
                   </TableCell>
@@ -415,7 +474,7 @@ const RankingView = () => {
           <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
                            onPageChange={(_, p) => setPage(p)}
                            onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
-                           rowsPerPageOptions={[20, 50, 100]}
+                           rowsPerPageOptions={[10, 25, 50]}
                            labelRowsPerPage='Baris per halaman:'
                            labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
           />
@@ -423,18 +482,24 @@ const RankingView = () => {
       )}
 
       {/* Dialog Riwayat Nilai */}
-      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth='md' fullWidth>
-        <DialogTitle>
-          <div className='flex items-center justify-between'>
-            <div>
-              <Typography variant='h6'>Riwayat Nilai</Typography>
-              {historyStudent && (
+      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth='md' fullWidth
+              fullScreen={isMobile}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <div className='flex items-start justify-between gap-2'>
+            <div className='flex items-center gap-3'>
+              <Avatar sx={{ width: 44, height: 44, fontSize: 14, bgcolor: 'primary.main' }}>
+                {getInitials(historyStudent?.full_name || '')}
+              </Avatar>
+              <div>
+                <Typography variant='h6' fontWeight={600}>{historyStudent?.full_name || '—'}</Typography>
                 <Typography variant='caption' color='text.secondary'>
-                  {historyStudent.full_name || '—'} · {historyStudent.nim || '—'} · Peringkat #{historyStudent.rank_position}
+                  {historyStudent?.nim || '—'} · {historyStudent?.syndicate_name || '—'} · Peringkat #{historyStudent?.rank_position}
                 </Typography>
-              )}
+              </div>
             </div>
-            <IconButton onClick={() => setHistoryOpen(false)}><i className='ri-close-line' /></IconButton>
+            <IconButton onClick={() => setHistoryOpen(false)} sx={{ mt: -0.5 }}>
+              <i className='ri-close-line' />
+            </IconButton>
           </div>
         </DialogTitle>
         <Divider />
@@ -448,63 +513,116 @@ const RankingView = () => {
             </Box>
           ) : (
             <>
-              <Box sx={{ px: 3, py: 2, bgcolor: 'background.default' }}>
-                <div className='flex flex-wrap items-center gap-4'>
-                  {[
-                    { label: 'Total Nilai Aktif', value: historyStudent?.total_value?.toFixed(2), color: 'primary.main' },
-                    { label: 'Jumlah Entri',      value: history.length,                          color: undefined },
-                    { label: 'Nilai Positif',     value: `+${history.filter(h => h.value > 0).reduce((s, h) => s + h.value, 0).toFixed(2)}`, color: 'success.main' },
-                    { label: 'Nilai Negatif',     value: history.filter(h => h.value < 0).reduce((s, h) => s + h.value, 0).toFixed(2), color: 'error.main' },
-                  ].map((s, i) => (
-                    <div key={s.label} className='flex items-center gap-3'>
-                      {i > 0 && <Divider orientation='vertical' flexItem />}
+              {/* Stats bar */}
+              <Grid container spacing={0} sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+                {[
+                  { label: 'Total Nilai', value: historyStudent?.total_value?.toFixed(2), color: '#7367F0', bg: '#F3EDFF', icon: 'ri-medal-line' },
+                  { label: 'Jumlah Entri', value: history.length, color: '#00CFE8', bg: '#E0F9FC', icon: 'ri-list-check-line' },
+                  { label: 'Nilai Positif', value: `+${history.filter(h => h.value > 0).reduce((s, h) => s + h.value, 0).toFixed(2)}`, color: '#28C76F', bg: '#E6F9EE', icon: 'ri-arrow-up-circle-line' },
+                  { label: 'Nilai Negatif', value: history.filter(h => h.value < 0).reduce((s, h) => s + h.value, 0).toFixed(2) || '0.00', color: '#EA5455', bg: '#FFEDED', icon: 'ri-arrow-down-circle-line' },
+                ].map((s, i) => (
+                  <Grid item xs={6} sm={3} key={s.label}
+                        sx={{ borderRight: i < 3 ? '1px solid' : 'none', borderColor: 'divider', p: 2 }}>
+                    <div className='flex items-center gap-2'>
+                      <div style={{
+                        width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                        background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <i className={s.icon} style={{ fontSize: 18, color: s.color }} />
+                      </div>
                       <div>
-                        <Typography variant='caption' color='text.secondary'>{s.label}</Typography>
-                        <Typography variant='h5' fontWeight={700} color={s.color}>{s.value}</Typography>
+                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>{s.label}</Typography>
+                        <Typography variant='body1' fontWeight={700} sx={{ color: s.color, lineHeight: 1.2 }}>{s.value}</Typography>
                       </div>
                     </div>
+                  </Grid>
+                ))}
+              </Grid>
+
+              {isMobile ? (
+                // Mobile history — card list
+                <div className='p-3 flex flex-col gap-2'>
+                  {history.map(entry => (
+                    <Card key={entry.id} variant='outlined'>
+                      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                        <div className='flex items-start justify-between gap-2'>
+                          <div className='flex-1'>
+                            <Typography variant='body2' fontWeight={500}>{entry.indicator?.name}</Typography>
+                            <Typography variant='caption' color='text.secondary'>
+                              {entry.indicator?.variable?.category?.name} · {fmtDate(entry.event_date)}
+                            </Typography>
+                          </div>
+                          <div className='flex items-center gap-1 flex-shrink-0'>
+                            <Chip
+                              label={entry.value >= 0 ? `+${entry.value}` : entry.value}
+                              size='small' variant='tonal'
+                              color={entry.value >= 0 ? 'success' : 'error'}
+                              sx={{ fontWeight: 700 }}
+                            />
+                            <Chip
+                              label={entry.status === 'VALID' ? 'Valid' : 'Dispensasi'}
+                              size='small' variant='tonal'
+                              color={entry.status === 'VALID' ? 'success' : 'info'}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
-              </Box>
-              <Divider />
-              <Table size='small'>
-                <TableHead>
-                  <TableRow>
-                    {['Tanggal', 'Indikator', 'Kategori', 'Nilai', 'Status'].map(h => (
-                      <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>{h}</TableCell>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {history.map(entry => (
-                    <TableRow key={entry.id}>
-                      <TableCell>
-                        <Typography variant='caption'>{fmtDate(entry.event_date)}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2'>{entry.indicator?.name}</Typography>
-                        <Typography variant='caption' color='text.secondary'>{entry.indicator?.variable?.name}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='caption' color='text.secondary'>
-                          {entry.indicator?.variable?.category?.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant='body2' fontWeight={700}
-                                    color={entry.value >= 0 ? 'success.main' : 'error.main'}>
-                          {entry.value >= 0 ? `+${entry.value}` : entry.value}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={entry.status === 'VALID' ? 'Valid' : 'Dispensasi'}
-                              color={entry.status === 'VALID' ? 'success' : 'info'}
-                              size='small' variant='tonal' />
-                      </TableCell>
+              ) : (
+                // Desktop history — table redesign
+                <Table size='small'>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'action.hover' }}>
+                      {['Tanggal', 'Indikator', 'Sumber', 'Nilai', 'Status'].map(h => (
+                        <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>{h}</TableCell>
+                      ))}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {history.map(entry => {
+                      const srcMap = {
+                        SPRINT: { label: 'Sprint', color: 'success' },
+                        AUTOMATIC: { label: 'Nilai Jabatan', color: 'info' },
+                        SELF_SUBMISSION: { label: 'Pengajuan Mandiri', color: 'warning' },
+                      }
+                      const src = srcMap[entry.source_type] || { label: entry.source_type, color: 'default' }
+                      return (
+                        <TableRow key={entry.id} hover>
+                          <TableCell sx={{ minWidth: 90 }}>
+                            <Typography variant='caption'>{fmtDate(entry.event_date)}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant='body2' fontWeight={500}>{entry.indicator?.name}</Typography>
+                            <Typography variant='caption' color='text.secondary'>
+                              {entry.indicator?.variable?.category?.name}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Chip label={src.label} color={src.color} size='small' variant='tonal' />
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={entry.value >= 0 ? `+${entry.value}` : entry.value}
+                              size='small' variant='tonal'
+                              color={entry.value >= 0 ? 'success' : 'error'}
+                              sx={{ fontWeight: 700 }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={entry.status === 'VALID' ? 'Valid' : 'Dispensasi'}
+                              color={entry.status === 'VALID' ? 'success' : 'info'}
+                              size='small' variant='tonal'
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </>
           )}
         </DialogContent>
