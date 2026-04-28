@@ -46,8 +46,8 @@ const VerticalMenu = ({ scrollMenu }) => {
   return (
     <ScrollWrapper
       {...(isBreakpointReached
-        ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
-        : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
+          ? { className: 'bs-full overflow-y-auto overflow-x-hidden', onScroll: container => scrollMenu(container, false) }
+          : { options: { wheelPropagation: false, suppressScrollX: true }, onScrollY: container => scrollMenu(container, true) }
       )}
     >
       <Menu
@@ -87,10 +87,6 @@ const VerticalMenu = ({ scrollMenu }) => {
             <MenuItem href='/nimen/self-submissions' icon={<i className='ri-file-check-line' />}>Pengajuan Mandiri</MenuItem>
           )}
 
-          {/* Inisiatif & Peringkat — semua role */}
-          <SubMenu label='Inisiatif' icon={<i className='ri-lightbulb-line' />}>
-            <MenuItem href='/initiative'>Semua Inisiatif</MenuItem>
-          </SubMenu>
           <MenuItem href='/ranking' icon={<i className='ri-bar-chart-line' />}>Peringkat</MenuItem>
         </MenuSection>
 
