@@ -73,3 +73,12 @@ export const batchNimenConfigApi = {
   updateConfig: (batchId, data) =>
     apiClient.put(`/nimen/batch-config/${batchId}`, data),
 }
+
+// ─── Nilai Jabatan Bulanan ────────────────────────────────────────────────
+export const nimenPositionValueApi = {
+  getPreview: (params) =>
+    apiClient.get('/nimen/position-values/preview', { params }),
+
+  grant: (data) =>
+    apiClient.post('/nimen/position-values/grant', data),
+}
