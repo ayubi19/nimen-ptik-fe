@@ -9,20 +9,22 @@ import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
-import Divider from '@mui/material/Divider'
+import Collapse from '@mui/material/Collapse'
 import FormControl from '@mui/material/FormControl'
 import Grid from '@mui/material/Grid'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
+import Pagination from '@mui/material/Pagination'
 import Select from '@mui/material/Select'
 import Table from '@mui/material/Table'
 import TableBody from '@mui/material/TableBody'
 import TableCell from '@mui/material/TableCell'
 import TableHead from '@mui/material/TableHead'
 import TableRow from '@mui/material/TableRow'
+import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Autocomplete from '@mui/material/Autocomplete'
-import TextField from '@mui/material/TextField'
+import Box from '@mui/material/Box'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import { batchApi } from '@/libs/api/masterDataApi'
@@ -31,10 +33,12 @@ import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
 import { getInitials } from '@/utils/getInitials'
 
 const SOURCE_CONFIG = {
-  SPRINT:          { label: 'Sprint',            color: 'success', bg: '#E6F9EE', text: '#1B7A47' },
-  AUTOMATIC:       { label: 'Nilai Jabatan',     color: 'info',    bg: '#E0F9FC', text: '#0891B2' },
-  SELF_SUBMISSION: { label: 'Pengajuan Mandiri', color: 'warning', bg: '#FFF3E8', text: '#B36B00' },
+  SPRINT:          { label: 'Sprint',            bg: '#E6F9EE', text: '#1B7A47', icon: 'ri-run-line' },
+  AUTOMATIC:       { label: 'Nilai Jabatan',     bg: '#E0F9FC', text: '#0891B2', icon: 'ri-user-star-line' },
+  SELF_SUBMISSION: { label: 'Pengajuan Mandiri', bg: '#FFF3E8', text: '#B36B00', icon: 'ri-file-add-line' },
 }
+
+const MAX_VISIBLE = 10
 
 const fmtDate = (d) => d
   ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -42,116 +46,154 @@ const fmtDate = (d) => d
 
 const fmtVal = (v) => v >= 0 ? `+${v}` : `${v}`
 
-// ── Section per sumber ────────────────────────────────────────────────────────
-const EntrySection = ({ sourceType, entries, isMobile }) => {
-  const cfg = SOURCE_CONFIG[sourceType] || { label: sourceType, color: 'default', bg: '#F4F4F4', text: '#5F5E5A' }
-  const total = entries.reduce((s, e) => s + e.value, 0)
+// ── Section per Indikator ─────────────────────────────────────────────────────
+const IndicatorSection = ({ indicatorName, categoryName, indicatorValue, entries, isMobile }) => {
+  const [expanded, setExpanded] = useState(false)
+
+  const sourceType = entries[0]?.source_type
+  const cfg = SOURCE_CONFIG[sourceType] || { label: sourceType, bg: '#F4F4F4', text: '#5F5E5A', icon: 'ri-file-list-line' }
+  const isPlus = indicatorValue >= 0
+
+  const visibleEntries = expanded ? entries : entries.slice(0, MAX_VISIBLE)
+  const hasMore = entries.length > MAX_VISIBLE
 
   return (
-    <Card className='mb-4'>
-      <CardContent className='pb-2'>
-        <div className='flex items-center justify-between mb-2'>
-          <div className='flex items-center gap-2'>
-            <Chip label={cfg.label} size='small'
-                  sx={{ bgcolor: cfg.bg, color: cfg.text, fontWeight: 600, fontSize: 11 }} />
-            <Typography variant='caption' color='text.secondary'>
-              {entries.length} entri
-            </Typography>
+    <Card className='mb-4' sx={{ overflow: 'hidden' }}>
+      {/* Header */}
+      <Box sx={{ px: 3, py: 1.5, bgcolor: isPlus ? '#E6F9EE' : '#FFE9EA' }}>
+        <div className='flex items-start justify-between gap-3'>
+          <div className='flex items-start gap-2 flex-1'>
+            <i className={cfg.icon} style={{ fontSize: 18, color: cfg.text, marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <Typography variant='body2' fontWeight={700} color='text.primary'>
+                {indicatorName}
+              </Typography>
+              <div className='flex items-center gap-2 mt-0.5 flex-wrap'>
+                <Typography variant='caption' color='text.secondary'>{categoryName}</Typography>
+                <Chip label={cfg.label} size='small'
+                      sx={{ bgcolor: cfg.bg, color: cfg.text, fontWeight: 600, fontSize: 10, height: 18 }} />
+                <Typography variant='caption' color='text.secondary'>
+                  {entries.length} peserta
+                </Typography>
+              </div>
+            </div>
           </div>
-          <Typography variant='body2' fontWeight={600}
-                      sx={{ color: total >= 0 ? 'success.main' : 'error.main' }}>
-            {fmtVal(parseFloat(total.toFixed(2)))}
-          </Typography>
+          {/* Nilai per indikator — bukan dijumlah, langsung dari indikator */}
+          <Chip
+            label={fmtVal(indicatorValue)}
+            size='small'
+            color={isPlus ? 'success' : 'error'}
+            variant='tonal'
+            sx={{ fontWeight: 700, flexShrink: 0 }}
+          />
         </div>
-      </CardContent>
+      </Box>
 
+      {/* Daftar peserta */}
       {isMobile ? (
-        <div className='px-4 pb-4 flex flex-col gap-2'>
-          {entries.map(e => (
-            <Card key={e.id} variant='outlined'>
-              <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                <div className='flex items-start justify-between gap-2'>
-                  <div className='flex items-center gap-2 flex-1'>
-                    <Avatar sx={{ width: 28, height: 28, fontSize: 10 }}>
-                      {getInitials(e.student?.full_name || '')}
-                    </Avatar>
-                    <div>
+        <>
+          <div className='px-3 py-3 flex flex-col gap-2'>
+            {visibleEntries.map(e => (
+              <Box key={e.id} className='flex items-center justify-between gap-2 p-2 rounded-lg'
+                   sx={{ bgcolor: 'action.hover' }}>
+                <div className='flex items-center gap-2 flex-1 min-w-0'>
+                  <Avatar sx={{ width: 28, height: 28, fontSize: 10, flexShrink: 0 }}>
+                    {getInitials(e.student?.full_name || '')}
+                  </Avatar>
+                  <div className='min-w-0'>
+                    <Typography variant='body2' fontWeight={500} noWrap>
+                      {e.student?.full_name || '—'}
+                    </Typography>
+                    <Typography variant='caption' color='text.secondary'>
+                      {e.student?.student_profile?.nim || '—'} · {fmtDate(e.event_date)}
+                    </Typography>
+                  </div>
+                </div>
+                {e.status === 'DISPENSED' && (
+                  <Chip label='Dispensasi' size='small' color='info' variant='tonal' sx={{ fontSize: 10, flexShrink: 0 }} />
+                )}
+              </Box>
+            ))}
+          </div>
+          {hasMore && (
+            <Box className='px-3 pb-3'>
+              <Button fullWidth variant='tonal' color='secondary' size='small'
+                      onClick={() => setExpanded(v => !v)}
+                      startIcon={<i className={expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} />}>
+                {expanded ? 'Sembunyikan' : `Lihat ${entries.length - MAX_VISIBLE} peserta lainnya`}
+              </Button>
+            </Box>
+          )}
+        </>
+      ) : (
+        <>
+          <Table size='small'>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                {['#', 'Mahasiswa', 'NIM', 'Sindikat', 'Tanggal', 'Status'].map(h => (
+                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                    {h}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {visibleEntries.map((e, idx) => (
+                <TableRow key={e.id} hover>
+                  <TableCell width={40}>
+                    <Typography variant='caption' color='text.secondary'>{idx + 1}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <div className='flex items-center gap-2'>
+                      <Avatar sx={{ width: 28, height: 28, fontSize: 10 }}>
+                        {getInitials(e.student?.full_name || '')}
+                      </Avatar>
                       <Typography variant='body2' fontWeight={500}>
                         {e.student?.full_name || '—'}
                       </Typography>
-                      <Typography variant='caption' color='text.secondary'>
-                        {e.indicator?.name}
-                      </Typography>
-                      <Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>
-                        {fmtDate(e.event_date)}
-                      </Typography>
                     </div>
-                  </div>
-                  <Chip label={fmtVal(e.value)} size='small'
-                        color={e.value >= 0 ? 'success' : 'error'} variant='tonal'
-                        sx={{ fontWeight: 700 }} />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Table size='small'>
-          <TableHead>
-            <TableRow sx={{ bgcolor: 'action.hover' }}>
-              {['Mahasiswa', 'NIM', 'Indikator', 'Tanggal', 'Nilai', 'Status'].map(h => (
-                <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                  {h}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {entries.map(e => (
-              <TableRow key={e.id} hover>
-                <TableCell>
-                  <div className='flex items-center gap-2'>
-                    <Avatar sx={{ width: 30, height: 30, fontSize: 10 }}>
-                      {getInitials(e.student?.full_name || '')}
-                    </Avatar>
-                    <Typography variant='body2' fontWeight={500}>
-                      {e.student?.full_name || '—'}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant='caption' color='text.secondary'>
+                      {e.student?.student_profile?.nim || '—'}
                     </Typography>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Typography variant='caption' color='text.secondary'>
-                    {e.student?.student_profile?.nim || '—'}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant='body2'>{e.indicator?.name}</Typography>
-                  <Typography variant='caption' color='text.secondary'>
-                    {e.indicator?.variable?.category?.name}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant='caption'>{fmtDate(e.event_date)}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip label={fmtVal(e.value)} size='small'
-                        color={e.value >= 0 ? 'success' : 'error'} variant='tonal'
-                        sx={{ fontWeight: 700 }} />
-                </TableCell>
-                <TableCell>
-                  <Chip label={e.status === 'DISPENSED' ? 'Dispensasi' : 'Valid'}
-                        size='small'
-                        color={e.status === 'DISPENSED' ? 'info' : 'success'}
-                        variant='tonal' />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant='caption' color='text.secondary'>
+                      {e.student?.student_profile?.syndicate?.name || '—'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant='caption'>{fmtDate(e.event_date)}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={e.status === 'DISPENSED' ? 'Dispensasi' : 'Valid'}
+                      size='small'
+                      color={e.status === 'DISPENSED' ? 'info' : 'success'}
+                      variant='tonal'
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          {hasMore && (
+            <Box className='px-4 py-2 flex justify-center'>
+              <Button variant='tonal' color='secondary' size='small'
+                      onClick={() => setExpanded(v => !v)}
+                      startIcon={<i className={expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} />}>
+                {expanded ? 'Sembunyikan' : `Lihat ${entries.length - MAX_VISIBLE} peserta lainnya`}
+              </Button>
+            </Box>
+          )}
+        </>
       )}
     </Card>
   )
 }
+
+const PAGE_SIZE = 10
 
 // ── Main View ─────────────────────────────────────────────────────────────────
 const NimenRekapView = () => {
@@ -164,25 +206,26 @@ const NimenRekapView = () => {
     ? (() => { try { return JSON.parse(atob(session.user.accessToken.split('.')[1])) } catch { return {} } })()
     : {}
   const isDeveloper = jwtPayload?.is_developer === true
-  const isAdmin = isDeveloper || roles.includes('admin_nimen')
+  const isAdmin = isDeveloper || roles.some(r => (typeof r === 'string' ? r : r.name) === 'admin_nimen')
   const studentId = session?.user?.id
 
-  // Admin state
-  const [batches, setBatches] = useState([])
-  const [batchID, setBatchID] = useState('')
+  const [batches, setBatches]           = useState([])
+  const [batchID, setBatchID]           = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
-  const [studentFilter, setStudentFilter] = useState(null)
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [students, setStudents] = useState([])
-  const [entries, setEntries] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [hasLoaded, setHasLoaded] = useState(false)
-  const [infoMsg, setInfoMsg] = useState('')
+  const [selectedStudents, setSelectedStudents] = useState([])
+  const [dateFrom, setDateFrom]         = useState('')
+  const [dateTo, setDateTo]             = useState('')
+  const [students, setStudents]         = useState([])
+  const [studentsLoading, setStudentsLoading] = useState(false)
+  const [entries, setEntries]           = useState([])
+  const [loading, setLoading]           = useState(false)
+  const [hasLoaded, setHasLoaded]       = useState(false)
+  const [infoMsg, setInfoMsg]           = useState('')
+  const [page, setPage]                 = useState(1)
 
-  // Mahasiswa state
-  const [myEntries, setMyEntries] = useState([])
-  const [myLoading, setMyLoading] = useState(false)
+  const [myEntries, setMyEntries]       = useState([])
+  const [myLoading, setMyLoading]       = useState(false)
+  const [myPage, setMyPage]             = useState(1)
 
   useEffect(() => {
     if (isAdmin) {
@@ -196,65 +239,111 @@ const NimenRekapView = () => {
     }
   }, [isAdmin, studentId])
 
-  // Load students when batch changes
   useEffect(() => {
-    if (!batchID) return
-    studentsApi?.getAll({ batch_id: batchID, page: 1, page_size: 200 })
-      .then(r => setStudents(r.data.data?.data || []))
-      .catch(() => {})
+    if (!batchID) { setStudents([]); return }
+    setStudentsLoading(true)
+    setSelectedStudents([]);
+
+    // Fetch semua mahasiswa dengan pagination loop (BE max 100 per page)
+    (async () => {
+      try {
+        let all = []
+        let currentPage = 1
+        while (true) {
+          const res = await studentsApi.getAll({
+            batch_id: parseInt(batchID),
+            page: currentPage,
+            page_size: 100,
+          })
+          const items = res.data.data?.data || []
+          all = [...all, ...items]
+          const pagination = res.data.data?.pagination
+          if (!pagination || currentPage >= pagination.total_pages) break
+          currentPage++
+        }
+        setStudents(all)
+      } catch {}
+      finally { setStudentsLoading(false) }
+    })()
   }, [batchID])
 
   const handleTampilkan = useCallback(async () => {
     if (!batchID) return
     setLoading(true)
     setHasLoaded(false)
+    setPage(1)
     try {
       const params = {}
       if (sourceFilter) params.source_type = sourceFilter
-      if (studentFilter) params.student_id = studentFilter.id
+      if (selectedStudents.length === 1) params.student_id = selectedStudents[0].id
       if (dateFrom) params.date_from = dateFrom
       if (dateTo) params.date_to = dateTo
 
       const res = await nimenRankingApi.getBatchEntries(batchID, params)
-      const data = res.data.data || []
+      let data = res.data.data || []
+
+      if (selectedStudents.length > 1) {
+        const ids = new Set(selectedStudents.map(s => s.id))
+        data = data.filter(e => ids.has(e.student_id))
+      }
+
       setEntries(data)
       setHasLoaded(true)
 
       const batch = batches.find(b => b.id === parseInt(batchID))
-      if (studentFilter) {
-        setInfoMsg(`Menampilkan rekap nilai atas nama ${studentFilter.full_name} (${studentFilter.student_profile?.nim || '—'})`)
+      if (selectedStudents.length > 0) {
+        setInfoMsg(`Rekap nilai ${selectedStudents.length} mahasiswa terpilih — angkatan ${batch?.name || ''}`)
       } else {
-        setInfoMsg(`Menampilkan rekap nilai seluruh mahasiswa angkatan ${batch?.name || ''}`)
+        setInfoMsg(`Rekap nilai seluruh mahasiswa — angkatan ${batch?.name || ''}`)
       }
     } catch {
       setInfoMsg('')
     } finally {
       setLoading(false)
     }
-  }, [batchID, sourceFilter, studentFilter, dateFrom, dateTo, batches])
+  }, [batchID, sourceFilter, selectedStudents, dateFrom, dateTo, batches])
 
-  // Group entries by source_type
+  // Group per indikator — nilai diambil dari indikator bukan dijumlah
   const grouped = useMemo(() => {
     const g = {}
     entries.forEach(e => {
-      const src = e.source_type || 'UNKNOWN'
-      if (!g[src]) g[src] = []
-      g[src].push(e)
+      const key = e.indicator_id || 'unknown'
+      if (!g[key]) g[key] = {
+        indicatorName:  e.indicator?.name || '—',
+        categoryName:   e.indicator?.variable?.category?.name || '—',
+        indicatorValue: e.indicator?.value ?? e.value, // nilai dari indikator
+        entries: [],
+      }
+      g[key].entries.push(e)
     })
-    return g
+    return Object.values(g).sort((a, b) => b.indicatorValue - a.indicatorValue)
   }, [entries])
 
-  const selectedBatch = batches.find(b => b.id === parseInt(batchID))
+  // Pagination untuk grouped sections
+  const totalPages = Math.ceil(grouped.length / PAGE_SIZE)
+  const pagedGrouped = grouped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  // ── useMemo mahasiswa (harus di luar conditional) ──────────────────────────
+  const myGrouped = useMemo(() => {
+    const g = {}
+    myEntries.forEach(e => {
+      const key = e.indicator_id || 'unknown'
+      if (!g[key]) g[key] = {
+        indicatorName:  e.indicator?.name || '—',
+        categoryName:   e.indicator?.variable?.category?.name || '—',
+        indicatorValue: e.indicator?.value ?? e.value,
+        entries: [],
+      }
+      g[key].entries.push(e)
+    })
+    return Object.values(g).sort((a, b) => b.indicatorValue - a.indicatorValue)
+  }, [myEntries])
+
+  const totalMyPages = Math.ceil(myGrouped.length / PAGE_SIZE)
+  const pagedMyGrouped = myGrouped.slice((myPage - 1) * PAGE_SIZE, myPage * PAGE_SIZE)
 
   // ── MAHASISWA VIEW ──────────────────────────────────────────────────────────
   if (!isAdmin) {
-    const myGrouped = {}
-    myEntries.forEach(e => {
-      const src = e.source_type || 'UNKNOWN'
-      if (!myGrouped[src]) myGrouped[src] = []
-      myGrouped[src].push(e)
-    })
-    const myTotal = myEntries.reduce((s, e) => s + e.value, 0)
 
     return (
       <>
@@ -277,15 +366,14 @@ const NimenRekapView = () => {
           </Card>
         ) : (
           <>
-            {/* Stats */}
             <Grid container spacing={4} className='mb-6'>
               {[
-                { label: 'Total Entri', value: myEntries.length, icon: 'ri-list-check-line', color: '#FF4C51', bg: '#FFE9EA' },
-                { label: 'Total Nilai', value: fmtVal(parseFloat(myTotal.toFixed(2))), icon: 'ri-medal-line', color: '#28C76F', bg: '#E6F9EE' },
+                { label: 'Total Kegiatan', value: myGrouped.length, icon: 'ri-list-check-line', color: '#FF4C51', bg: '#FFE9EA' },
+                { label: 'Total Entri',    value: myEntries.length, icon: 'ri-medal-line',      color: '#28C76F', bg: '#E6F9EE' },
               ].map(s => (
                 <Grid item xs={6} key={s.label}>
                   <Card>
-                    <CardContent className='flex items-center gap-3'>
+                    <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
                       <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
                       </div>
@@ -299,9 +387,17 @@ const NimenRekapView = () => {
               ))}
             </Grid>
 
-            {Object.entries(myGrouped).map(([src, items]) => (
-              <EntrySection key={src} sourceType={src} entries={items} isMobile={isMobile} />
+            {pagedMyGrouped.map((g, idx) => (
+              <IndicatorSection key={idx} {...g} isMobile={isMobile} />
             ))}
+
+            {totalMyPages > 1 && (
+              <div className='flex justify-center mt-4'>
+                <Pagination count={totalMyPages} page={myPage}
+                            onChange={(_, p) => { setMyPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                            color='primary' shape='rounded' />
+              </div>
+            )}
           </>
         )}
       </>
@@ -322,16 +418,25 @@ const NimenRekapView = () => {
         <CardContent>
           <Typography variant='subtitle1' fontWeight={600} className='mb-4'>Filter Rekap Nilai</Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth size='small'>
                 <InputLabel>Angkatan</InputLabel>
-                <Select label='Angkatan' value={batchID}
-                        onChange={e => { setBatchID(e.target.value); setHasLoaded(false); setStudentFilter(null) }}
-                        renderValue={val => {
-                          const b = batches.find(x => x.id === parseInt(val))
-                          if (!b) return ''
-                          return `${b.name} · ke-${b.batch_number} (${b.year}) · ${b.program_type || 'S1'}`
-                        }}>
+                <Select
+                  label='Angkatan'
+                  value={batchID}
+                  onChange={e => { setBatchID(e.target.value); setHasLoaded(false) }}
+                  renderValue={val => {
+                    const b = batches.find(x => x.id === parseInt(val))
+                    if (!b) return ''
+                    return (
+                      <div className='flex items-center justify-between gap-2'>
+                        <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
+                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
+                              color={b.program_type === 'S2' ? 'info' : 'success'}
+                              sx={{ flexShrink: 0 }} />
+                      </div>
+                    )
+                  }}>
                   {batches.map(b => (
                     <MenuItem key={b.id} value={b.id}>
                       <div className='flex items-center justify-between w-full gap-2'>
@@ -349,7 +454,8 @@ const NimenRekapView = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={4}>
+
+            <Grid item xs={12} md={6}>
               <FormControl fullWidth size='small'>
                 <InputLabel>Sumber Nilai</InputLabel>
                 <Select label='Sumber Nilai' value={sourceFilter}
@@ -361,32 +467,78 @@ const NimenRekapView = () => {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12} sm={4}>
+
+            <Grid item xs={12}>
               <Autocomplete
+                multiple
                 size='small'
                 options={students}
-                getOptionLabel={s => `${s.full_name} (${s.student_profile?.nim || '—'})`}
-                value={studentFilter}
-                onChange={(_, val) => setStudentFilter(val)}
+                loading={studentsLoading}
+                getOptionLabel={s => s.full_name || ''}
+                isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                value={selectedStudents}
+                onChange={(_, val) => setSelectedStudents(val)}
                 disabled={!batchID}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id}>
+                    <div className='flex items-center gap-2'>
+                      <Avatar sx={{ width: 28, height: 28, fontSize: 10 }}>
+                        {getInitials(option.full_name || '')}
+                      </Avatar>
+                      <div>
+                        <Typography variant='body2' fontWeight={500}>{option.full_name}</Typography>
+                        <Typography variant='caption' color='text.secondary'>
+                          {option.student_profile?.nim || '—'}
+                        </Typography>
+                      </div>
+                    </div>
+                  </li>
+                )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => {
+                    const tagProps = getTagProps({ index })
+                    return (
+                      <Chip
+                        {...tagProps}
+                        key={option.id}
+                        label={option.full_name}
+                        size='small'
+                        color='primary'
+                        variant='tonal'
+                      />
+                    )
+                  })
+                }
                 renderInput={params => (
-                  <TextField {...params} label='Mahasiswa (opsional)'
-                             placeholder={batchID ? 'Pilih mahasiswa...' : 'Pilih angkatan dulu'} />
+                  <TextField {...params} label='Nama Mahasiswa'
+                             placeholder={batchID ? 'Pilih satu atau lebih mahasiswa...' : 'Pilih angkatan dulu'}
+                             InputProps={{
+                               ...params.InputProps,
+                               endAdornment: (
+                                 <>
+                                   {studentsLoading ? <CircularProgress size={14} /> : null}
+                                   {params.InputProps.endAdornment}
+                                 </>
+                               ),
+                             }}
+                  />
                 )}
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+
+            <Grid item xs={12} md={6}>
               <TextField fullWidth size='small' type='date' label='Dari Tanggal'
                          value={dateFrom} onChange={e => setDateFrom(e.target.value)}
                          InputLabelProps={{ shrink: true }} />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} md={6}>
               <TextField fullWidth size='small' type='date' label='Sampai Tanggal'
                          value={dateTo} onChange={e => setDateTo(e.target.value)}
                          InputLabelProps={{ shrink: true }}
                          inputProps={{ min: dateFrom || undefined }} />
             </Grid>
-            <Grid item xs={12} sm={4}>
+
+            <Grid item xs={12}>
               <Button fullWidth variant='contained' onClick={handleTampilkan}
                       disabled={loading || !batchID}
                       startIcon={loading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-search-line' />}>
@@ -403,49 +555,44 @@ const NimenRekapView = () => {
           <CardContent className='text-center py-16'>
             <i className='ri-bar-chart-grouped-line text-6xl opacity-20 block mb-3' />
             <Typography variant='body1' color='text.secondary'>
-              Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai,
-              atau pilih mahasiswa tertentu untuk melihat nilai individu.
+              Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
             </Typography>
           </CardContent>
         </Card>
       )}
 
-      {/* Info banner */}
-      {hasLoaded && infoMsg && (
-        <Alert severity='info' icon={<i className='ri-information-line' />} className='mb-4'>
-          {infoMsg}
-          {selectedBatch && (
-            <span className='ml-1'>
-              · <strong>{selectedBatch.program_type || 'S1'}</strong>
-            </span>
-          )}
-        </Alert>
-      )}
-
-      {/* Stats */}
+      {/* Info + Stats */}
       {hasLoaded && (
-        <Grid container spacing={4} className='mb-6'>
-          {[
-            { label: 'Total Mahasiswa', value: new Set(entries.map(e => e.student_id)).size, icon: 'ri-group-line', color: '#FF4C51', bg: '#FFE9EA' },
-            { label: 'Total Sumber Kegiatan', value: Object.keys(grouped).length, icon: 'ri-stack-line', color: '#7367F0', bg: '#F3EDFF' },
-          ].map(s => (
-            <Grid item xs={6} key={s.label}>
-              <Card>
-                <CardContent className='flex items-center gap-3'>
-                  <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
-                  </div>
-                  <div>
-                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                    <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 10, sm: 12 } }}>
-                      {s.label}
-                    </Typography>
-                  </div>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <>
+          {infoMsg && (
+            <Alert severity='info' icon={<i className='ri-information-line' />} className='mb-4'>
+              {infoMsg}
+            </Alert>
+          )}
+
+          <Grid container spacing={4} className='mb-6'>
+            {[
+              { label: 'Mahasiswa',      value: new Set(entries.map(e => e.student_id)).size, icon: 'ri-group-line',  color: '#FF4C51', bg: '#FFE9EA' },
+              { label: 'Jenis Kegiatan', value: grouped.length,                               icon: 'ri-stack-line', color: '#7367F0', bg: '#F3EDFF' },
+            ].map(s => (
+              <Grid item xs={6} key={s.label}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
+                    </div>
+                    <div>
+                      <Typography variant='h4' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
+                      <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 10, sm: 12 } }}>
+                        {s.label}
+                      </Typography>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </>
       )}
 
       {/* Empty result */}
@@ -460,10 +607,18 @@ const NimenRekapView = () => {
         </Card>
       )}
 
-      {/* Grouped sections */}
-      {hasLoaded && Object.entries(grouped).map(([src, items]) => (
-        <EntrySection key={src} sourceType={src} entries={items} isMobile={isMobile} />
+      {/* Grouped per indikator dengan pagination */}
+      {hasLoaded && pagedGrouped.map((g, idx) => (
+        <IndicatorSection key={idx} {...g} isMobile={isMobile} />
       ))}
+
+      {hasLoaded && totalPages > 1 && (
+        <div className='flex justify-center mt-4 mb-6'>
+          <Pagination count={totalPages} page={page}
+                      onChange={(_, p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                      color='primary' shape='rounded' />
+        </div>
+      )}
     </>
   )
 }
