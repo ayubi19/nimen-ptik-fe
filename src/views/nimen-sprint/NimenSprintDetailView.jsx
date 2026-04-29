@@ -41,6 +41,8 @@ import FormControlLabel from '@mui/material/FormControlLabel'
 import Step from '@mui/material/Step'
 import StepLabel from '@mui/material/StepLabel'
 import Stepper from '@mui/material/Stepper'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { nimenSprintApi } from '@/libs/api/nimenSprintApi'
 import { nimenAttachmentApi, nimenParticipantDocApi } from '@/libs/api/nimenDocumentApi'
 import DocumentManager from '@/components/nimen/DocumentManager'
@@ -74,6 +76,8 @@ const decodeJwt = (token) => {
 const NimenSprintDetailView = ({ sprintId }) => {
   const router = useRouter()
   const { data: session } = useSession()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
   const [sprint, setSprint] = useState(null)
   const [participants, setParticipants] = useState([])
   const [attachments, setAttachments] = useState([])
@@ -259,17 +263,73 @@ const NimenSprintDetailView = ({ sprintId }) => {
 
   return (
     <>
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2 mb-6'>
+        <Typography variant='caption' color='text.secondary'
+                    sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    onClick={() => router.push('/nimen/sprints')}>
+          Daftar Sprint
+        </Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary' noWrap
+                    sx={{ maxWidth: { xs: 160, sm: 'none' } }}>
+          {sprint.sprint_number}
+        </Typography>
+      </div>
+
       <Grid container spacing={6}>
 
         {/* Stepper Status */}
         <Grid item xs={12}>
           <Card>
-            <CardContent>
-              <Stepper activeStep={statusCfg.step} alternativeLabel>
-                {SPRINT_STEPS.map(label => (
-                  <Step key={label}><StepLabel>{label}</StepLabel></Step>
-                ))}
-              </Stepper>
+            <CardContent sx={{ py: { xs: 1.5, md: 2 } }}>
+              {isMobile ? (
+                // Mobile — horizontal scrollable steps
+                <Box sx={{ overflowX: 'auto', pb: 0.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content', gap: 0 }}>
+                    {SPRINT_STEPS.map((label, i) => {
+                      const isDone = i < statusCfg.step
+                      const isActive = i === statusCfg.step
+                      return (
+                        <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                            <Box sx={{
+                              width: 28, height: 28, borderRadius: '50%',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 12, fontWeight: 700,
+                              bgcolor: isDone || isActive ? 'primary.main' : 'action.hover',
+                              color: isDone || isActive ? '#fff' : 'text.secondary',
+                            }}>
+                              {isDone ? <i className='ri-check-line' style={{ fontSize: 13 }} /> : i + 1}
+                            </Box>
+                            <Typography variant='caption'
+                                        sx={{
+                                          fontSize: 10, whiteSpace: 'nowrap',
+                                          color: isActive ? 'primary.main' : isDone ? 'text.primary' : 'text.secondary',
+                                          fontWeight: isActive ? 700 : 400,
+                                        }}>
+                              {label}
+                            </Typography>
+                          </div>
+                          {i < SPRINT_STEPS.length - 1 && (
+                            <Box sx={{
+                              width: 32, height: 2, mx: 0.5, mb: 2.5, flexShrink: 0,
+                              bgcolor: isDone ? 'primary.main' : 'divider',
+                            }} />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Box>
+              ) : (
+                // Desktop — standard MUI stepper
+                <Stepper activeStep={statusCfg.step} alternativeLabel>
+                  {SPRINT_STEPS.map(label => (
+                    <Step key={label}><StepLabel>{label}</StepLabel></Step>
+                  ))}
+                </Stepper>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -278,23 +338,41 @@ const NimenSprintDetailView = ({ sprintId }) => {
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <div className='flex flex-wrap items-start justify-between gap-4'>
-                <div>
-                  <div className='flex items-center gap-3 mb-2'>
-                    <Typography variant='h5'>{sprint.title}</Typography>
-                    <Chip label={statusCfg.label} color={statusCfg.color} size='small' variant='tonal' />
+              {/* Title + Status */}
+              <div className='flex items-start justify-between gap-2 mb-3 flex-wrap'>
+                <div className='flex items-center gap-2 flex-wrap flex-1 min-w-0'>
+                  <Typography variant='h6' fontWeight={600} sx={{ wordBreak: 'break-word' }}>
+                    {sprint.title}
+                  </Typography>
+                  <Chip label={statusCfg.label} color={statusCfg.color} size='small' variant='tonal'
+                        sx={{ flexShrink: 0 }} />
+                </div>
+              </div>
+
+              {/* Info baris */}
+              <div className='flex flex-col gap-1.5 mb-4'>
+                <div className='flex items-center gap-2'>
+                  <i className='ri-file-list-3-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
+                  <Typography variant='body2' color='text.secondary'>{sprint.sprint_number}</Typography>
+                </div>
+                {sprint.location && (
+                  <div className='flex items-center gap-2'>
+                    <i className='ri-map-pin-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
+                    <Typography variant='body2' color='text.secondary'>{sprint.location}</Typography>
                   </div>
-                  <Typography variant='body2' color='text.secondary' className='mb-1'>
-                    <i className='ri-file-list-3-line mr-1' />{sprint.sprint_number}
-                    {sprint.location && <><i className='ri-map-pin-line ml-3 mr-1' />{sprint.location}</>}
-                  </Typography>
+                )}
+                <div className='flex items-center gap-2'>
+                  <i className='ri-calendar-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
                   <Typography variant='body2' color='text.secondary'>
-                    <i className='ri-calendar-line mr-1' />
-                    {new Date(sprint.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                    {new Date(sprint.event_date).toLocaleDateString('id-ID', {
+                      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
+                    })}
                   </Typography>
-                  {(sprint.coordinators?.length > 0 || sprint.coordinator) && (
-                    <Typography variant='body2' color='text.secondary' className='mt-1'>
-                      <i className='ri-user-star-line mr-1' />
+                </div>
+                {(sprint.coordinators?.length > 0 || sprint.coordinator) && (
+                  <div className='flex items-center gap-2'>
+                    <i className='ri-user-star-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
+                    <Typography variant='body2' color='text.secondary'>
                       Koordinator:{' '}
                       <strong>
                         {sprint.coordinators?.length > 0
@@ -302,50 +380,61 @@ const NimenSprintDetailView = ({ sprintId }) => {
                           : sprint.coordinator?.full_name}
                       </strong>
                     </Typography>
-                  )}
-                </div>
-                <div className='flex flex-wrap gap-2'>
-                  {/* Tombol berdasarkan status & role */}
-                  {isEditable && isAdmin && (
-                    <>
-                      <Button variant='tonal' startIcon={<i className='ri-edit-line' />}
-                        onClick={() => router.push(`/nimen/sprints/${sprintId}/edit`)}>
-                        Edit
-                      </Button>
-                      <Button variant='contained' color='warning'
-                        startIcon={<i className='ri-send-plane-line' />}
-                        onClick={handleOpenSend}
-                        disabled={quotaUsed === 0}>
-                        Kirim ke Koordinator
-                      </Button>
-                    </>
-                  )}
-                  {isReviewSubmitted && isAdmin && (
-                    <Button variant='contained' color='success'
-                      startIcon={<i className='ri-check-double-line' />}
-                      onClick={handleOpenFinalize}>
-                      Finalisasi Sprint
+                  </div>
+                )}
+              </div>
+
+              <Divider className='mb-4' />
+
+              {/* Action buttons */}
+              <div className={`flex flex-wrap gap-2 ${isMobile ? 'flex-col' : 'items-center'}`}>
+                {isEditable && isAdmin && (
+                  <>
+                    <Button variant='tonal' color='secondary'
+                            startIcon={<i className='ri-edit-line' />}
+                            fullWidth={isMobile}
+                            onClick={() => router.push(`/nimen/sprints/${sprintId}/edit`)}>
+                      Edit
                     </Button>
-                  )}
-                  {sprint.status === 'ACTIVE' && isAdmin && (
                     <Button variant='contained' color='warning'
-                      startIcon={<i className='ri-shield-check-line' />}
-                      onClick={() => router.push(`/nimen/sprints/${sprintId}/approval`)}>
-                      Approval Nilai
+                            startIcon={<i className='ri-send-plane-line' />}
+                            fullWidth={isMobile}
+                            onClick={handleOpenSend}
+                            disabled={quotaUsed === 0}>
+                      Kirim ke Koordinator
                     </Button>
-                  )}
-                  {isDraftPejabat && isCoordinator && (
-                    <Button variant='contained' color='info'
-                      startIcon={<i className='ri-edit-box-line' />}
-                      onClick={() => router.push(`/nimen/sprints/${sprintId}/coordinator-review`)}>
-                      Review Peserta
-                    </Button>
-                  )}
-                  <Button variant='tonal' color='secondary' startIcon={<i className='ri-arrow-left-line' />}
-                    onClick={() => router.push('/nimen/sprints')}>
-                    Kembali
+                  </>
+                )}
+                {isReviewSubmitted && isAdmin && (
+                  <Button variant='contained' color='success'
+                          startIcon={<i className='ri-check-double-line' />}
+                          fullWidth={isMobile}
+                          onClick={handleOpenFinalize}>
+                    Finalisasi Sprint
                   </Button>
-                </div>
+                )}
+                {sprint.status === 'ACTIVE' && isAdmin && (
+                  <Button variant='contained' color='warning'
+                          startIcon={<i className='ri-shield-check-line' />}
+                          fullWidth={isMobile}
+                          onClick={() => router.push(`/nimen/sprints/${sprintId}/approval`)}>
+                    Approval Nilai
+                  </Button>
+                )}
+                {isDraftPejabat && isCoordinator && (
+                  <Button variant='contained' color='info'
+                          startIcon={<i className='ri-edit-box-line' />}
+                          fullWidth={isMobile}
+                          onClick={() => router.push(`/nimen/sprints/${sprintId}/coordinator-review`)}>
+                    Review Peserta
+                  </Button>
+                )}
+                <Button variant='tonal' color='secondary'
+                        startIcon={<i className='ri-arrow-left-line' />}
+                        fullWidth={isMobile}
+                        onClick={() => router.push('/nimen/sprints')}>
+                  Kembali
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -424,47 +513,83 @@ const NimenSprintDetailView = ({ sprintId }) => {
         </Grid>
 
         {/* Daftar Peserta */}
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12}>
           <Card>
-            <CardHeader
-              title={
-                <div className='flex items-center gap-3'>
-                  <span>Daftar Peserta</span>
+            <CardContent sx={{ pb: 1 }}>
+              <div className='flex items-center justify-between flex-wrap gap-2 mb-3'>
+                <div className='flex items-center gap-2'>
+                  <Typography variant='subtitle1' fontWeight={600}>Daftar Peserta</Typography>
                   <Chip label={`${quotaUsed} / ${sprint.participant_quota}`} size='small'
-                    color={quotaUsed >= sprint.participant_quota ? 'success' : 'warning'} variant='tonal' />
+                        color={quotaUsed >= sprint.participant_quota ? 'success' : 'warning'} variant='tonal' />
                 </div>
-              }
-              action={
-                isEditable && isAdmin && quotaUsed < sprint.participant_quota && (
+                {isEditable && isAdmin && quotaUsed < sprint.participant_quota && (
                   <Button variant='contained' size='small'
-                    startIcon={generatorLoading ? <CircularProgress size={14} color='inherit' /> : <i className='ri-magic-line' />}
-                    onClick={handleGenerate} disabled={generatorLoading}>
+                          startIcon={generatorLoading ? <CircularProgress size={14} color='inherit' /> : <i className='ri-magic-line' />}
+                          onClick={handleGenerate} disabled={generatorLoading}>
                     Generator Peserta
                   </Button>
-                )
-              }
-            />
-            <Box sx={{ px: 2, pb: 1 }}>
+                )}
+              </div>
               <LinearProgress variant='determinate' value={quotaPercent}
-                color={quotaUsed >= sprint.participant_quota ? 'success' : 'warning'}
-                sx={{ height: 6, borderRadius: 3 }}
+                              color={quotaUsed >= sprint.participant_quota ? 'success' : 'warning'}
+                              sx={{ height: 6, borderRadius: 3, mb: 2 }}
               />
-            </Box>
+            </CardContent>
             <Divider />
             {participants.length === 0 ? (
               <Box className='flex flex-col items-center justify-center py-10 gap-2' sx={{ color: 'text.secondary' }}>
                 <i className='ri-group-line text-5xl opacity-30' />
                 <Typography variant='body2'>Belum ada peserta.</Typography>
               </Box>
+            ) : isMobile ? (
+              // Mobile — Card list
+              <div className='p-3 flex flex-col gap-2'>
+                {participants.map(p => {
+                  const student = p.student
+                  const profile = student?.student_profile
+                  const approvalCfg = APPROVAL_CONFIG[p.approval_status] || { label: p.approval_status, color: 'default' }
+                  return (
+                    <Card key={p.id} variant='outlined'>
+                      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                        <div className='flex items-start justify-between gap-2'>
+                          <div className='flex items-center gap-2 flex-1 min-w-0'>
+                            <Avatar sx={{ width: 32, height: 32, fontSize: 11, flexShrink: 0 }}>
+                              {getInitials(student?.full_name || '')}
+                            </Avatar>
+                            <div className='min-w-0'>
+                              <Typography variant='body2' fontWeight={600} noWrap>{student?.full_name}</Typography>
+                              <Typography variant='caption' color='text.secondary'>
+                                {profile?.nim || '—'} · {profile?.syndicate?.name || '—'}
+                              </Typography>
+                            </div>
+                          </div>
+                          <div className='flex items-center gap-1 flex-shrink-0'>
+                            <Chip label={approvalCfg.label} color={approvalCfg.color} size='small' variant='tonal' />
+                            {isEditable && isAdmin && (
+                              <Tooltip title='Hapus dari sprint'>
+                                <IconButton size='small' color='error'
+                                            onClick={() => handleRemoveParticipant(p.id)}>
+                                  <i className='ri-delete-bin-line text-[16px]' />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
             ) : (
-              <Table size='small'>
+              // Desktop — Table full width
+              <Table>
                 <TableHead>
-                  <TableRow>
-                    <TableCell>Peserta</TableCell>
-                    <TableCell>NIM</TableCell>
-                    <TableCell>Sindikat</TableCell>
-                    <TableCell>Status</TableCell>
-                    {isEditable && isAdmin && <TableCell align='center'>Aksi</TableCell>}
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Peserta</TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>NIM</TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Sindikat</TableCell>
+                    <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Status</TableCell>
+                    {isEditable && isAdmin && <TableCell align='center' sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Aksi</TableCell>}
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -473,7 +598,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
                     const profile = student?.student_profile
                     const approvalCfg = APPROVAL_CONFIG[p.approval_status] || { label: p.approval_status, color: 'default' }
                     return (
-                      <TableRow key={p.id}>
+                      <TableRow key={p.id} hover>
                         <TableCell>
                           <div className='flex items-center gap-2'>
                             <Avatar sx={{ width: 32, height: 32, fontSize: 12 }}>
@@ -482,8 +607,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
                             <Typography variant='body2' fontWeight={600}>{student?.full_name}</Typography>
                           </div>
                         </TableCell>
-                        <TableCell><Typography variant='body2'>{profile?.nim || '-'}</Typography></TableCell>
-                        <TableCell><Typography variant='body2'>{profile?.syndicate?.name || '-'}</Typography></TableCell>
+                        <TableCell><Typography variant='body2'>{profile?.nim || '—'}</Typography></TableCell>
+                        <TableCell><Typography variant='body2'>{profile?.syndicate?.name || '—'}</Typography></TableCell>
                         <TableCell>
                           <Chip label={approvalCfg.label} color={approvalCfg.color} size='small' variant='tonal' />
                         </TableCell>
@@ -491,11 +616,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
                           <TableCell align='center'>
                             <Tooltip title='Hapus dari sprint'>
                               <IconButton size='small' color='error'
-                                onClick={() => handleRemoveParticipant(p.student_id)}
-                                disabled={removeLoading === p.student_id}>
-                                {removeLoading === p.student_id
-                                  ? <CircularProgress size={16} />
-                                  : <i className='ri-delete-bin-7-line' />}
+                                          onClick={() => handleRemoveParticipant(p.id)}>
+                                <i className='ri-delete-bin-line text-[18px]' />
                               </IconButton>
                             </Tooltip>
                           </TableCell>
@@ -553,9 +675,9 @@ const NimenSprintDetailView = ({ sprintId }) => {
                     <TableRow key={s.student_id} selected={selectedStudents.includes(s.student_id)}>
                       <TableCell padding='checkbox'>
                         <Checkbox checked={selectedStudents.includes(s.student_id)}
-                          onChange={e => setSelectedStudents(prev =>
-                            e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
-                          )} />
+                                  onChange={e => setSelectedStudents(prev =>
+                                    e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
+                                  )} />
                       </TableCell>
                       <TableCell><Typography variant='body2' fontWeight={600}>{s.full_name}</Typography></TableCell>
                       <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
@@ -577,9 +699,9 @@ const NimenSprintDetailView = ({ sprintId }) => {
                         <TableRow key={s.student_id}>
                           <TableCell padding='checkbox'>
                             <Checkbox checked={selectedStudents.includes(s.student_id)}
-                              onChange={e => setSelectedStudents(prev =>
-                                e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
-                              )} />
+                                      onChange={e => setSelectedStudents(prev =>
+                                        e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
+                                      )} />
                           </TableCell>
                           <TableCell><Typography variant='body2'>{s.full_name}</Typography></TableCell>
                           <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
@@ -602,8 +724,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
           </Typography>
           <Button variant='tonal' color='secondary' onClick={() => setGeneratorOpen(false)} disabled={addingLoading}>Batal</Button>
           <Button variant='contained' onClick={handleAddFromGenerator}
-            disabled={addingLoading || selectedStudents.length === 0}
-            startIcon={addingLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-user-add-line' />}>
+                  disabled={addingLoading || selectedStudents.length === 0}
+                  startIcon={addingLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-user-add-line' />}>
             {addingLoading ? 'Menambahkan...' : `Tambah ${selectedStudents.length} Peserta`}
           </Button>
         </DialogActions>
@@ -641,19 +763,19 @@ const NimenSprintDetailView = ({ sprintId }) => {
                 const isDisabled = !isSelected && selectedCoordinatorIDs.length >= 5
                 return (
                   <div key={c.user_id}
-                    onClick={() => {
-                      if (isDisabled) return
-                      setSelectedCoordinatorIDs(prev =>
-                        isSelected ? prev.filter(id => id !== c.user_id) : [...prev, c.user_id]
-                      )
-                    }}
-                    className='flex items-center gap-3 p-3 border rounded-lg cursor-pointer'
-                    style={{
-                      borderColor: isSelected ? '#7367f0' : undefined,
-                      backgroundColor: isSelected ? '#7367f010' : undefined,
-                      opacity: isDisabled ? 0.4 : 1,
-                      cursor: isDisabled ? 'not-allowed' : 'pointer',
-                    }}>
+                       onClick={() => {
+                         if (isDisabled) return
+                         setSelectedCoordinatorIDs(prev =>
+                           isSelected ? prev.filter(id => id !== c.user_id) : [...prev, c.user_id]
+                         )
+                       }}
+                       className='flex items-center gap-3 p-3 border rounded-lg cursor-pointer'
+                       style={{
+                         borderColor: isSelected ? '#7367f0' : undefined,
+                         backgroundColor: isSelected ? '#7367f010' : undefined,
+                         opacity: isDisabled ? 0.4 : 1,
+                         cursor: isDisabled ? 'not-allowed' : 'pointer',
+                       }}>
                     <div style={{
                       width: 20, height: 20, borderRadius: 4, border: '2px solid',
                       borderColor: isSelected ? '#7367f0' : '#ccc',
@@ -696,13 +818,13 @@ const NimenSprintDetailView = ({ sprintId }) => {
         <Divider />
         <DialogActions className='p-4 gap-2'>
           <Button variant='tonal' color='secondary'
-            onClick={() => { setSendOpen(false); setCoordinatorSearch('') }}
-            disabled={sendLoading}>
+                  onClick={() => { setSendOpen(false); setCoordinatorSearch('') }}
+                  disabled={sendLoading}>
             Batal
           </Button>
           <Button variant='contained' color='warning' onClick={handleSendToCoordinator}
-            disabled={sendLoading || selectedCoordinatorIDs.length === 0}
-            startIcon={sendLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-send-plane-line' />}>
+                  disabled={sendLoading || selectedCoordinatorIDs.length === 0}
+                  startIcon={sendLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-send-plane-line' />}>
             {sendLoading ? 'Mengirim...' : `Kirim ke ${selectedCoordinatorIDs.length || ''} Koordinator`}
           </Button>
         </DialogActions>
@@ -718,22 +840,22 @@ const NimenSprintDetailView = ({ sprintId }) => {
           </DialogContentText>
           <RadioGroup value={finalizeVersion} onChange={e => setFinalizeVersion(e.target.value)} className='mb-4'>
             <FormControlLabel value='DRAFT_ORIGINAL'
-              control={<Radio />}
-              label={
-                <div>
-                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Admin (awal)</Typography>
-                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang dibuat admin, sebelum review koordinator</Typography>
-                </div>
-              }
+                              control={<Radio />}
+                              label={
+                                <div>
+                                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Admin (awal)</Typography>
+                                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang dibuat admin, sebelum review koordinator</Typography>
+                                </div>
+                              }
             />
             <FormControlLabel value='COORDINATOR_DRAFT'
-              control={<Radio />}
-              label={
-                <div>
-                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Koordinator</Typography>
-                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang sudah direvisi koordinator</Typography>
-                </div>
-              }
+                              control={<Radio />}
+                              label={
+                                <div>
+                                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Koordinator</Typography>
+                                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang sudah direvisi koordinator</Typography>
+                                </div>
+                              }
             />
           </RadioGroup>
 
@@ -770,7 +892,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
                   <TableBody>
                     {listToShow?.filter(p => p.change_type !== 'REMOVED').map(p => (
                       <TableRow key={p.student_id}
-                        sx={p.change_type === 'ADDED' ? { bgcolor: 'success.lighter' } : {}}>
+                                sx={p.change_type === 'ADDED' ? { bgcolor: 'success.lighter' } : {}}>
                         <TableCell>
                           <div className='flex items-center gap-2'>
                             <Avatar sx={{ width: 28, height: 28, fontSize: 11 }}>
@@ -812,8 +934,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
         <DialogActions className='p-4 gap-2'>
           <Button variant='tonal' color='secondary' onClick={() => setFinalizeOpen(false)} disabled={finalizeLoading}>Batal</Button>
           <Button variant='contained' color='success' onClick={handleFinalize}
-            disabled={finalizeLoading || finalizeDiffLoading}
-            startIcon={finalizeLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-check-double-line' />}>
+                  disabled={finalizeLoading || finalizeDiffLoading}
+                  startIcon={finalizeLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-check-double-line' />}>
             {finalizeLoading ? 'Memfinalisasi...' : 'Finalisasi Sprint'}
           </Button>
         </DialogActions>

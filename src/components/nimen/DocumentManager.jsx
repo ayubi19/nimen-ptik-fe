@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useRef, useState } from 'react'
-import Image from 'next/image'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
@@ -128,7 +127,12 @@ const DocumentManager = ({
 
     try {
       const res = await onGetPresignedURL(doc.id)
-      setViewerURL(res.data.data.url)
+      const rawUrl = res.data.data.url
+      // Jika URL relatif (/api/v1/...), prepend dengan API base URL
+      const serveUrl = rawUrl.startsWith('/')
+        ? `${process.env.NEXT_PUBLIC_API_URL}${rawUrl}`
+        : rawUrl
+      setViewerURL(serveUrl)
     } catch (err) {
       setError(err.message || 'Gagal membuka file')
       setViewerOpen(false)
@@ -140,7 +144,11 @@ const DocumentManager = ({
   const handleDownload = useCallback(async (doc) => {
     try {
       const res = await onGetPresignedURL(doc.id)
-      window.open(res.data.data.url, '_blank')
+      const rawUrl = res.data.data.url
+      const serveUrl = rawUrl.startsWith('/')
+        ? `${process.env.NEXT_PUBLIC_API_URL}${rawUrl}`
+        : rawUrl
+      window.open(serveUrl, '_blank')
     } catch (err) {
       setError(err.message || 'Gagal mendownload file')
     }
@@ -291,12 +299,11 @@ const DocumentManager = ({
           ) : viewerURL ? (
             IMAGE_TYPES.includes(viewerType) ? (
               <Box className='flex justify-center p-4'>
-                <Image
+                {/* Pakai <img> biasa — URL sudah aman via BE proxy, tidak perlu next/image */}
+                <img
                   src={viewerURL}
                   alt={viewerName}
-                  width={1200}
-                  height={900}
-                  style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', width: 'auto', height: 'auto' }}
+                  style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
                 />
               </Box>
             ) : (
