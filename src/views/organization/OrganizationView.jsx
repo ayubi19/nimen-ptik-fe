@@ -1,42 +1,43 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Divider from '@mui/material/Divider'
-import Tab from '@mui/material/Tab'
-import Tabs from '@mui/material/Tabs'
+import Alert from '@mui/material/Alert'
+import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
 import DialogActions from '@mui/material/DialogActions'
+import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
+import DialogTitle from '@mui/material/DialogTitle'
+import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
-import IconButton from '@mui/material/IconButton'
-import TextField from '@mui/material/TextField'
 import FormControl from '@mui/material/FormControl'
+import FormControlLabel from '@mui/material/FormControlLabel'
+import Grid from '@mui/material/Grid'
+import IconButton from '@mui/material/IconButton'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
-import InputAdornment from '@mui/material/InputAdornment'
-import FormControlLabel from '@mui/material/FormControlLabel'
-import Switch from '@mui/material/Switch'
-import Autocomplete from '@mui/material/Autocomplete'
-import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
-import Avatar from '@mui/material/Avatar'
+import Switch from '@mui/material/Switch'
+import Tab from '@mui/material/Tab'
 import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
 import TableBody from '@mui/material/TableBody'
-import TableRow from '@mui/material/TableRow'
 import TableCell from '@mui/material/TableCell'
+import TableHead from '@mui/material/TableHead'
 import TablePagination from '@mui/material/TablePagination'
+import TableRow from '@mui/material/TableRow'
+import Tabs from '@mui/material/Tabs'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import Autocomplete from '@mui/material/Autocomplete'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { useForm, Controller } from 'react-hook-form'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
@@ -50,193 +51,60 @@ import { getInitials } from '@/utils/getInitials'
 
 dayjs.locale('id')
 
-// ─── Tab Master Jabatan ───────────────────────────────────────────────────────
-
-const PositionMasterTab = () => {
-  const [positions, setPositions] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editData, setEditData] = useState(null)
-  const [formLoading, setFormLoading] = useState(false)
-  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
-
-  const showToast = useCallback((msg, severity = 'success') => {
-    setToast({ open: true, message: msg, severity })
-  }, [])
-
-  const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: { name: '', display_name: '', description: '', is_active: true }
-  })
-
-  const fetchPositions = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await studentPositionApi.getAll({})
-      setPositions(res.data.data || [])
-    } catch (err) {
-      showToast(err.message || 'Gagal memuat data', 'error')
-    } finally {
-      setLoading(false)
-    }
-  }, [showToast])
-
-  useEffect(() => { fetchPositions() }, [fetchPositions])
-
-  const handleOpenCreate = useCallback(() => {
-    setEditData(null)
-    reset({ name: '', display_name: '', description: '', is_active: true })
-    setDrawerOpen(true)
-  }, [reset])
-
-  const handleOpenEdit = useCallback((pos) => {
-    setEditData(pos)
-    reset({
-      name: pos.name,
-      display_name: pos.display_name,
-      description: pos.description || '',
-      is_active: pos.is_active,
-    })
-    setDrawerOpen(true)
-  }, [reset])
-
-  const handleSubmitForm = useCallback(async (values) => {
-    setFormLoading(true)
-    try {
-      if (editData) {
-        await studentPositionApi.update(editData.id, {
-          display_name: values.display_name,
-          description: values.description || '',
-          is_active: values.is_active,
-        })
-        showToast('Jabatan berhasil diperbarui')
-      } else {
-        await studentPositionApi.create({
-          name: values.name,
-          display_name: values.display_name,
-          description: values.description || '',
-        })
-        showToast('Jabatan berhasil dibuat')
-      }
-      setDrawerOpen(false)
-      fetchPositions()
-    } catch (err) {
-      showToast(err.message || 'Terjadi kesalahan', 'error')
-    } finally {
-      setFormLoading(false)
-    }
-  }, [editData, fetchPositions, showToast])
-
-  return (
-    <>
-      <div className='flex justify-between items-center mb-4'>
-        <Typography variant='body2' color='text.secondary'>
-          {positions.length} jabatan terdaftar
-        </Typography>
-        <Button variant='contained' size='small' startIcon={<i className='ri-add-line' />}
-          onClick={handleOpenCreate}>
-          Tambah Jabatan
-        </Button>
+// ── Assignment Mobile Card ────────────────────────────────────────────────────
+const AssignmentMobileCard = ({ a, onEdit, onDelete }) => (
+  <Card className='mb-3'>
+    <CardContent>
+      <div className='flex items-start justify-between mb-2'>
+        <div className='flex items-center gap-2 flex-1 min-w-0'>
+          <Avatar sx={{ width: 36, height: 36, fontSize: 12, flexShrink: 0 }}>
+            {getInitials(a.user?.full_name || '')}
+          </Avatar>
+          <div className='min-w-0'>
+            <Typography variant='body2' fontWeight={600} noWrap>{a.user?.full_name || '—'}</Typography>
+            <Typography variant='caption' color='text.secondary'>
+              {a.user?.student_profile?.nim || '—'}
+            </Typography>
+          </div>
+        </div>
+        <Chip label={a.is_active ? 'Aktif' : 'Nonaktif'}
+              color={a.is_active ? 'success' : 'secondary'} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
       </div>
+      <div className='flex flex-wrap gap-2 mb-2'>
+        <Chip label={a.position?.display_name || '—'} size='small' color='primary' variant='tonal' />
+      </div>
+      <Typography variant='caption' color='text.secondary'>
+        <i className='ri-calendar-line mr-1' />
+        {a.period_start ? dayjs(a.period_start).format('DD/MM/YYYY') : '—'}
+        {a.period_end ? ` – ${dayjs(a.period_end).format('DD/MM/YYYY')}` : ' — sekarang'}
+      </Typography>
+      <Divider className='my-2' />
+      <div className='flex gap-2'>
+        <Button size='small' variant='tonal' color='secondary' fullWidth
+                startIcon={<i className='ri-edit-line' />} onClick={() => onEdit(a)}>Edit</Button>
+        <Button size='small' variant='tonal' color='error' fullWidth
+                startIcon={<i className='ri-delete-bin-line' />} onClick={() => onDelete(a)}>Hapus</Button>
+      </div>
+    </CardContent>
+  </Card>
+)
 
-      {loading ? (
-        <Box className='flex justify-center py-10'><CircularProgress /></Box>
-      ) : (
-        <div className='flex flex-col gap-3'>
-          {positions.map(pos => (
-            <Box key={pos.id} className='flex items-center justify-between p-4 rounded-lg border'
-              sx={{ borderColor: 'divider' }}>
-              <div>
-                <div className='flex items-center gap-2'>
-                  <Typography variant='body1' fontWeight={600}>{pos.display_name}</Typography>
-                  <Chip label={pos.is_active ? 'Aktif' : 'Nonaktif'}
-                    color={pos.is_active ? 'success' : 'secondary'} size='small' variant='tonal' />
-                </div>
-                <Typography variant='caption' color='text.secondary'>
-                  <code>{pos.name}</code>
-                  {pos.description && ` — ${pos.description}`}
-                </Typography>
-              </div>
-              <IconButton size='small' onClick={() => handleOpenEdit(pos)}>
-                <i className='ri-edit-line' />
-              </IconButton>
-            </Box>
-          ))}
-        </div>
-      )}
-
-      {/* Drawer Form */}
-      <Drawer open={drawerOpen} anchor='right' variant='temporary' onClose={() => setDrawerOpen(false)}
-        ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 420 } } }}>
-        <div className='flex items-center justify-between pli-6 plb-5'>
-          <Typography variant='h5'>{editData ? 'Edit Jabatan' : 'Tambah Jabatan'}</Typography>
-          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line text-2xl' /></IconButton>
-        </div>
-        <Divider />
-        <div className='p-6'>
-          <form onSubmit={handleSubmit(handleSubmitForm)} className='flex flex-col gap-5'>
-            {!editData && (
-              <Controller name='name' control={control}
-                rules={{ required: 'Wajib diisi', pattern: { value: /^[a-z0-9_]+$/, message: 'Hanya huruf kecil, angka, dan underscore' } }}
-                render={({ field }) => (
-                  <TextField {...field} fullWidth label='Kode Jabatan' placeholder='contoh: ketua_angkatan'
-                    helperText={errors.name?.message || 'Huruf kecil, angka, underscore. Tidak bisa diubah setelah dibuat.'}
-                    error={!!errors.name} />
-                )}
-              />
-            )}
-            <Controller name='display_name' control={control}
-              rules={{ required: 'Nama tampilan wajib diisi' }}
-              render={({ field }) => (
-                <TextField {...field} fullWidth label='Nama Jabatan'
-                  placeholder='contoh: Ketua Angkatan'
-                  error={!!errors.display_name} helperText={errors.display_name?.message} />
-              )}
-            />
-            <Controller name='description' control={control}
-              render={({ field }) => (
-                <TextField {...field} fullWidth multiline rows={2} label='Deskripsi (opsional)' />
-              )}
-            />
-            {editData && (
-              <Controller name='is_active' control={control}
-                render={({ field }) => (
-                  <FormControlLabel control={<Switch {...field} checked={field.value} />} label='Status Aktif' />
-                )}
-              />
-            )}
-            <div className='flex gap-4 mt-2'>
-              <Button fullWidth type='submit' variant='contained' disabled={formLoading}
-                startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-                {formLoading ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-              <Button fullWidth variant='tonal' color='secondary' onClick={() => setDrawerOpen(false)}>Batal</Button>
-            </div>
-          </form>
-        </div>
-      </Drawer>
-
-      <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(t => ({ ...t, open: false }))} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-        <Alert severity={toast.severity} variant='filled' onClose={() => setToast(t => ({ ...t, open: false }))}>{toast.message}</Alert>
-      </Snackbar>
-    </>
-  )
-}
-
-// ─── Tab Struktur Organisasi ──────────────────────────────────────────────────
-
+// ── Tab Struktur Organisasi ───────────────────────────────────────────────────
 const OrganizationStructureTab = () => {
-  const [batches, setBatches] = useState([])
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const [batches, setBatches]           = useState([])
   const [selectedBatch, setSelectedBatch] = useState('')
-  const [positions, setPositions] = useState([])
-  const [assignments, setAssignments] = useState([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [page, setPage] = useState(0)
-  const [pageSize] = useState(20)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editData, setEditData] = useState(null)
-  const [formLoading, setFormLoading] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [positions, setPositions]       = useState([])
+  const [assignments, setAssignments]   = useState([])
+  const [total, setTotal]               = useState(0)
+  const [loading, setLoading]           = useState(false)
+  const [page, setPage]                 = useState(0)
+  const [pageSize, setPageSize]         = useState(20)
+  const [drawerOpen, setDrawerOpen]     = useState(false)
+  const [editData, setEditData]         = useState(null)
+  const [formLoading, setFormLoading]   = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [studentSearch, setStudentSearch] = useState('')
@@ -244,12 +112,11 @@ const OrganizationStructureTab = () => {
   const [studentLoading, setStudentLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
 
-  const showToast = useCallback((msg, severity = 'success') => {
-    setToast({ open: true, message: msg, severity })
-  }, [])
+  const showToast = useCallback((msg, severity = 'success') =>
+    setToast({ open: true, message: msg, severity }), [])
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: { user_id: '', user_obj: null, position_id: '', period_start: null, period_end: null, notes: '', is_active: true }
+    defaultValues: { user_id: '', position_id: '', period_start: null, period_end: null, notes: '', is_active: true }
   })
 
   useEffect(() => {
@@ -273,7 +140,7 @@ const OrganizationStructureTab = () => {
 
   useEffect(() => { fetchAssignments() }, [fetchAssignments])
 
-  // Search mahasiswa dengan debounce
+  // Debounce search mahasiswa
   useEffect(() => {
     if (studentSearch.length < 2) return
     setStudentLoading(true)
@@ -288,7 +155,7 @@ const OrganizationStructureTab = () => {
 
   const handleOpenCreate = useCallback(() => {
     setEditData(null)
-    reset({ user_id: '', user_obj: null, position_id: '', period_start: null, period_end: null, notes: '', is_active: true })
+    reset({ user_id: '', position_id: '', period_start: null, period_end: null, notes: '', is_active: true })
     setDrawerOpen(true)
   }, [reset])
 
@@ -340,7 +207,7 @@ const OrganizationStructureTab = () => {
     try {
       await positionAssignmentApi.remove(deleteTarget.id)
       showToast('Assignment berhasil dihapus')
-      setDeleteOpen(false)
+      setDeleteTarget(null)
       fetchAssignments()
     } catch (err) {
       showToast(err.message || 'Gagal menghapus', 'error')
@@ -349,25 +216,54 @@ const OrganizationStructureTab = () => {
     }
   }, [deleteTarget, fetchAssignments, showToast])
 
+  const totalAktif = assignments.filter(a => a.is_active).length
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='id'>
-      {/* Pilih Angkatan */}
-      <div className='flex flex-wrap items-center justify-between gap-4 mb-4'>
-        <FormControl size='small' sx={{ minWidth: 200 }}>
+
+      {/* Filter + Tombol */}
+      <div className='flex flex-wrap items-center justify-between gap-3 mb-4'>
+        <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 220 } }}>
           <InputLabel>Pilih Angkatan</InputLabel>
           <Select label='Pilih Angkatan' value={selectedBatch}
-            onChange={e => { setSelectedBatch(e.target.value); setPage(0) }}>
+                  onChange={e => { setSelectedBatch(e.target.value); setPage(0) }}>
             {batches.map(b => <MenuItem key={b.id} value={b.id}>{b.name} ({b.year})</MenuItem>)}
           </Select>
         </FormControl>
         {selectedBatch && (
-          <Button variant='contained' size='small' startIcon={<i className='ri-user-star-line' />}
-            onClick={handleOpenCreate}>
+          <Button variant='contained' startIcon={<i className='ri-user-star-line' />}
+                  onClick={handleOpenCreate}
+                  sx={{ width: { xs: '100%', sm: 'auto' } }}>
             Assign Jabatan
           </Button>
         )}
       </div>
 
+      {/* Stats — hanya tampil kalau sudah pilih angkatan */}
+      {selectedBatch && assignments.length > 0 && (
+        <Grid container spacing={3} className='mb-4'>
+          {[
+            { label: 'Total Pejabat', value: total, icon: 'ri-group-line', color: '#FF4C51', bg: '#FFE9EA' },
+            { label: 'Aktif', value: totalAktif, icon: 'ri-checkbox-circle-line', color: '#28C76F', bg: '#E6F9EE' },
+          ].map(s => (
+            <Grid item xs={6} key={s.label}>
+              <Card sx={{ height: '100%' }}>
+                <CardContent sx={{ p: '12px !important', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
+                  </div>
+                  <div>
+                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
+                    <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 11, sm: 12 } }}>{s.label}</Typography>
+                  </div>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {/* Content */}
       {!selectedBatch ? (
         <Box className='flex flex-col items-center py-12 gap-2' sx={{ color: 'text.secondary' }}>
           <i className='ri-organization-chart text-5xl opacity-30' />
@@ -378,59 +274,74 @@ const OrganizationStructureTab = () => {
       ) : assignments.length === 0 ? (
         <Box className='flex flex-col items-center py-12 gap-2' sx={{ color: 'text.secondary' }}>
           <i className='ri-user-star-line text-5xl opacity-30' />
-          <Typography variant='body2'>Belum ada struktur organisasi untuk angkatan ini</Typography>
+          <Typography variant='body2'>Belum ada pejabat untuk angkatan ini</Typography>
           <Button variant='contained' size='small' startIcon={<i className='ri-add-line' />}
-            onClick={handleOpenCreate}>
+                  onClick={handleOpenCreate}>
             Assign Jabatan Pertama
           </Button>
         </Box>
-      ) : (
+      ) : isMobile ? (
+        // ── Mobile: Card List ──
         <>
-          <Table size='small'>
+          {assignments.map(a => (
+            <AssignmentMobileCard key={a.id} a={a}
+                                  onEdit={handleOpenEdit} onDelete={setDeleteTarget} />
+          ))}
+          <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
+                           onPageChange={(_, p) => setPage(p)}
+                           onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                           rowsPerPageOptions={[20, 50]}
+                           labelRowsPerPage='Baris:'
+                           labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+          />
+        </>
+      ) : (
+        // ── Desktop: Table ──
+        <Card>
+          <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>Mahasiswa</TableCell>
-                <TableCell>NIM</TableCell>
-                <TableCell>Jabatan</TableCell>
-                <TableCell>Periode</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align='center'>Aksi</TableCell>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                {['Mahasiswa', 'NIM', 'Jabatan', 'Periode', 'Status', 'Aksi'].map(h => (
+                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                    {h}
+                  </TableCell>
+                ))}
               </TableRow>
             </TableHead>
             <TableBody>
               {assignments.map(a => (
-                <TableRow key={a.id}>
+                <TableRow key={a.id} hover>
                   <TableCell>
                     <div className='flex items-center gap-2'>
                       <Avatar sx={{ width: 32, height: 32, fontSize: 12 }}>
                         {getInitials(a.user?.full_name || '')}
                       </Avatar>
-                      <Typography variant='body2' fontWeight={600}>{a.user?.full_name}</Typography>
+                      <Typography variant='body2' fontWeight={600}>{a.user?.full_name || '—'}</Typography>
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Typography variant='body2'>{a.user?.student_profile?.nim || '-'}</Typography>
+                    <Typography variant='body2'>{a.user?.student_profile?.nim || '—'}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip label={a.position?.display_name || '-'} size='small' color='primary' variant='tonal' />
+                    <Chip label={a.position?.display_name || '—'} size='small' color='primary' variant='tonal' />
                   </TableCell>
                   <TableCell>
                     <Typography variant='caption'>
-                      {a.period_start ? dayjs(a.period_start).format('DD/MM/YYYY') : '-'}
-                      {a.period_end && ` – ${dayjs(a.period_end).format('DD/MM/YYYY')}`}
+                      {a.period_start ? dayjs(a.period_start).format('DD/MM/YYYY') : '—'}
+                      {a.period_end ? ` – ${dayjs(a.period_end).format('DD/MM/YYYY')}` : ''}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip label={a.is_active ? 'Aktif' : 'Nonaktif'}
-                      color={a.is_active ? 'success' : 'secondary'} size='small' variant='tonal' />
+                          color={a.is_active ? 'success' : 'secondary'} size='small' variant='tonal' />
                   </TableCell>
-                  <TableCell align='center'>
-                    <div className='flex items-center justify-center gap-0.5'>
+                  <TableCell>
+                    <div className='flex items-center gap-0.5'>
                       <IconButton size='small' onClick={() => handleOpenEdit(a)}>
-                        <i className='ri-edit-line text-[22px]' />
+                        <i className='ri-edit-line text-[20px]' />
                       </IconButton>
-                      <IconButton size='small' onClick={() => { setDeleteTarget(a); setDeleteOpen(true) }}>
-                        <i className='ri-delete-bin-7-line text-[22px]' />
+                      <IconButton size='small' color='error' onClick={() => setDeleteTarget(a)}>
+                        <i className='ri-delete-bin-line text-[20px]' />
                       </IconButton>
                     </div>
                   </TableCell>
@@ -439,156 +350,341 @@ const OrganizationStructureTab = () => {
             </TableBody>
           </Table>
           <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
-            onPageChange={(_, p) => setPage(p)} rowsPerPageOptions={[20]}
-            labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+                           onPageChange={(_, p) => setPage(p)}
+                           onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                           rowsPerPageOptions={[20, 50]}
+                           labelRowsPerPage='Baris per halaman:'
+                           labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
           />
-        </>
+        </Card>
       )}
 
       {/* Drawer Assign */}
-      <Drawer open={drawerOpen} anchor='right' variant='temporary' onClose={() => setDrawerOpen(false)}
-        ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 440 } } }}>
-        <div className='flex items-center justify-between pli-6 plb-5'>
-          <Typography variant='h5'>{editData ? 'Edit Assignment' : 'Assign Jabatan'}</Typography>
-          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line text-2xl' /></IconButton>
+      <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 440 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
+          <Typography variant='h6'>{editData ? 'Edit Assignment' : 'Assign Jabatan'}</Typography>
+          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line' /></IconButton>
         </div>
-        <Divider />
-        <div className='p-6'>
-          <form onSubmit={handleSubmit(handleSubmitForm)} className='flex flex-col gap-5'>
-            {!editData && (
-              <>
-                {/* Cari mahasiswa */}
-                <Controller name='user_id' control={control} rules={{ required: 'Mahasiswa wajib dipilih' }}
-                  render={({ field }) => (
-                    <Autocomplete
-                      options={studentOptions}
-                      loading={studentLoading}
-                      getOptionLabel={opt => opt.full_name || ''}
-                      isOptionEqualToValue={(opt, val) => opt.id === val?.id}
-                      onInputChange={(_, val) => setStudentSearch(val)}
-                      onChange={(_, val) => field.onChange(val?.id || '')}
-                      renderOption={(props, opt) => (
-                        <li {...props} key={opt.id}>
-                          <div className='flex items-center gap-2'>
-                            <Avatar sx={{ width: 28, height: 28, fontSize: 11 }}>{getInitials(opt.full_name || '')}</Avatar>
-                            <div>
-                              <Typography variant='body2' fontWeight={600}>{opt.full_name}</Typography>
-                              <Typography variant='caption' color='text.secondary'>{opt.student_profile?.nim}</Typography>
-                            </div>
-                          </div>
-                        </li>
-                      )}
-                      renderInput={params => (
-                        <TextField {...params} label='Cari Mahasiswa' placeholder='Ketik nama atau NIM...'
-                          error={!!errors.user_id} helperText={errors.user_id?.message || 'Cari dari angkatan yang dipilih'}
-                          InputProps={{ ...params.InputProps, endAdornment: (<>{studentLoading ? <CircularProgress size={16} /> : null}{params.InputProps.endAdornment}</>) }}
+        <form onSubmit={handleSubmit(handleSubmitForm)} className='flex flex-col gap-4 p-4 overflow-y-auto'>
+          {!editData && (
+            <>
+              <Controller name='user_id' control={control} rules={{ required: 'Mahasiswa wajib dipilih' }}
+                          render={({ field }) => (
+                            <Autocomplete
+                              options={studentOptions}
+                              loading={studentLoading}
+                              getOptionLabel={opt => opt.full_name || ''}
+                              isOptionEqualToValue={(opt, val) => opt.id === val?.id}
+                              onInputChange={(_, val) => setStudentSearch(val)}
+                              onChange={(_, val) => field.onChange(val?.id || '')}
+                              renderOption={(props, opt) => (
+                                <li {...props} key={opt.id}>
+                                  <div className='flex items-center gap-2'>
+                                    <Avatar sx={{ width: 28, height: 28, fontSize: 11 }}>{getInitials(opt.full_name || '')}</Avatar>
+                                    <div>
+                                      <Typography variant='body2' fontWeight={600}>{opt.full_name}</Typography>
+                                      <Typography variant='caption' color='text.secondary'>{opt.student_profile?.nim}</Typography>
+                                    </div>
+                                  </div>
+                                </li>
+                              )}
+                              renderInput={params => (
+                                <TextField {...params} label='Cari Mahasiswa' placeholder='Ketik nama atau NIM...'
+                                           error={!!errors.user_id} helperText={errors.user_id?.message || 'Cari dari angkatan yang dipilih'}
+                                           InputProps={{ ...params.InputProps, endAdornment: (<>{studentLoading ? <CircularProgress size={16} /> : null}{params.InputProps.endAdornment}</>) }}
+                                />
+                              )}
+                            />
+                          )}
+              />
+              <Controller name='position_id' control={control} rules={{ required: 'Jabatan wajib dipilih' }}
+                          render={({ field }) => (
+                            <FormControl fullWidth error={!!errors.position_id}>
+                              <InputLabel>Jabatan</InputLabel>
+                              <Select {...field} label='Jabatan'>
+                                {positions.map(p => <MenuItem key={p.id} value={p.id}>{p.display_name}</MenuItem>)}
+                              </Select>
+                              {errors.position_id && <Typography variant='caption' color='error'>{errors.position_id.message}</Typography>}
+                            </FormControl>
+                          )}
+              />
+              <Controller name='period_start' control={control} rules={{ required: 'Tanggal mulai wajib diisi' }}
+                          render={({ field }) => (
+                            <DatePicker label='Tanggal Mulai Jabatan' value={field.value} onChange={field.onChange}
+                                        format='DD/MM/YYYY'
+                                        slotProps={{ textField: { fullWidth: true, error: !!errors.period_start, helperText: errors.period_start?.message } }}
+                            />
+                          )}
+              />
+            </>
+          )}
+          <Controller name='period_end' control={control}
+                      render={({ field }) => (
+                        <DatePicker label='Tanggal Selesai (opsional)' value={field.value} onChange={field.onChange}
+                                    format='DD/MM/YYYY'
+                                    slotProps={{ textField: { fullWidth: true, helperText: 'Kosongkan jika masih menjabat' } }}
                         />
                       )}
-                    />
-                  )}
-                />
-
-                {/* Jabatan */}
-                <Controller name='position_id' control={control} rules={{ required: 'Jabatan wajib dipilih' }}
-                  render={({ field }) => (
-                    <FormControl fullWidth error={!!errors.position_id}>
-                      <InputLabel>Jabatan</InputLabel>
-                      <Select {...field} label='Jabatan'>
-                        {positions.map(p => <MenuItem key={p.id} value={p.id}>{p.display_name}</MenuItem>)}
-                      </Select>
-                      {errors.position_id && <Typography variant='caption' color='error'>{errors.position_id.message}</Typography>}
-                    </FormControl>
-                  )}
-                />
-
-                {/* Tanggal mulai */}
-                <Controller name='period_start' control={control} rules={{ required: 'Tanggal mulai wajib diisi' }}
-                  render={({ field }) => (
-                    <DatePicker label='Tanggal Mulai Jabatan' value={field.value} onChange={field.onChange}
-                      format='DD/MM/YYYY'
-                      slotProps={{ textField: { fullWidth: true, error: !!errors.period_start, helperText: errors.period_start?.message } }}
-                    />
-                  )}
-                />
-              </>
-            )}
-
-            {/* Tanggal selesai (opsional, bisa di create maupun edit) */}
-            <Controller name='period_end' control={control}
-              render={({ field }) => (
-                <DatePicker label='Tanggal Selesai (opsional)' value={field.value} onChange={field.onChange}
-                  format='DD/MM/YYYY'
-                  slotProps={{ textField: { fullWidth: true, helperText: 'Kosongkan jika masih menjabat' } }}
-                />
-              )}
+          />
+          <Controller name='notes' control={control}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth multiline rows={2} label='Catatan (opsional)' />
+                      )}
+          />
+          {editData && (
+            <Controller name='is_active' control={control}
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={<Switch checked={field.value} onChange={e => field.onChange(e.target.checked)} />}
+                            label='Status Aktif'
+                          />
+                        )}
             />
-
-            <Controller name='notes' control={control}
-              render={({ field }) => (
-                <TextField {...field} fullWidth multiline rows={2} label='Catatan (opsional)' />
-              )}
-            />
-
-            {editData && (
-              <Controller name='is_active' control={control}
-                render={({ field }) => (
-                  <FormControlLabel control={<Switch {...field} checked={field.value} />} label='Status Aktif' />
-                )}
-              />
-            )}
-
-            <div className='flex gap-4 mt-2'>
-              <Button fullWidth type='submit' variant='contained' disabled={formLoading}
-                startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-                {formLoading ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-              <Button fullWidth variant='tonal' color='secondary' onClick={() => setDrawerOpen(false)}>Batal</Button>
-            </div>
-          </form>
-        </div>
+          )}
+          <div className='flex gap-2 mt-2'>
+            <Button fullWidth variant='tonal' color='secondary'
+                    onClick={() => setDrawerOpen(false)} disabled={formLoading}>Batal</Button>
+            <Button fullWidth variant='contained' type='submit' disabled={formLoading}
+                    startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+              {formLoading ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
       </Drawer>
 
       {/* Dialog Hapus */}
-      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth='xs' fullWidth>
-        <DialogTitle>Hapus Assignment</DialogTitle>
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth='xs' fullWidth>
+        <DialogTitle>Hapus Assignment?</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Hapus jabatan <strong>{deleteTarget?.position?.display_name}</strong> dari <strong>{deleteTarget?.user?.full_name}</strong>?
           </DialogContentText>
         </DialogContent>
-        <DialogActions className='pli-5 plb-4'>
-          <Button onClick={() => setDeleteOpen(false)} variant='tonal' color='secondary' disabled={deleteLoading}>Batal</Button>
-          <Button onClick={handleDelete} variant='contained' color='error' disabled={deleteLoading}
-            startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+        <DialogActions className='p-4 gap-2'>
+          <Button variant='tonal' color='secondary' onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>Batal</Button>
+          <Button variant='contained' color='error' onClick={handleDelete} disabled={deleteLoading}
+                  startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
             {deleteLoading ? 'Menghapus...' : 'Hapus'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(t => ({ ...t, open: false }))} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-        <Alert severity={toast.severity} variant='filled' onClose={() => setToast(t => ({ ...t, open: false }))}>{toast.message}</Alert>
+      <Snackbar open={toast.open} autoHideDuration={4000}
+                onClose={() => setToast(t => ({ ...t, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert severity={toast.severity} variant='filled'
+               onClose={() => setToast(t => ({ ...t, open: false }))}>{toast.message}</Alert>
       </Snackbar>
     </LocalizationProvider>
   )
 }
 
-// ─── Main View ────────────────────────────────────────────────────────────────
+// ── Tab Master Jabatan ────────────────────────────────────────────────────────
+const PositionMasterTab = () => {
+  const [positions, setPositions]   = useState([])
+  const [loading, setLoading]       = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [editData, setEditData]     = useState(null)
+  const [formLoading, setFormLoading] = useState(false)
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
 
+  const showToast = useCallback((msg, severity = 'success') =>
+    setToast({ open: true, message: msg, severity }), [])
+
+  const { control, handleSubmit, reset, formState: { errors } } = useForm({
+    defaultValues: { name: '', display_name: '', description: '', is_active: true }
+  })
+
+  const fetchPositions = useCallback(async () => {
+    setLoading(true)
+    try {
+      const res = await studentPositionApi.getAll({})
+      setPositions(res.data.data || [])
+    } catch (err) {
+      showToast(err.message || 'Gagal memuat data', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
+
+  useEffect(() => { fetchPositions() }, [fetchPositions])
+
+  const handleOpenCreate = useCallback(() => {
+    setEditData(null)
+    reset({ name: '', display_name: '', description: '', is_active: true })
+    setDrawerOpen(true)
+  }, [reset])
+
+  const handleOpenEdit = useCallback((pos) => {
+    setEditData(pos)
+    reset({ name: pos.name, display_name: pos.display_name, description: pos.description || '', is_active: pos.is_active })
+    setDrawerOpen(true)
+  }, [reset])
+
+  const handleSubmitForm = useCallback(async (values) => {
+    setFormLoading(true)
+    try {
+      if (editData) {
+        await studentPositionApi.update(editData.id, {
+          display_name: values.display_name,
+          description: values.description || '',
+          is_active: values.is_active,
+        })
+        showToast('Jabatan berhasil diperbarui')
+      } else {
+        await studentPositionApi.create({
+          name: values.name,
+          display_name: values.display_name,
+          description: values.description || '',
+        })
+        showToast('Jabatan berhasil dibuat')
+      }
+      setDrawerOpen(false)
+      fetchPositions()
+    } catch (err) {
+      showToast(err.message || 'Terjadi kesalahan', 'error')
+    } finally {
+      setFormLoading(false)
+    }
+  }, [editData, fetchPositions, showToast])
+
+  return (
+    <>
+      <div className='flex items-center justify-between mb-4'>
+        <Typography variant='body2' color='text.secondary'>{positions.length} jabatan terdaftar</Typography>
+        <Button variant='contained' size='small' startIcon={<i className='ri-add-line' />}
+                onClick={handleOpenCreate}>
+          Tambah Jabatan
+        </Button>
+      </div>
+
+      {loading ? (
+        <Box className='flex justify-center py-10'><CircularProgress /></Box>
+      ) : (
+        <div className='flex flex-col gap-3'>
+          {positions.map(pos => (
+            <Card key={pos.id} variant='outlined'>
+              <CardContent sx={{ p: '12px !important' }}>
+                <div className='flex items-center justify-between'>
+                  <div>
+                    <div className='flex items-center gap-2'>
+                      <Typography variant='body2' fontWeight={600}>{pos.display_name}</Typography>
+                      <Chip label={pos.is_active ? 'Aktif' : 'Nonaktif'}
+                            color={pos.is_active ? 'success' : 'secondary'} size='small' variant='tonal' />
+                    </div>
+                    <Typography variant='caption' color='text.secondary'>
+                      <code>{pos.name}</code>
+                      {pos.description && ` — ${pos.description}`}
+                    </Typography>
+                  </div>
+                  <IconButton size='small' onClick={() => handleOpenEdit(pos)}>
+                    <i className='ri-edit-line' />
+                  </IconButton>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Drawer */}
+      <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
+          <Typography variant='h6'>{editData ? 'Edit Jabatan' : 'Tambah Jabatan'}</Typography>
+          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line' /></IconButton>
+        </div>
+        <form onSubmit={handleSubmit(handleSubmitForm)} className='flex flex-col gap-4 p-4'>
+          {!editData && (
+            <Controller name='name' control={control}
+                        rules={{ required: 'Wajib diisi', pattern: { value: /^[a-z0-9_]+$/, message: 'Hanya huruf kecil, angka, underscore' } }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth label='Kode Jabatan' placeholder='contoh: ketua_angkatan'
+                                     helperText={errors.name?.message || 'Tidak bisa diubah setelah dibuat'}
+                                     error={!!errors.name} />
+                        )}
+            />
+          )}
+          <Controller name='display_name' control={control}
+                      rules={{ required: 'Nama tampilan wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label='Nama Jabatan' placeholder='contoh: Ketua Angkatan'
+                                   error={!!errors.display_name} helperText={errors.display_name?.message} />
+                      )}
+          />
+          <Controller name='description' control={control}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth multiline rows={2} label='Deskripsi (opsional)' />
+                      )}
+          />
+          {editData && (
+            <Controller name='is_active' control={control}
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={<Switch checked={field.value} onChange={e => field.onChange(e.target.checked)} />}
+                            label='Status Aktif'
+                          />
+                        )}
+            />
+          )}
+          <div className='flex gap-2 mt-2'>
+            <Button fullWidth variant='tonal' color='secondary'
+                    onClick={() => setDrawerOpen(false)} disabled={formLoading}>Batal</Button>
+            <Button fullWidth variant='contained' type='submit' disabled={formLoading}
+                    startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+              {formLoading ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
+
+      <Snackbar open={toast.open} autoHideDuration={4000}
+                onClose={() => setToast(t => ({ ...t, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert severity={toast.severity} variant='filled'
+               onClose={() => setToast(t => ({ ...t, open: false }))}>{toast.message}</Alert>
+      </Snackbar>
+    </>
+  )
+}
+
+// ── Main View ─────────────────────────────────────────────────────────────────
 const OrganizationView = () => {
   const [activeTab, setActiveTab] = useState(0)
 
   return (
-    <Card>
-      <CardHeader title='Struktur Organisasi Mahasiswa' />
-      <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} sx={{ px: 6, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab label='Struktur Organisasi' icon={<i className='ri-organization-chart' />} iconPosition='start' />
-        <Tab label='Master Jabatan' icon={<i className='ri-list-settings-line' />} iconPosition='start' />
-      </Tabs>
-      <CardContent>
-        {activeTab === 0 && <OrganizationStructureTab />}
-        {activeTab === 1 && <PositionMasterTab />}
-      </CardContent>
-    </Card>
+    <>
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2 mb-6'>
+        <Typography variant='caption' color='text.secondary'>Mahasiswa</Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary'>Struktur Organisasi</Typography>
+      </div>
+
+      <Card>
+        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}
+              variant='fullWidth'
+              sx={{ px: { xs: 0, sm: 4 }, borderBottom: 1, borderColor: 'divider' }}>
+          <Tab
+            label='Struktur Organisasi'
+            icon={<i className='ri-organization-chart' />}
+            iconPosition='start'
+            sx={{ fontSize: { xs: 12, sm: 14 }, minHeight: 48, px: { xs: 1, sm: 3 } }}
+          />
+          <Tab
+            label='Master Jabatan'
+            icon={<i className='ri-list-settings-line' />}
+            iconPosition='start'
+            sx={{ fontSize: { xs: 12, sm: 14 }, minHeight: 48, px: { xs: 1, sm: 3 } }}
+          />
+        </Tabs>
+        <CardContent>
+          {activeTab === 0 && <OrganizationStructureTab />}
+          {activeTab === 1 && <PositionMasterTab />}
+        </CardContent>
+      </Card>
+    </>
   )
 }
 
