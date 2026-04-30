@@ -22,35 +22,75 @@ import TableCell from '@mui/material/TableCell'
 import LinearProgress from '@mui/material/LinearProgress'
 import Alert from '@mui/material/Alert'
 import Tooltip from '@mui/material/Tooltip'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { studentsApi } from '@/libs/api/studentsApi'
 import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
 import { exportStudentPDF, exportStudentXLSX } from '@/utils/exportUtils'
 import { getInitials } from '@/utils/getInitials'
 
 const SOURCE_CONFIG = {
-  SPRINT:          { label: 'Sprint',             color: 'primary' },
-  SELF_SUBMISSION: { label: 'Pengajuan Mandiri',  color: 'info'    },
-  AUTOMATIC:       { label: 'Otomatis',           color: 'success' },
+  SPRINT:          { label: 'Sprint',            color: 'primary' },
+  SELF_SUBMISSION: { label: 'Pengajuan Mandiri', color: 'info'    },
+  AUTOMATIC:       { label: 'Otomatis',          color: 'success' },
 }
 
 const STATUS_CONFIG = {
-  VALID:     { label: 'Valid',       color: 'success' },
+  VALID:     { label: 'Valid',      color: 'success' },
   DISPENSED: { label: 'Dispensasi', color: 'info'    },
 }
+
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  : '—'
 
 const InfoRow = ({ label, value }) => (
   <div className='flex justify-between py-2 border-b last:border-0'>
     <Typography variant='body2' color='text.secondary'>{label}</Typography>
-    <Typography variant='body2' fontWeight={500}>{value || '—'}</Typography>
+    <Typography variant='body2' fontWeight={500} sx={{ textAlign: 'right', wordBreak: 'break-all', ml: 2 }}>
+      {value || '—'}
+    </Typography>
   </div>
 )
 
+// ── Mobile: Riwayat Card ──────────────────────────────────────────────────────
+const HistoryMobileCard = ({ entry }) => {
+  const srcCfg = SOURCE_CONFIG[entry.source_type] || { label: entry.source_type, color: 'default' }
+  const stsCfg = STATUS_CONFIG[entry.status]      || { label: entry.status,      color: 'default' }
+  const isPlus = entry.value >= 0
+
+  return (
+    <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+      <div className='flex items-start justify-between gap-2 mb-1'>
+        <div className='flex-1 min-w-0'>
+          <Typography variant='body2' fontWeight={600} noWrap>{entry.indicator?.name}</Typography>
+          <Typography variant='caption' color='text.secondary'>
+            {entry.indicator?.variable?.category?.name} · {entry.indicator?.variable?.name}
+          </Typography>
+        </div>
+        <Typography variant='body2' fontWeight={700}
+                    color={isPlus ? 'success.main' : 'error.main'} sx={{ flexShrink: 0 }}>
+          {isPlus ? `+${entry.value}` : entry.value}
+        </Typography>
+      </div>
+      <div className='flex items-center gap-2 flex-wrap mt-1'>
+        <Typography variant='caption' color='text.secondary'>{fmtDate(entry.event_date)}</Typography>
+        <Chip label={srcCfg.label} color={srcCfg.color} size='small' variant='tonal' sx={{ height: 18, fontSize: 10 }} />
+        <Chip label={stsCfg.label} color={stsCfg.color} size='small' variant='tonal' sx={{ height: 18, fontSize: 10 }} />
+      </div>
+    </Box>
+  )
+}
+
 const StudentProfileView = ({ studentId }) => {
   const router = useRouter()
-  const [student, setStudent] = useState(null)
-  const [history, setHistory] = useState([])
-  const [ranking, setRanking] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const [student, setStudent]           = useState(null)
+  const [history, setHistory]           = useState([])
+  const [ranking, setRanking]           = useState(null)
+  const [loading, setLoading]           = useState(true)
   const [exportLoading, setExportLoading] = useState('')
 
   const fetchAll = useCallback(async () => {
@@ -60,11 +100,16 @@ const StudentProfileView = ({ studentId }) => {
       const s = studentRes.data.data
       setStudent(s)
 
-      // Fetch nilai history dan ranking paralel
+      // Fetch history dan ranking secara paralel
+      // Ranking: langsung filter by student_id agar tidak perlu fetch semua mahasiswa
       const [historyRes, rankingRes] = await Promise.allSettled([
         nimenRankingApi.getValueHistory(studentId),
         s.student_profile?.batch_id
-          ? nimenRankingApi.getRankings({ batch_id: s.student_profile.batch_id, page: 1, page_size: 999 })
+          ? nimenRankingApi.getRankings({
+            batch_id: s.student_profile.batch_id,
+            page: 1,
+            page_size: 999,
+          })
           : Promise.resolve(null),
       ])
 
@@ -74,7 +119,7 @@ const StudentProfileView = ({ studentId }) => {
 
       if (rankingRes.status === 'fulfilled' && rankingRes.value) {
         const rows = rankingRes.value.data.data?.data || []
-        const myRank = rows.find(r => r.student_id === parseInt(studentId))
+        const myRank = rows.find(r => String(r.student_id) === String(studentId))
         setRanking(myRank || null)
       }
     } catch (err) {
@@ -101,16 +146,13 @@ const StudentProfileView = ({ studentId }) => {
   }, [student, history, ranking])
 
   if (loading) return <Box className='flex justify-center py-20'><CircularProgress /></Box>
-  if (!student) return (
-    <Alert severity='error'>Mahasiswa tidak ditemukan.</Alert>
-  )
+  if (!student) return <Alert severity='error'>Mahasiswa tidak ditemukan.</Alert>
 
-  const profile = student.student_profile
+  const profile    = student.student_profile
   const totalValue = history.reduce((s, e) => s + e.value, 0)
-  const maxValue = ranking?.max_value || 95
-  const pct = Math.min((totalValue / maxValue) * 100, 100)
+  const maxValue   = ranking?.max_value || 95
+  const pct        = Math.min((totalValue / maxValue) * 100, 100)
 
-  // Hitung ringkasan per sumber
   const bySource = history.reduce((acc, e) => {
     acc[e.source_type] = (acc[e.source_type] || 0) + e.value
     return acc
@@ -123,28 +165,24 @@ const StudentProfileView = ({ studentId }) => {
       <Grid item xs={12}>
         <div className='flex items-center justify-between gap-4 flex-wrap'>
           <Button variant='tonal' color='secondary' size='small'
-            startIcon={<i className='ri-arrow-left-line' />}
-            onClick={() => router.back()}>
+                  startIcon={<i className='ri-arrow-left-line' />}
+                  onClick={() => router.back()}>
             Kembali
           </Button>
           <ButtonGroup variant='tonal' size='small' disabled={!!exportLoading}>
             <Tooltip title='Export PDF'>
               <Button color='error'
-                startIcon={exportLoading === 'pdf'
-                  ? <CircularProgress size={14} color='inherit' />
-                  : <i className='ri-file-pdf-line' />}
-                onClick={handleExportPDF}>
-                PDF
-              </Button>
+                      startIcon={exportLoading === 'pdf'
+                        ? <CircularProgress size={14} color='inherit' />
+                        : <i className='ri-file-pdf-line' />}
+                      onClick={handleExportPDF}>PDF</Button>
             </Tooltip>
             <Tooltip title='Export Excel'>
               <Button color='success'
-                startIcon={exportLoading === 'xlsx'
-                  ? <CircularProgress size={14} color='inherit' />
-                  : <i className='ri-file-excel-line' />}
-                onClick={handleExportXLSX}>
-                Excel
-              </Button>
+                      startIcon={exportLoading === 'xlsx'
+                        ? <CircularProgress size={14} color='inherit' />
+                        : <i className='ri-file-excel-line' />}
+                      onClick={handleExportXLSX}>Excel</Button>
             </Tooltip>
           </ButtonGroup>
         </div>
@@ -178,24 +216,24 @@ const StudentProfileView = ({ studentId }) => {
             </CardContent>
             <Divider />
             <CardContent>
-              <InfoRow label='Username' value={student.username} />
-              <InfoRow label='Email' value={student.email} />
-              <InfoRow label='Jenis Kelamin' value={profile?.gender === 'M' ? 'Laki-laki' : 'Perempuan'} />
-              <InfoRow label='Agama' value={profile?.religion} />
+              <InfoRow label='Username'        value={student.username} />
+              <InfoRow label='Email'           value={student.email} />
+              <InfoRow label='Jenis Kelamin'   value={profile?.gender === 'M' ? 'Laki-laki' : 'Perempuan'} />
+              <InfoRow label='Agama'           value={profile?.religion} />
               <InfoRow label='Status Pernikahan'
-                value={profile?.marital_status === 'SINGLE' ? 'Belum Menikah' : 'Menikah'} />
-              <InfoRow label='Tempat Lahir' value={profile?.birth_place} />
+                       value={profile?.marital_status === 'SINGLE' ? 'Belum Menikah' : 'Menikah'} />
+              <InfoRow label='Tempat Lahir'    value={profile?.birth_place} />
               <InfoRow label='Tanggal Lahir'
-                value={profile?.birth_date
-                  ? new Date(profile.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
-                  : null} />
-              <InfoRow label='No. HP' value={profile?.phone} />
-              <InfoRow label='Kota' value={profile?.city} />
+                       value={profile?.birth_date
+                         ? new Date(profile.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+                         : null} />
+              <InfoRow label='No. HP'          value={profile?.phone} />
+              <InfoRow label='Kota'            value={profile?.city} />
               <InfoRow label='Status Akademik' value={profile?.academic_status?.name} />
             </CardContent>
           </Card>
 
-          {/* Kartu ranking & total nilai */}
+          {/* Kartu Nilai NIMEN */}
           <Card>
             <CardHeader title='Nilai NIMEN' titleTypographyProps={{ variant: 'subtitle1' }} />
             <Divider />
@@ -212,20 +250,13 @@ const StudentProfileView = ({ studentId }) => {
                       </Typography>
                     </div>
                     <div className='text-right'>
-                      <Typography variant='h4' fontWeight={700}>
-                        #{ranking.rank_position}
-                      </Typography>
-                      <Typography variant='caption' color='text.secondary'>
-                        Peringkat Angkatan
-                      </Typography>
+                      <Typography variant='h4' fontWeight={700}>#{ranking.rank_position}</Typography>
+                      <Typography variant='caption' color='text.secondary'>Peringkat Angkatan</Typography>
                     </div>
                   </div>
-                  <LinearProgress
-                    variant='determinate'
-                    value={pct}
-                    color={pct >= 100 ? 'success' : pct >= 70 ? 'primary' : 'warning'}
-                    sx={{ height: 8, borderRadius: 4 }}
-                  />
+                  <LinearProgress variant='determinate' value={pct}
+                                  color={pct >= 100 ? 'success' : pct >= 70 ? 'primary' : 'warning'}
+                                  sx={{ height: 8, borderRadius: 4 }} />
                   <Divider />
                   <div className='flex flex-col gap-1'>
                     <Typography variant='caption' color='text.secondary' fontWeight={600}>
@@ -237,7 +268,7 @@ const StudentProfileView = ({ studentId }) => {
                         <div key={src} className='flex items-center justify-between'>
                           <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
                           <Typography variant='body2' fontWeight={600}
-                            color={val >= 0 ? 'success.main' : 'error.main'}>
+                                      color={val >= 0 ? 'success.main' : 'error.main'}>
                             {val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2)}
                           </Typography>
                         </div>
@@ -268,30 +299,33 @@ const StudentProfileView = ({ studentId }) => {
               <i className='ri-inbox-line text-5xl opacity-30' />
               <Typography variant='body2'>Belum ada riwayat nilai.</Typography>
             </Box>
+          ) : isMobile ? (
+            // ── Mobile: Card List ──
+            <div>
+              {history.map(entry => (
+                <HistoryMobileCard key={entry.id} entry={entry} />
+              ))}
+            </div>
           ) : (
+            // ── Desktop: Table ──
             <Table size='small'>
               <TableHead>
-                <TableRow>
-                  <TableCell>Tanggal</TableCell>
-                  <TableCell>Indikator</TableCell>
-                  <TableCell>Kategori</TableCell>
-                  <TableCell>Sumber</TableCell>
-                  <TableCell align='right'>Nilai</TableCell>
-                  <TableCell>Status</TableCell>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  {['Tanggal', 'Indikator', 'Kategori', 'Sumber', 'Nilai', 'Status'].map(h => (
+                    <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                      {h}
+                    </TableCell>
+                  ))}
                 </TableRow>
               </TableHead>
               <TableBody>
                 {history.map(entry => {
                   const srcCfg = SOURCE_CONFIG[entry.source_type] || { label: entry.source_type, color: 'default' }
-                  const stsCfg = STATUS_CONFIG[entry.status] || { label: entry.status, color: 'default' }
+                  const stsCfg = STATUS_CONFIG[entry.status]      || { label: entry.status,      color: 'default' }
                   return (
-                    <TableRow key={entry.id}>
+                    <TableRow key={entry.id} hover>
                       <TableCell>
-                        <Typography variant='caption'>
-                          {new Date(entry.event_date).toLocaleDateString('id-ID', {
-                            day: '2-digit', month: 'short', year: 'numeric'
-                          })}
-                        </Typography>
+                        <Typography variant='caption'>{fmtDate(entry.event_date)}</Typography>
                       </TableCell>
                       <TableCell>
                         <Typography variant='body2'>{entry.indicator?.name}</Typography>
@@ -309,7 +343,7 @@ const StudentProfileView = ({ studentId }) => {
                       </TableCell>
                       <TableCell align='right'>
                         <Typography variant='body2' fontWeight={700}
-                          color={entry.value >= 0 ? 'success.main' : 'error.main'}>
+                                    color={entry.value >= 0 ? 'success.main' : 'error.main'}>
                           {entry.value >= 0 ? `+${entry.value}` : entry.value}
                         </Typography>
                       </TableCell>
