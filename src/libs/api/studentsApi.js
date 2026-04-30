@@ -4,6 +4,9 @@ export const studentsApi = {
   getAll: (params) =>
     apiClient.get('/students', { params }),
 
+  getSummary: () =>
+    apiClient.get('/students/summary'),
+
   getById: (id) =>
     apiClient.get(`/students/${id}`),
 

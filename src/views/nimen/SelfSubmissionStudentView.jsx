@@ -232,20 +232,22 @@ const SelfSubmissionStudentView = () => {
         ].map(s => (
           <Grid item xs={6} sm={3} key={s.label}>
             <Card>
-              <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                  background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                  <Typography variant='caption' color='text.secondary'
-                              sx={{ display: 'block', fontSize: { xs: 10, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {s.label}
-                  </Typography>
-                </div>
+              <CardContent sx={{ p: "0 !important" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: "12px", p: "12px" }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
+                    <Typography variant='caption' color='text.secondary'
+                                sx={{ display: 'block', fontSize: { xs: 10, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.label}
+                    </Typography>
+                  </div>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -263,7 +265,7 @@ const SelfSubmissionStudentView = () => {
           </Typography>
 
           {indicators.length === 0 ? (
-            <Box className='text-center py-6'>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, py: 6 }}>
               <i className='ri-inbox-line text-4xl opacity-30 block mb-2' />
               <Typography variant='body2' color='text.secondary'>
                 Tidak ada indikator yang tersedia untuk pengajuan mandiri.

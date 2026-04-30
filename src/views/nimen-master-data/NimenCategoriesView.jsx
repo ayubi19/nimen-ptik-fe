@@ -295,8 +295,10 @@ const NimenCategoriesView = () => {
         <div className='flex justify-center py-10'><CircularProgress /></div>
       ) : filtered.length === 0 ? (
         <Card>
-          <CardContent className='text-center py-12'>
-            <i className='ri-node-tree text-5xl opacity-30 block mb-3' />
+          <CardContent sx={{ py: 12 }}>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+              <i className='ri-node-tree' style={{ fontSize: 48, opacity: 0.3 }} />
+            </Box>
             <Typography variant='body2' color='text.secondary'>Tidak ada kategori ditemukan</Typography>
           </CardContent>
         </Card>

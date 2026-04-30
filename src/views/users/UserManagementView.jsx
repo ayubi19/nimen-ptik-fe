@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import Alert from '@mui/material/Alert'
+import Avatar from '@mui/material/Avatar'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import Divider from '@mui/material/Divider'
-import Drawer from '@mui/material/Drawer'
+import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
@@ -13,186 +14,215 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
-import FormControlLabel from '@mui/material/FormControlLabel'
+import Divider from '@mui/material/Divider'
+import Drawer from '@mui/material/Drawer'
+import FormControl from '@mui/material/FormControl'
+import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import InputAdornment from '@mui/material/InputAdornment'
+import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
-import Switch from '@mui/material/Switch'
-import TablePagination from '@mui/material/TablePagination'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableHead from '@mui/material/TableHead'
+import TablePagination from '@mui/material/TablePagination'
+import TableRow from '@mui/material/TableRow'
+import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { useForm, Controller } from 'react-hook-form'
-import {
-  createColumnHelper, flexRender, getCoreRowModel,
-  useReactTable, getSortedRowModel
-} from '@tanstack/react-table'
-import CustomAvatar from '@core/components/mui/Avatar'
 import { getInitials } from '@/utils/getInitials'
 import { userManagementApi } from '@/libs/api/userManagementApi'
-import tableStyles from '@core/styles/table.module.css'
 
-const columnHelper = createColumnHelper()
-
-// Role yang tersedia untuk dibuat via user management
-// (student & student_pic hanya via onboarding Telegram)
 const AVAILABLE_ROLES = [
-  { value: 'admin_nimen', label: 'Admin NIMEN' },
+  { value: 'admin_nimen',      label: 'Admin NIMEN' },
   { value: 'admin_initiative', label: 'Admin Inisiatif' },
-  { value: 'viewer', label: 'Viewer' },
+  { value: 'viewer',           label: 'Viewer' },
 ]
 
 const ROLE_COLORS = {
-  admin_nimen: 'primary',
+  admin_nimen:      'primary',
   admin_initiative: 'warning',
-  student: 'success',
-  student_pic: 'info',
-  viewer: 'secondary',
+  student:          'success',
+  student_pic:      'info',
+  viewer:           'secondary',
 }
 
 const ROLE_LABELS = {
-  admin_nimen: 'Admin NIMEN',
+  admin_nimen:      'Admin NIMEN',
   admin_initiative: 'Admin Inisiatif',
-  student: 'Mahasiswa',
-  student_pic: 'Mahasiswa PIC',
-  viewer: 'Viewer',
+  student:          'Mahasiswa',
+  student_pic:      'Mahasiswa PIC',
+  viewer:           'Viewer',
 }
 
-const DebouncedInput = ({ value: initialValue, onChange, debounce = 400, ...props }) => {
-  const [value, setValue] = useState(initialValue)
-  const onChangeRef = useRef(onChange)
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  : '—'
 
-  useEffect(() => { onChangeRef.current = onChange }, [onChange])
-  useEffect(() => setValue(initialValue), [initialValue])
+const DebouncedInput = ({ value: initial, onChange, debounce = 400, ...props }) => {
+  const [value, setValue] = useState(initial)
+  const ref = useRef(onChange)
+  useEffect(() => { ref.current = onChange }, [onChange])
+  useEffect(() => setValue(initial), [initial])
   useEffect(() => {
-    const t = setTimeout(() => onChangeRef.current(value), debounce)
+    const t = setTimeout(() => ref.current(value), debounce)
     return () => clearTimeout(t)
   }, [value, debounce])
-
   return <TextField {...props} value={value} onChange={e => setValue(e.target.value)} size='small' />
 }
 
+// ── Mobile Card ───────────────────────────────────────────────────────────────
+const UserMobileCard = ({ user, onEdit, onToggle, onDelete }) => (
+  <Card className='mb-3'>
+    <CardContent sx={{ p: '12px !important' }}>
+      <div className='flex items-start justify-between gap-2 mb-2'>
+        <div className='flex items-center gap-2 flex-1 min-w-0'>
+          <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
+            {getInitials(user.full_name || user.username)}
+          </Avatar>
+          <div className='min-w-0'>
+            <Typography variant='body2' fontWeight={600} noWrap>{user.full_name || user.username}</Typography>
+            <Typography variant='caption' color='text.secondary' noWrap>{user.username}</Typography>
+          </div>
+        </div>
+        <Chip label={user.is_active ? 'Aktif' : 'Nonaktif'}
+              color={user.is_active ? 'success' : 'default'} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
+      </div>
+      <div className='flex items-center gap-1 mb-1'>
+        <i className='ri-mail-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
+        <Typography variant='caption' color='text.secondary' noWrap>{user.email || '—'}</Typography>
+      </div>
+      <div className='flex items-center gap-2 mb-3 flex-wrap'>
+        {(user.roles || []).map(r => (
+          <Chip key={r} label={ROLE_LABELS[r] || r}
+                color={ROLE_COLORS[r] || 'default'} size='small' variant='tonal' />
+        ))}
+      </div>
+      <Divider className='mb-2' />
+      <div className='flex gap-1.5 flex-wrap'>
+        <Button size='small' variant='tonal' color='secondary'
+                startIcon={<i className='ri-edit-line' />}
+                onClick={() => onEdit(user)}>Edit</Button>
+        <Button size='small' variant='tonal'
+                color={user.is_active ? 'error' : 'success'}
+                onClick={() => onToggle(user)}>
+          {user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+        </Button>
+        <Button size='small' variant='tonal' color='error'
+                startIcon={<i className='ri-delete-bin-line' />}
+                onClick={() => onDelete(user)}>Hapus</Button>
+      </div>
+    </CardContent>
+  </Card>
+)
+
+// ── Main View ─────────────────────────────────────────────────────────────────
 const UserManagementView = () => {
-  const [data, setData] = useState([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const [data, setData]         = useState([])
+  const [total, setTotal]       = useState(0)
+  const [loading, setLoading]   = useState(false)
   const [globalFilter, setGlobalFilter] = useState('')
-  const [roleFilter, setRoleFilter] = useState('')
+  const [roleFilter, setRoleFilter]     = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [page, setPage] = useState(0)
+  const [page, setPage]         = useState(0)
   const [pageSize, setPageSize] = useState(10)
 
-  // Drawer form (create & edit)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editData, setEditData] = useState(null) // null = create mode
-  const [formLoading, setFormLoading] = useState(false)
-
-  // Toggle active dialog
-  const [toggleOpen, setToggleOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen]     = useState(false)
+  const [editData, setEditData]         = useState(null)
+  const [saveLoading, setSaveLoading]   = useState(false)
   const [toggleTarget, setToggleTarget] = useState(null)
   const [toggleLoading, setToggleLoading] = useState(false)
-
-  // Delete dialog
-  const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
-
-  // Toast
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
-  const showToast = useCallback((message, severity = 'success') => {
-    setToast({ open: true, message, severity })
-  }, [])
+
+  const showToast = useCallback((msg, severity = 'success') =>
+    setToast({ open: true, message: msg, severity }), [])
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: { username: '', full_name: '', email: '', role: '' }
+    defaultValues: { full_name: '', email: '', username: '', password: '', role: 'viewer' }
   })
 
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
       const params = { page: page + 1, page_size: pageSize }
-      if (globalFilter) params.search = globalFilter
-      if (roleFilter) params.role = roleFilter
-      if (statusFilter !== '') params.is_active = statusFilter
+      if (globalFilter) params.search    = globalFilter
+      if (roleFilter)   params.role      = roleFilter
+      if (statusFilter) params.is_active = statusFilter
       const res = await userManagementApi.getAll(params)
-      setData(res.data.data.data || [])
-      setTotal(res.data.data.pagination?.total || 0)
+      setData(res.data.data?.data || [])
+      setTotal(res.data.data?.pagination?.total || 0)
     } catch (err) {
       showToast(err.message || 'Gagal memuat data', 'error')
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }, [page, pageSize, globalFilter, roleFilter, statusFilter, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
 
   const handleOpenCreate = useCallback(() => {
     setEditData(null)
-    reset({ username: '', full_name: '', email: '', role: '' })
+    reset({ full_name: '', email: '', username: '', password: '', role: 'viewer' })
     setDrawerOpen(true)
   }, [reset])
 
-  const handleOpenEdit = useCallback((row) => {
-    setEditData(row)
+  const handleOpenEdit = useCallback((user) => {
+    setEditData(user)
     reset({
-      username: row.username,
-      full_name: row.full_name,
-      email: row.email || '',
-      role: row.roles?.[0] || '',
+      full_name: user.full_name || '',
+      email:     user.email || '',
+      username:  user.username || '',
+      password:  '',
+      role:      user.roles?.[0] || 'viewer',
     })
     setDrawerOpen(true)
   }, [reset])
 
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerOpen(false)
-    setEditData(null)
-  }, [])
-
-  const handleSubmitForm = useCallback(async (values) => {
-    setFormLoading(true)
+  const handleSave = useCallback(async (values) => {
+    setSaveLoading(true)
     try {
       if (editData) {
         await userManagementApi.update(editData.id, {
           full_name: values.full_name,
-          email: values.email || null,
+          email: values.email,
           role: values.role,
+          ...(values.password ? { password: values.password } : {}),
         })
         showToast('User berhasil diperbarui')
       } else {
         await userManagementApi.create({
-          username: values.username,
           full_name: values.full_name,
-          email: values.email || null,
+          email: values.email,
+          username: values.username,
+          password: values.password,
           role: values.role,
         })
-        showToast('User berhasil dibuat. Password default: Nimen@2025')
+        showToast('User berhasil dibuat')
       }
-      handleCloseDrawer()
-      fetchData()
+      setDrawerOpen(false); fetchData()
     } catch (err) {
-      showToast(err.message || 'Terjadi kesalahan', 'error')
-    } finally {
-      setFormLoading(false)
-    }
-  }, [editData, fetchData, handleCloseDrawer, showToast])
+      showToast(err.message || 'Gagal menyimpan', 'error')
+    } finally { setSaveLoading(false) }
+  }, [editData, fetchData, showToast])
 
   const handleToggleActive = useCallback(async () => {
     setToggleLoading(true)
     try {
       await userManagementApi.toggleActive(toggleTarget.id)
-      showToast(`Akun ${toggleTarget.full_name} berhasil ${toggleTarget.is_active ? 'dinonaktifkan' : 'diaktifkan'}`)
-      setToggleOpen(false)
-      fetchData()
+      showToast(`Akun berhasil ${toggleTarget.is_active ? 'dinonaktifkan' : 'diaktifkan'}`)
+      setToggleTarget(null); fetchData()
     } catch (err) {
       showToast(err.message || 'Gagal mengubah status', 'error')
-    } finally {
-      setToggleLoading(false)
-    }
+    } finally { setToggleLoading(false) }
   }, [toggleTarget, fetchData, showToast])
 
   const handleDelete = useCallback(async () => {
@@ -200,293 +230,299 @@ const UserManagementView = () => {
     try {
       await userManagementApi.delete(deleteTarget.id)
       showToast('User berhasil dihapus')
-      setDeleteOpen(false)
-      fetchData()
+      setDeleteTarget(null); fetchData()
     } catch (err) {
-      showToast(err.message || 'Gagal menghapus user', 'error')
-    } finally {
-      setDeleteLoading(false)
-    }
+      showToast(err.message || 'Gagal menghapus', 'error')
+    } finally { setDeleteLoading(false) }
   }, [deleteTarget, fetchData, showToast])
-
-  const columns = useMemo(() => [
-    columnHelper.accessor('full_name', {
-      header: 'User',
-      cell: ({ row }) => (
-        <div className='flex items-center gap-3'>
-          <CustomAvatar skin='light' color='primary' size={34}>
-            {getInitials(row.original.full_name)}
-          </CustomAvatar>
-          <div className='flex flex-col'>
-            <Typography color='text.primary' className='font-medium'>{row.original.full_name}</Typography>
-            <Typography variant='body2' color='text.secondary'>{row.original.username}</Typography>
-          </div>
-        </div>
-      )
-    }),
-    columnHelper.accessor('email', {
-      header: 'Email',
-      cell: ({ row }) => (
-        <Typography variant='body2' color={row.original.email ? 'text.primary' : 'text.disabled'}>
-          {row.original.email || '—'}
-        </Typography>
-      )
-    }),
-    columnHelper.accessor('roles', {
-      header: 'Role',
-      cell: ({ row }) => {
-        const role = row.original.roles?.[0]
-        return role
-          ? <Chip label={ROLE_LABELS[role] || role} color={ROLE_COLORS[role] || 'default'} size='small' variant='tonal' sx={{ minWidth: 130, justifyContent: 'center' }} />
-          : <Typography color='text.disabled' variant='body2'>—</Typography>
-      }
-    }),
-    columnHelper.accessor('is_active', {
-      header: 'Status',
-      cell: ({ row }) => (
-        <Chip
-          label={row.original.is_active ? 'Aktif' : 'Nonaktif'}
-          color={row.original.is_active ? 'success' : 'secondary'}
-          size='small' variant='tonal'
-        />
-      )
-    }),
-    columnHelper.accessor('created_at', {
-      header: 'Dibuat',
-      cell: ({ row }) => (
-        <Typography variant='body2' color='text.secondary'>
-          {row.original.created_at ? new Date(row.original.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-        </Typography>
-      )
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Aksi',
-      cell: ({ row }) => (
-        <div className='flex items-center gap-0.5'>
-          <Tooltip title='Edit'>
-            <IconButton size='small' onClick={() => handleOpenEdit(row.original)}>
-              <i className='ri-edit-line text-[22px]' />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={row.original.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
-            <IconButton
-              size='small'
-              color={row.original.is_active ? 'error' : 'success'}
-              onClick={() => { setToggleTarget(row.original); setToggleOpen(true) }}
-            >
-              <i className={`ri-${row.original.is_active ? 'forbid' : 'checkbox-circle'}-line text-[22px]`} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title='Hapus'>
-            <IconButton size='small' color='error' onClick={() => { setDeleteTarget(row.original); setDeleteOpen(true) }}>
-              <i className='ri-delete-bin-7-line text-[22px]' />
-            </IconButton>
-          </Tooltip>
-        </div>
-      )
-    })
-  ], [handleOpenEdit])
-
-  const table = useReactTable({
-    data, columns, manualPagination: true, manualFiltering: true,
-    rowCount: total, getCoreRowModel: getCoreRowModel(), getSortedRowModel: getSortedRowModel()
-  })
 
   return (
     <>
-      <Card>
-        <CardHeader
-          title='Manajemen User'
-          sx={{ pb: 0 }}
-          action={
-            <Button variant='contained' startIcon={<i className='ri-add-line' />} onClick={handleOpenCreate}>
-              Tambah User
-            </Button>
-          }
-        />
-        <div className='flex flex-wrap justify-between gap-4 p-6'>
-          <div className='flex flex-wrap items-center gap-4'>
-            <FormControl size='small' sx={{ minWidth: 160 }}>
-              <InputLabel>Role</InputLabel>
-              <Select label='Role' value={roleFilter} onChange={e => { setRoleFilter(e.target.value); setPage(0) }}>
-                <MenuItem value=''>Semua Role</MenuItem>
-                {AVAILABLE_ROLES.map(r => <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>)}
-                <MenuItem value='student'>Mahasiswa</MenuItem>
-                <MenuItem value='student_pic'>Mahasiswa PIC</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl size='small' sx={{ minWidth: 130 }}>
-              <InputLabel>Status</InputLabel>
-              <Select label='Status' value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
-                <MenuItem value=''>Semua</MenuItem>
-                <MenuItem value='true'>Aktif</MenuItem>
-                <MenuItem value='false'>Nonaktif</MenuItem>
-              </Select>
-            </FormControl>
-          </div>
-          <DebouncedInput
-            value={globalFilter}
-            onChange={val => { setGlobalFilter(val); setPage(0) }}
-            placeholder='Cari nama, username...'
-            InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-            sx={{ minWidth: 240 }}
-          />
-        </div>
-        <Divider />
-        <div className='overflow-x-auto'>
-          <table className={tableStyles.table}>
-            <thead>
-            {table.getHeaderGroups().map(hg => (
-              <tr key={hg.id}>{hg.headers.map(h => <th key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>
-            ))}
-            </thead>
-            <tbody>
-            {loading ? (
-              <tr><td colSpan={columns.length} className='text-center py-10'><CircularProgress size={32} /></td></tr>
-            ) : table.getRowModel().rows.length === 0 ? (
-              <tr><td colSpan={columns.length} className='text-center py-10'><Typography color='text.secondary'>Tidak ada data user</Typography></td></tr>
-            ) : (
-              table.getRowModel().rows.map(row => (
-                <tr key={row.id}>{row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>
-              ))
-            )}
-            </tbody>
-          </table>
-        </div>
-        <TablePagination
-          component='div' count={total} page={page} rowsPerPage={pageSize}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage='Baris per halaman:'
-          labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
-        />
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2 mb-6'>
+        <Typography variant='caption' color='text.secondary'>Administrasi</Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary'>Manajemen User</Typography>
+      </div>
+
+      {/* Header */}
+      <div className='flex items-center justify-between mb-6 flex-wrap gap-3'>
+        <div />
+        <Button variant='contained' startIcon={<i className='ri-add-line' />}
+                onClick={handleOpenCreate}
+                sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          Tambah User
+        </Button>
+      </div>
+
+      {/* Filter */}
+      <Card className='mb-6'>
+        <CardContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>Role</InputLabel>
+                <Select label='Role' value={roleFilter}
+                        onChange={e => { setRoleFilter(e.target.value); setPage(0) }}>
+                  <MenuItem value=''>Semua Role</MenuItem>
+                  {Object.entries(ROLE_LABELS).map(([key, label]) => (
+                    <MenuItem key={key} value={key}>
+                      <Chip label={label} color={ROLE_COLORS[key] || 'default'} size='small' variant='tonal' />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>Status</InputLabel>
+                <Select label='Status' value={statusFilter}
+                        onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
+                  <MenuItem value=''>Semua Status</MenuItem>
+                  <MenuItem value='true'>Aktif</MenuItem>
+                  <MenuItem value='false'>Nonaktif</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <DebouncedInput fullWidth value={globalFilter}
+                              onChange={v => { setGlobalFilter(v); setPage(0) }}
+                              placeholder='Cari nama, username...'
+                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
       </Card>
 
-      {/* ── Form Drawer (Create & Edit) ── */}
-      <Drawer open={drawerOpen} anchor='right' variant='temporary' onClose={handleCloseDrawer}
-              ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 420 } } }}>
-        <div className='flex items-center justify-between pli-6 plb-5'>
+      {/* Content */}
+      {loading ? (
+        <Box className='flex justify-center py-10'><CircularProgress /></Box>
+      ) : isMobile ? (
+        <>
+          {data.length === 0 ? (
+            <Card>
+              <CardContent sx={{ py: 6 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <i className='ri-user-settings-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                  <Typography variant='body2' color='text.secondary'>Tidak ada user ditemukan.</Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          ) : data.map(u => (
+            <UserMobileCard key={u.id} user={u}
+                            onEdit={handleOpenEdit}
+                            onToggle={u => { setToggleTarget(u) }}
+                            onDelete={u => { setDeleteTarget(u) }}
+            />
+          ))}
+          <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
+                           onPageChange={(_, p) => setPage(p)}
+                           onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                           rowsPerPageOptions={[10, 25, 50]}
+                           labelRowsPerPage='Baris:'
+                           labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+          />
+        </>
+      ) : (
+        <Card>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                {['User', 'Email', 'Role', 'Status', 'Dibuat', 'Aksi'].map(h => (
+                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                    {h}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} sx={{ py: 8 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <i className='ri-user-settings-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada user ditemukan.</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : data.map(u => (
+                <TableRow key={u.id} hover>
+                  <TableCell>
+                    <div className='flex items-center gap-2'>
+                      <Avatar sx={{ width: 32, height: 32, fontSize: 12 }}>
+                        {getInitials(u.full_name || u.username)}
+                      </Avatar>
+                      <div>
+                        <Typography variant='body2' fontWeight={600}>{u.full_name || u.username}</Typography>
+                        <Typography variant='caption' color='text.secondary'>{u.username}</Typography>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell><Typography variant='body2'>{u.email || '—'}</Typography></TableCell>
+                  <TableCell>
+                    <div className='flex flex-wrap gap-1'>
+                      {(u.roles || []).map(r => (
+                        <Chip key={r} label={ROLE_LABELS[r] || r}
+                              color={ROLE_COLORS[r] || 'default'} size='small' variant='tonal' />
+                      ))}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Chip label={u.is_active ? 'Aktif' : 'Nonaktif'}
+                          color={u.is_active ? 'success' : 'default'} size='small' variant='tonal' />
+                  </TableCell>
+                  <TableCell><Typography variant='body2'>{fmtDate(u.created_at)}</Typography></TableCell>
+                  <TableCell>
+                    <div className='flex items-center gap-0.5'>
+                      <Tooltip title='Edit'>
+                        <IconButton size='small' onClick={() => handleOpenEdit(u)}>
+                          <i className='ri-edit-line text-[18px]' />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={u.is_active ? 'Nonaktifkan' : 'Aktifkan'}>
+                        <IconButton size='small' color={u.is_active ? 'error' : 'success'}
+                                    onClick={() => setToggleTarget(u)}>
+                          <i className={`ri-${u.is_active ? 'forbid' : 'checkbox-circle'}-line text-[18px]`} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title='Hapus'>
+                        <IconButton size='small' color='error' onClick={() => setDeleteTarget(u)}>
+                          <i className='ri-delete-bin-line text-[18px]' />
+                        </IconButton>
+                      </Tooltip>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
+                           onPageChange={(_, p) => setPage(p)}
+                           onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                           rowsPerPageOptions={[10, 25, 50]}
+                           labelRowsPerPage='Baris per halaman:'
+                           labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+          />
+        </Card>
+      )}
+
+      {/* Drawer Create/Edit */}
+      <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
           <div>
-            <Typography variant='h5'>{editData ? 'Edit User' : 'Tambah User'}</Typography>
-            {editData && <Typography variant='body2' color='text.secondary'>{editData.username}</Typography>}
+            <Typography variant='h6'>{editData ? 'Edit User' : 'Tambah User'}</Typography>
+            {editData && <Typography variant='caption' color='text.secondary'>{editData.username}</Typography>}
           </div>
-          <IconButton onClick={handleCloseDrawer}><i className='ri-close-line text-2xl' /></IconButton>
+          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line' /></IconButton>
         </div>
-        <Divider />
-        <div className='p-6'>
-          <form onSubmit={handleSubmit(handleSubmitForm)} className='flex flex-col gap-5'>
-
-            {/* Username — hanya saat create */}
-            {!editData && (
-              <Controller name='username' control={control}
-                          rules={{ required: 'Username wajib diisi', minLength: { value: 3, message: 'Minimal 3 karakter' } }}
-                          render={({ field }) => (
-                            <TextField {...field} fullWidth label='Username' placeholder='Contoh: john.doe'
-                                       error={!!errors.username} helperText={errors.username?.message} />
-                          )}
-              />
-            )}
-
-            <Controller name='full_name' control={control}
-                        rules={{ required: 'Nama lengkap wajib diisi', minLength: { value: 2, message: 'Minimal 2 karakter' } }}
+        <form onSubmit={handleSubmit(handleSave)} className='flex flex-col gap-4 p-4 overflow-y-auto'>
+          <Controller name='full_name' control={control} rules={{ required: 'Nama wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth size='small' label='Nama Lengkap'
+                                   error={!!errors.full_name} helperText={errors.full_name?.message} />
+                      )}
+          />
+          <Controller name='email' control={control} rules={{ required: 'Email wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth size='small' label='Email' type='email'
+                                   error={!!errors.email} helperText={errors.email?.message} />
+                      )}
+          />
+          {!editData && (
+            <Controller name='username' control={control} rules={{ required: 'Username wajib diisi' }}
                         render={({ field }) => (
-                          <TextField {...field} fullWidth label='Nama Lengkap' placeholder='Contoh: John Doe'
-                                     error={!!errors.full_name} helperText={errors.full_name?.message} />
+                          <TextField {...field} fullWidth size='small' label='Username'
+                                     error={!!errors.username} helperText={errors.username?.message} />
                         )}
             />
-
-            <Controller name='email' control={control}
-                        rules={{ pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Format email tidak valid' } }}
-                        render={({ field }) => (
-                          <TextField {...field} fullWidth label='Email (opsional)' placeholder='john@example.com'
-                                     error={!!errors.email} helperText={errors.email?.message} />
-                        )}
-            />
-
-            <Controller name='role' control={control}
-                        rules={{ required: 'Role wajib dipilih' }}
-                        render={({ field }) => (
-                          <FormControl fullWidth error={!!errors.role}>
-                            <InputLabel>Role</InputLabel>
-                            <Select {...field} label='Role'>
-                              {AVAILABLE_ROLES.map(r => (
-                                <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>
-                              ))}
-                            </Select>
-                            {errors.role && <Typography variant='caption' color='error' className='mt-1 ml-3'>{errors.role.message}</Typography>}
-                          </FormControl>
-                        )}
-            />
-
-            {/* Info password default — hanya saat create */}
-            {!editData && (
-              <Alert severity='info' variant='outlined'>
-                Password default: <strong>Nimen@2025</strong>. User wajib mengganti password saat login pertama.
-              </Alert>
-            )}
-
-            <div className='flex gap-4 mt-2'>
-              <Button fullWidth type='submit' variant='contained' disabled={formLoading}
-                      startIcon={formLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-                {formLoading ? 'Menyimpan...' : 'Simpan'}
-              </Button>
-              <Button fullWidth variant='tonal' color='secondary' onClick={handleCloseDrawer} disabled={formLoading}>
-                Batal
-              </Button>
-            </div>
-          </form>
-        </div>
+          )}
+          <Controller name='password' control={control}
+                      rules={editData ? {} : { required: 'Password wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth size='small' label={editData ? 'Password Baru (opsional)' : 'Password'}
+                                   type='password' error={!!errors.password} helperText={errors.password?.message} />
+                      )}
+          />
+          <Controller name='role' control={control} rules={{ required: 'Role wajib dipilih' }}
+                      render={({ field }) => (
+                        <FormControl fullWidth size='small' error={!!errors.role}>
+                          <InputLabel>Role</InputLabel>
+                          <Select {...field} label='Role'>
+                            {/* Tampilkan role saat ini jika tidak ada di AVAILABLE_ROLES (misal: student) */}
+                            {editData && !AVAILABLE_ROLES.find(r => r.value === field.value) && (
+                              <MenuItem value={field.value} disabled>
+                                <Chip label={ROLE_LABELS[field.value] || field.value}
+                                      color={ROLE_COLORS[field.value] || 'default'} size='small' variant='tonal' />
+                              </MenuItem>
+                            )}
+                            {AVAILABLE_ROLES.map(r => (
+                              <MenuItem key={r.value} value={r.value}>
+                                <Chip label={r.label} color={ROLE_COLORS[r.value] || 'default'} size='small' variant='tonal' />
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
+          />
+          <div className='flex gap-2 mt-2'>
+            <Button fullWidth variant='tonal' color='secondary'
+                    onClick={() => setDrawerOpen(false)} disabled={saveLoading}>Batal</Button>
+            <Button fullWidth variant='contained' type='submit' disabled={saveLoading}
+                    startIcon={saveLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+              {saveLoading ? 'Menyimpan...' : editData ? 'Simpan Perubahan' : 'Buat User'}
+            </Button>
+          </div>
+        </form>
       </Drawer>
 
-      {/* ── Toggle Active Dialog ── */}
-      <Dialog open={toggleOpen} onClose={() => setToggleOpen(false)} maxWidth='xs' fullWidth>
+      {/* Dialog Toggle */}
+      <Dialog open={!!toggleTarget} onClose={() => setToggleTarget(null)} maxWidth='xs' fullWidth>
         <DialogTitle>{toggleTarget?.is_active ? 'Nonaktifkan' : 'Aktifkan'} Akun</DialogTitle>
         <DialogContent>
           <DialogContentText>
             {toggleTarget?.is_active
-              ? `Nonaktifkan akun ${toggleTarget?.full_name}? User tidak bisa login selama akun nonaktif.`
-              : `Aktifkan kembali akun ${toggleTarget?.full_name}?`
-            }
+              ? `Nonaktifkan akun ${toggleTarget?.full_name || toggleTarget?.username}?`
+              : `Aktifkan kembali akun ${toggleTarget?.full_name || toggleTarget?.username}?`}
           </DialogContentText>
         </DialogContent>
-        <DialogActions className='pli-5 plb-4'>
-          <Button onClick={() => setToggleOpen(false)} variant='tonal' color='secondary' disabled={toggleLoading}>Batal</Button>
-          <Button
-            onClick={handleToggleActive}
-            variant='contained'
-            color={toggleTarget?.is_active ? 'error' : 'success'}
-            disabled={toggleLoading}
-            startIcon={toggleLoading ? <CircularProgress size={16} color='inherit' /> : null}
-          >
+        <DialogActions className='p-4 gap-2'>
+          <Button variant='tonal' color='secondary' onClick={() => setToggleTarget(null)} disabled={toggleLoading}>
+            Batal
+          </Button>
+          <Button variant='contained' color={toggleTarget?.is_active ? 'error' : 'success'}
+                  onClick={handleToggleActive} disabled={toggleLoading}
+                  startIcon={toggleLoading ? <CircularProgress size={16} color='inherit' /> : null}>
             {toggleLoading ? 'Memproses...' : toggleTarget?.is_active ? 'Nonaktifkan' : 'Aktifkan'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* ── Delete Dialog ── */}
-      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth='xs' fullWidth>
-        <DialogTitle>Hapus User</DialogTitle>
+      {/* Dialog Delete */}
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth='xs' fullWidth>
+        <DialogTitle>Hapus User?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Hapus user <strong>{deleteTarget?.full_name}</strong> ({deleteTarget?.username})? Tindakan ini tidak dapat dibatalkan.
+            Hapus akun <strong>{deleteTarget?.full_name || deleteTarget?.username}</strong>? Tindakan ini tidak dapat dibatalkan.
           </DialogContentText>
         </DialogContent>
-        <DialogActions className='pli-5 plb-4'>
-          <Button onClick={() => setDeleteOpen(false)} variant='tonal' color='secondary' disabled={deleteLoading}>Batal</Button>
-          <Button onClick={handleDelete} variant='contained' color='error' disabled={deleteLoading}
+        <DialogActions className='p-4 gap-2'>
+          <Button variant='tonal' color='secondary' onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>
+            Batal
+          </Button>
+          <Button variant='contained' color='error' onClick={handleDelete} disabled={deleteLoading}
                   startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
             {deleteLoading ? 'Menghapus...' : 'Hapus'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* ── Toast ── */}
       <Snackbar open={toast.open} autoHideDuration={4000}
                 onClose={() => setToast(t => ({ ...t, open: false }))}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-        <Alert severity={toast.severity} variant='filled' onClose={() => setToast(t => ({ ...t, open: false }))}>
+        <Alert severity={toast.severity} variant='filled'
+               onClose={() => setToast(t => ({ ...t, open: false }))}>
           {toast.message}
         </Alert>
       </Snackbar>

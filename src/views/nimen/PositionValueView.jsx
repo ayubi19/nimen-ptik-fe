@@ -185,12 +185,14 @@ const PositionValueView = () => {
       {/* Empty state */}
       {!preview && !previewLoading && (
         <Card>
-          <CardContent className='text-center py-16'>
-            <i className='ri-medal-line text-6xl opacity-20 block mb-3' />
-            <Typography variant='body1' color='text.secondary'>
-              Pilih angkatan dan bulan, lalu klik <strong>Preview</strong> untuk melihat
-              daftar pejabat yang akan mendapat nilai jabatan.
-            </Typography>
+          <CardContent sx={{ py: 6 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <i className='ri-medal-line' style={{ fontSize: 48, opacity: 0.25 }} />
+              <Typography variant='body2' color='text.secondary' sx={{ textAlign: 'center' }}>
+                Pilih angkatan dan bulan, lalu klik <strong>Preview</strong> untuk melihat
+                daftar pejabat yang akan mendapat nilai jabatan.
+              </Typography>
+            </Box>
           </CardContent>
         </Card>
       )}

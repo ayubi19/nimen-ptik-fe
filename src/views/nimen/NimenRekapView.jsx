@@ -362,11 +362,13 @@ const NimenRekapView = () => {
           <div className='flex justify-center py-10'><CircularProgress /></div>
         ) : myEntries.length === 0 ? (
           <Card>
-            <CardContent className='text-center py-16'>
-              <i className='ri-inbox-line text-6xl opacity-20 block mb-3' />
-              <Typography variant='body1' color='text.secondary'>
-                Belum ada nilai yang tercatat untuk akun Anda.
-              </Typography>
+            <CardContent sx={{ py: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.25 }} />
+                <Typography variant='body2' color='text.secondary'>
+                  Belum ada nilai yang tercatat untuk akun Anda.
+                </Typography>
+              </Box>
             </CardContent>
           </Card>
         ) : (
@@ -566,11 +568,13 @@ const NimenRekapView = () => {
         {/* Empty state awal */}
         {!hasLoaded && !loading && (
           <Card>
-            <CardContent className='text-center py-16'>
-              <i className='ri-bar-chart-grouped-line text-6xl opacity-20 block mb-3' />
-              <Typography variant='body1' color='text.secondary'>
-                Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
-              </Typography>
+            <CardContent sx={{ py: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <i className='ri-bar-chart-grouped-line' style={{ fontSize: 48, opacity: 0.25 }} />
+                <Typography variant='body2' color='text.secondary'>
+                  Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
+                </Typography>
+              </Box>
             </CardContent>
           </Card>
         )}
@@ -612,11 +616,13 @@ const NimenRekapView = () => {
         {/* Empty result */}
         {hasLoaded && entries.length === 0 && (
           <Card>
-            <CardContent className='text-center py-12'>
-              <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
-              <Typography variant='body2' color='text.secondary'>
-                Tidak ada entri nilai yang ditemukan untuk filter yang dipilih.
-              </Typography>
+            <CardContent sx={{ py: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                <Typography variant='body2' color='text.secondary'>
+                  Tidak ada entri nilai yang ditemukan untuk filter yang dipilih.
+                </Typography>
+              </Box>
             </CardContent>
           </Card>
         )}

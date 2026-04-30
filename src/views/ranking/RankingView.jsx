@@ -375,11 +375,13 @@ const RankingView = () => {
         <Box className='flex justify-center py-10'><CircularProgress /></Box>
       ) : rows.length === 0 ? (
         <Card>
-          <CardContent className='text-center py-12'>
-            <i className='ri-bar-chart-line text-5xl opacity-30 block mb-2' />
-            <Typography variant='body2' color='text.secondary'>
-              {batchID ? 'Belum ada data ranking untuk filter yang dipilih.' : 'Pilih angkatan untuk melihat ranking.'}
-            </Typography>
+          <CardContent sx={{ py: 6 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <i className='ri-bar-chart-line' style={{ fontSize: 48, opacity: 0.3 }} />
+              <Typography variant='body2' color='text.secondary'>
+                {batchID ? 'Belum ada data ranking untuk filter yang dipilih.' : 'Pilih angkatan untuk melihat ranking.'}
+              </Typography>
+            </Box>
           </CardContent>
         </Card>
       ) : isMobile ? (

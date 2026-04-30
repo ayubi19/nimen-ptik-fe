@@ -272,7 +272,7 @@ const NimenIndicatorsView = () => {
         ].map(s => (
           <Grid item xs={6} sm={3} key={s.label}>
             <Card sx={{ height: '100%' }}>
-              <CardContent className='flex items-center gap-3'>
+              <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 8, flexShrink: 0,
                   background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -343,8 +343,10 @@ const NimenIndicatorsView = () => {
         <div>
           {data.length === 0 ? (
             <Card>
-              <CardContent className='text-center py-10'>
-                <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
+              <CardContent sx={{ py: 10 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                  <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                </Box>
                 <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
               </CardContent>
             </Card>
@@ -390,7 +392,9 @@ const NimenIndicatorsView = () => {
               {data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align='center' sx={{ py: 8 }}>
-                    <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                      <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                    </Box>
                     <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
                   </TableCell>
                 </TableRow>

@@ -262,8 +262,10 @@ const NimenCategoriesView = () => {
         <div>
           {filtered.length === 0 ? (
             <Card>
-              <CardContent className='text-center py-10'>
-                <i className='ri-node-tree text-5xl opacity-30 block mb-2' />
+              <CardContent sx={{ py: 10 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                  <i className='ri-node-tree' style={{ fontSize: 48, opacity: 0.3 }} />
+                </Box>
                 <Typography variant='body2' color='text.secondary'>Tidak ada kategori ditemukan</Typography>
               </CardContent>
             </Card>
@@ -289,7 +291,9 @@ const NimenCategoriesView = () => {
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align='center' sx={{ py: 8 }}>
-                    <i className='ri-node-tree text-5xl opacity-30 block mb-2' />
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                      <i className='ri-node-tree' style={{ fontSize: 48, opacity: 0.3 }} />
+                    </Box>
                     <Typography variant='body2' color='text.secondary'>Tidak ada kategori ditemukan</Typography>
                   </TableCell>
                 </TableRow>

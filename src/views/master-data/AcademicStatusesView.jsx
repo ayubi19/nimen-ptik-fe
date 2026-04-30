@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import Button from '@mui/material/Button'
+import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
@@ -249,9 +250,11 @@ const AcademicStatusesView = () => {
         // Mobile — Card List
         filtered.length === 0 ? (
           <Card>
-            <CardContent className='text-center py-12'>
-              <i className='ri-graduation-cap-line text-5xl opacity-30 block mb-3' />
-              <Typography variant='body2' color='text.secondary'>Tidak ada status akademik ditemukan</Typography>
+            <CardContent sx={{ py: 6 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <i className='ri-graduation-cap-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                <Typography variant='body2' color='text.secondary'>Tidak ada status akademik ditemukan</Typography>
+              </Box>
             </CardContent>
           </Card>
         ) : filtered.map(s => (
@@ -274,9 +277,11 @@ const AcademicStatusesView = () => {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} align='center' sx={{ py: 8 }}>
-                    <i className='ri-graduation-cap-line text-5xl opacity-30 block mb-2' />
-                    <Typography variant='body2' color='text.secondary'>Tidak ada status akademik ditemukan</Typography>
+                  <TableCell colSpan={4} sx={{ py: 8 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <i className='ri-graduation-cap-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada status akademik ditemukan</Typography>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ) : filtered.map(s => (

@@ -208,7 +208,7 @@ const SyndicatesView = () => {
         ].map(s => (
           <Grid item xs={6} key={s.label}>
             <Card sx={{ height: '100%' }}>
-              <CardContent className='flex items-center gap-3'>
+              <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 8, flexShrink: 0,
                   background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -257,8 +257,10 @@ const SyndicatesView = () => {
         // Mobile — Card List
         filtered.length === 0 ? (
           <Card>
-            <CardContent className='text-center py-12'>
-              <i className='ri-shield-star-line text-5xl opacity-30 block mb-3' />
+            <CardContent sx={{ py: 12 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                <i className='ri-shield-star-line' style={{ fontSize: 48, opacity: 0.3 }} />
+              </Box>
               <Typography variant='body2' color='text.secondary'>Tidak ada sindikat ditemukan</Typography>
             </CardContent>
           </Card>
@@ -283,7 +285,9 @@ const SyndicatesView = () => {
               {filtered.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} align='center' sx={{ py: 8 }}>
-                    <i className='ri-shield-star-line text-5xl opacity-30 block mb-2' />
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                      <i className='ri-shield-star-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                    </Box>
                     <Typography variant='body2' color='text.secondary'>Tidak ada sindikat ditemukan</Typography>
                   </TableCell>
                 </TableRow>

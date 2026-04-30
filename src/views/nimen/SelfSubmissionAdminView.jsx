@@ -211,20 +211,22 @@ const SelfSubmissionAdminView = () => {
         ].map(s => (
           <Grid item xs={6} sm={3} key={s.label}>
             <Card sx={{ height: '100%' }}>
-              <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                  background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                  <Typography variant='caption' color='text.secondary'
-                              sx={{ display: 'block', fontSize: { xs: 11, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {s.label}
-                  </Typography>
-                </div>
+              <CardContent sx={{ p: "0 !important" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: "12px", p: "12px" }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
+                    <Typography variant='caption' color='text.secondary'
+                                sx={{ display: 'block', fontSize: { xs: 11, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.label}
+                    </Typography>
+                  </div>
+                </Box>
               </CardContent>
             </Card>
           </Grid>
@@ -268,9 +270,11 @@ const SelfSubmissionAdminView = () => {
         <>
           {data.length === 0 ? (
             <Card>
-              <CardContent className='text-center py-12'>
-                <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
-                <Typography variant='body2' color='text.secondary'>Tidak ada pengajuan ditemukan.</Typography>
+              <CardContent sx={{ py: 6 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                  <Typography variant='body2' color='text.secondary'>Tidak ada pengajuan ditemukan.</Typography>
+                </Box>
               </CardContent>
             </Card>
           ) : data.map(s => (
@@ -300,9 +304,11 @@ const SelfSubmissionAdminView = () => {
             <TableBody>
               {data.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align='center' sx={{ py: 8 }}>
-                    <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
-                    <Typography variant='body2' color='text.secondary'>Tidak ada pengajuan ditemukan.</Typography>
+                  <TableCell colSpan={6} sx={{ py: 8 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada pengajuan ditemukan.</Typography>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ) : data.map(s => {

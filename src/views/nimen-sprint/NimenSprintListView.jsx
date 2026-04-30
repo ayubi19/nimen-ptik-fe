@@ -235,7 +235,7 @@ const NimenSprintListView = () => {
         ].map(s => (
           <Grid item xs={6} sm={3} key={s.label}>
             <Card>
-              <CardContent className='flex items-center gap-3'>
+              <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{
                   width: 44, height: 44, borderRadius: 8, flexShrink: 0,
                   background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -325,8 +325,10 @@ const NimenSprintListView = () => {
         <>
           {data.length === 0 ? (
             <Card>
-              <CardContent className='text-center py-12'>
-                <i className='ri-flag-line text-5xl opacity-30 block mb-2' />
+              <CardContent sx={{ py: 12 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                  <i className='ri-flag-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                </Box>
                 <Typography variant='body2' color='text.secondary'>Tidak ada sprint ditemukan</Typography>
               </CardContent>
             </Card>
@@ -359,7 +361,9 @@ const NimenSprintListView = () => {
               {data.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} align='center' sx={{ py: 8 }}>
-                    <i className='ri-flag-line text-5xl opacity-30 block mb-2' />
+                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+                      <i className='ri-flag-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                    </Box>
                     <Typography variant='body2' color='text.secondary'>Tidak ada sprint ditemukan</Typography>
                   </TableCell>
                 </TableRow>

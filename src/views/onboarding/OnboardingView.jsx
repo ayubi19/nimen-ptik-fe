@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import Alert from '@mui/material/Alert'
+import Avatar from '@mui/material/Avatar'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import Divider from '@mui/material/Divider'
-import Drawer from '@mui/material/Drawer'
+import CardContent from '@mui/material/CardContent'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
 import Dialog from '@mui/material/Dialog'
@@ -13,121 +14,165 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContent from '@mui/material/DialogContent'
 import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
+import Divider from '@mui/material/Divider'
+import Drawer from '@mui/material/Drawer'
+import FormControl from '@mui/material/FormControl'
+import Grid from '@mui/material/Grid'
 import IconButton from '@mui/material/IconButton'
 import InputAdornment from '@mui/material/InputAdornment'
+import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
-import TablePagination from '@mui/material/TablePagination'
-import TextField from '@mui/material/TextField'
-import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
-import FormControl from '@mui/material/FormControl'
-import InputLabel from '@mui/material/InputLabel'
-import Grid from '@mui/material/Grid'
-import Box from '@mui/material/Box'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableHead from '@mui/material/TableHead'
+import TablePagination from '@mui/material/TablePagination'
+import TableRow from '@mui/material/TableRow'
+import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { useForm, Controller } from 'react-hook-form'
-import {
-  createColumnHelper, flexRender, getCoreRowModel,
-  useReactTable, getSortedRowModel
-} from '@tanstack/react-table'
+import { getInitials } from '@/utils/getInitials'
 import { onboardingApi, telegramAdminApi } from '@/libs/api/onboardingApi'
 import { syndicateApi, batchApi, academicStatusApi } from '@/libs/api/masterDataApi'
-import tableStyles from '@core/styles/table.module.css'
 
-const columnHelper = createColumnHelper()
+const STATUS_CONFIG = {
+  PENDING:  { label: 'Menunggu',  color: 'warning', icon: 'ri-time-line' },
+  APPROVED: { label: 'Disetujui', color: 'success', icon: 'ri-checkbox-circle-line' },
+  REJECTED: { label: 'Ditolak',   color: 'error',   icon: 'ri-close-circle-line' },
+}
 
-const DebouncedInput = ({ value: initialValue, onChange, debounce = 400, ...props }) => {
-  const [value, setValue] = useState(initialValue)
-  const onChangeRef = useRef(onChange)
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+  : '—'
 
-  useEffect(() => { onChangeRef.current = onChange }, [onChange])
-  useEffect(() => setValue(initialValue), [initialValue])
+const DebouncedInput = ({ value: initial, onChange, debounce = 400, ...props }) => {
+  const [value, setValue] = useState(initial)
+  const ref = useRef(onChange)
+  useEffect(() => { ref.current = onChange }, [onChange])
+  useEffect(() => setValue(initial), [initial])
   useEffect(() => {
-    const t = setTimeout(() => onChangeRef.current(value), debounce)
+    const t = setTimeout(() => ref.current(value), debounce)
     return () => clearTimeout(t)
   }, [value, debounce])
-
   return <TextField {...props} value={value} onChange={e => setValue(e.target.value)} size='small' />
 }
 
-const statusMap = {
-  PENDING: { label: 'Menunggu', color: 'warning' },
-  APPROVED: { label: 'Disetujui', color: 'success' },
-  REJECTED: { label: 'Ditolak', color: 'error' },
+// ── Mobile Card ───────────────────────────────────────────────────────────────
+const RegistrationMobileCard = ({ reg, onDetail, onApprove, onReject }) => {
+  const cfg = STATUS_CONFIG[reg.status] || { label: reg.status, color: 'default' }
+  const isPending = reg.status === 'PENDING'
+  return (
+    <Card className='mb-3'>
+      <CardContent sx={{ p: '12px !important' }}>
+        <div className='flex items-start justify-between gap-2 mb-2'>
+          <div className='flex items-center gap-2 flex-1 min-w-0'>
+            <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0, bgcolor: 'primary.main' }}>
+              {getInitials(reg.full_name)}
+            </Avatar>
+            <div className='min-w-0'>
+              <Typography variant='body2' fontWeight={600} noWrap>{reg.full_name}</Typography>
+              <Typography variant='caption' color='text.secondary'>{reg.nim}</Typography>
+            </div>
+          </div>
+          <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
+        </div>
+        <div className='flex flex-col gap-0.5 mb-2'>
+          <div className='flex items-center gap-1'>
+            <i className='ri-mail-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
+            <Typography variant='caption' color='text.secondary' noWrap>{reg.email}</Typography>
+          </div>
+          {reg.phone && (
+            <div className='flex items-center gap-1'>
+              <i className='ri-phone-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
+              <Typography variant='caption' color='text.secondary'>{reg.phone}</Typography>
+            </div>
+          )}
+          <div className='flex items-center gap-1'>
+            <i className='ri-calendar-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
+            <Typography variant='caption' color='text.secondary'>{fmtDate(reg.created_at)}</Typography>
+          </div>
+        </div>
+        {reg.status === 'REJECTED' && reg.rejection_reason && (
+          <Alert severity='error' sx={{ py: 0.5, mb: 1, fontSize: 11 }}>
+            {reg.rejection_reason}
+          </Alert>
+        )}
+        <Divider className='mb-2' />
+        <div className='flex gap-1.5 flex-wrap'>
+          <Button size='small' variant='tonal' color='secondary'
+                  startIcon={<i className='ri-eye-line' />}
+                  onClick={() => onDetail(reg)}>Detail</Button>
+          {isPending && (
+            <>
+              <Button size='small' variant='contained' color='success'
+                      startIcon={<i className='ri-checkbox-circle-line' />}
+                      onClick={() => onApprove(reg)}>Setujui</Button>
+              <Button size='small' variant='tonal' color='error'
+                      startIcon={<i className='ri-close-circle-line' />}
+                      onClick={() => onReject(reg)}>Tolak</Button>
+            </>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
+// ── Main View ─────────────────────────────────────────────────────────────────
 const OnboardingView = () => {
-  // ── Table state ──
-  const [data, setData] = useState([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const [data, setData]         = useState([])
+  const [total, setTotal]       = useState(0)
+  const [loading, setLoading]   = useState(false)
   const [globalFilter, setGlobalFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('PENDING')
-  const [page, setPage] = useState(0)
+  const [page, setPage]         = useState(0)
   const [pageSize, setPageSize] = useState(10)
 
-  // ── Master data options ──
-  const [syndicates, setSyndicates] = useState([])
-  const [batches, setBatches] = useState([])
+  const [syndicates, setSyndicates]             = useState([])
+  const [batches, setBatches]                   = useState([])
   const [academicStatuses, setAcademicStatuses] = useState([])
 
-  // ── Approve drawer ──
-  const [approveOpen, setApproveOpen] = useState(false)
+  const [detailOpen, setDetailOpen]     = useState(false)
+  const [detailData, setDetailData]     = useState(null)
+  const [approveOpen, setApproveOpen]   = useState(false)
   const [approveTarget, setApproveTarget] = useState(null)
   const [approveLoading, setApproveLoading] = useState(false)
-
-  // ── Reject dialog ──
-  const [rejectOpen, setRejectOpen] = useState(false)
+  const [rejectOpen, setRejectOpen]     = useState(false)
   const [rejectTarget, setRejectTarget] = useState(null)
   const [rejectLoading, setRejectLoading] = useState(false)
-
-  // ── Detail drawer ──
-  const [detailOpen, setDetailOpen] = useState(false)
-  const [detailData, setDetailData] = useState(null)
-
-  // ── Register Telegram drawer ──
-  const [telegramDrawerOpen, setTelegramDrawerOpen] = useState(false)
+  const [telegramOpen, setTelegramOpen] = useState(false)
   const [telegramForm, setTelegramForm] = useState({ telegram_user_id: '', telegram_username: '' })
   const [telegramLoading, setTelegramLoading] = useState(false)
-
-  // ── Toast ──
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
-  const showToast = useCallback((message, severity = 'success') => {
-    setToast({ open: true, message, severity })
-  }, [])
 
-  // ── Forms ──
-  const {
-    control: approveControl,
-    handleSubmit: handleApproveSubmit,
-    reset: resetApprove,
-    formState: { errors: approveErrors }
-  } = useForm({
-    defaultValues: {
-      syndicate_id: '', batch_id: '', academic_status_id: '',
-      nim: '', gender: 'M', religion: 'Islam', marital_status: 'SINGLE'
-    }
+  const showToast = useCallback((msg, severity = 'success') =>
+    setToast({ open: true, message: msg, severity }), [])
+
+  const { control: approveControl, handleSubmit: handleApproveSubmit,
+    reset: resetApprove, formState: { errors: approveErrors } } = useForm({
+    defaultValues: { nim: '', syndicate_id: '', batch_id: '', academic_status_id: '',
+      gender: 'M', religion: 'Islam', marital_status: 'SINGLE' }
   })
 
-  const {
-    control: rejectControl,
-    handleSubmit: handleRejectSubmit,
-    reset: resetReject,
-    formState: { errors: rejectErrors }
-  } = useForm({
+  const { control: rejectControl, handleSubmit: handleRejectSubmit,
+    reset: resetReject, formState: { errors: rejectErrors } } = useForm({
     defaultValues: { reason: '' }
   })
 
-  // ── Load master data options ──
   useEffect(() => {
     syndicateApi.getAllActive().then(r => setSyndicates(r.data.data || [])).catch(() => {})
     batchApi.getAllActive().then(r => setBatches(r.data.data || [])).catch(() => {})
     academicStatusApi.getAllActive().then(r => setAcademicStatuses(r.data.data || [])).catch(() => {})
   }, [])
 
-  // ── Fetch registrations ──
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
@@ -135,8 +180,8 @@ const OnboardingView = () => {
       if (globalFilter) params.search = globalFilter
       if (statusFilter) params.status = statusFilter
       const res = await onboardingApi.getAll(params)
-      setData(res.data.data.data || [])
-      setTotal(res.data.data.pagination?.total || 0)
+      setData(res.data.data?.data || [])
+      setTotal(res.data.data?.pagination?.total || 0)
     } catch (err) {
       showToast(err.message || 'Gagal memuat data', 'error')
     } finally {
@@ -146,13 +191,10 @@ const OnboardingView = () => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // ── Handlers ──
   const handleOpenApprove = useCallback((row) => {
     setApproveTarget(row)
-    resetApprove({
-      syndicate_id: '', batch_id: '', academic_status_id: '',
-      nim: row.nim, gender: 'M', religion: 'Islam', marital_status: 'SINGLE',
-    })
+    resetApprove({ nim: row.nim, syndicate_id: '', batch_id: '', academic_status_id: '',
+      gender: 'M', religion: 'Islam', marital_status: 'SINGLE' })
     setApproveOpen(true)
   }, [resetApprove])
 
@@ -169,33 +211,25 @@ const OnboardingView = () => {
         syndicate_id: parseInt(values.syndicate_id),
         batch_id: parseInt(values.batch_id),
         academic_status_id: parseInt(values.academic_status_id),
-        nim: values.nim,
-        gender: values.gender,
-        religion: values.religion,
-        marital_status: values.marital_status,
+        nim: values.nim, gender: values.gender,
+        religion: values.religion, marital_status: values.marital_status,
       })
-      showToast('Registrasi disetujui dan akun berhasil dibuat')
-      setApproveOpen(false)
-      fetchData()
+      showToast('Registrasi disetujui, akun mahasiswa berhasil dibuat')
+      setApproveOpen(false); fetchData()
     } catch (err) {
       showToast(err.message || 'Gagal menyetujui', 'error')
-    } finally {
-      setApproveLoading(false)
-    }
+    } finally { setApproveLoading(false) }
   }, [approveTarget, fetchData, showToast])
 
   const handleReject = useCallback(async (values) => {
     setRejectLoading(true)
     try {
       await onboardingApi.reject(rejectTarget.id, { reason: values.reason })
-      showToast('Registrasi berhasil ditolak')
-      setRejectOpen(false)
-      fetchData()
+      showToast('Pendaftaran berhasil ditolak')
+      setRejectOpen(false); fetchData()
     } catch (err) {
       showToast(err.message || 'Gagal menolak', 'error')
-    } finally {
-      setRejectLoading(false)
-    }
+    } finally { setRejectLoading(false) }
   }, [rejectTarget, fetchData, showToast])
 
   const handleRegisterTelegram = useCallback(async () => {
@@ -207,199 +241,268 @@ const OnboardingView = () => {
         telegram_username: telegramForm.telegram_username || null,
       })
       showToast('Telegram berhasil didaftarkan untuk notifikasi')
-      setTelegramDrawerOpen(false)
+      setTelegramOpen(false)
       setTelegramForm({ telegram_user_id: '', telegram_username: '' })
     } catch (err) {
       showToast(err.message || 'Gagal mendaftarkan Telegram', 'error')
-    } finally {
-      setTelegramLoading(false)
-    }
+    } finally { setTelegramLoading(false) }
   }, [telegramForm, showToast])
 
-  // ── Columns ──
-  const columns = useMemo(() => [
-    columnHelper.accessor('full_name', {
-      header: 'Nama',
-      cell: ({ row }) => (
-        <div>
-          <Typography className='font-medium' color='text.primary'>{row.original.full_name}</Typography>
-          <Typography variant='body2' color='text.secondary'>{row.original.nim}</Typography>
-        </div>
-      )
-    }),
-    columnHelper.accessor('email', {
-      header: 'Kontak',
-      cell: ({ row }) => (
-        <div>
-          <Typography variant='body2'>{row.original.email}</Typography>
-          <Typography variant='body2' color='text.secondary'>{row.original.phone}</Typography>
-        </div>
-      )
-    }),
-    columnHelper.accessor('status', {
-      header: 'Status',
-      cell: ({ row }) => {
-        const s = statusMap[row.original.status] || { label: row.original.status, color: 'default' }
-        return <Chip label={s.label} color={s.color} size='small' variant='tonal' />
-      }
-    }),
-    columnHelper.accessor('created_at', {
-      header: 'Tanggal Daftar',
-      cell: ({ row }) => (
-        <Typography variant='body2'>
-          {new Date(row.original.created_at).toLocaleDateString('id-ID', {
-            day: '2-digit', month: 'short', year: 'numeric'
-          })}
-        </Typography>
-      )
-    }),
-    columnHelper.display({
-      id: 'actions',
-      header: 'Aksi',
-      cell: ({ row }) => (
-        <div className='flex items-center gap-0.5'>
-          <Tooltip title='Lihat Detail'>
-            <IconButton size='small' onClick={() => { setDetailData(row.original); setDetailOpen(true) }}>
-              <i className='ri-eye-line text-[22px]' />
-            </IconButton>
-          </Tooltip>
-          {row.original.status === 'PENDING' && (
-            <>
-              <Tooltip title='Setujui'>
-                <IconButton size='small' color='success' onClick={() => handleOpenApprove(row.original)}>
-                  <i className='ri-checkbox-circle-line text-[22px]' />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title='Tolak'>
-                <IconButton size='small' color='error' onClick={() => handleOpenReject(row.original)}>
-                  <i className='ri-close-circle-line text-[22px]' />
-                </IconButton>
-              </Tooltip>
-            </>
-          )}
-        </div>
-      )
-    })
-  ], [handleOpenApprove, handleOpenReject])
-
-  const table = useReactTable({
-    data, columns, manualPagination: true, manualFiltering: true,
-    rowCount: total, getCoreRowModel: getCoreRowModel(), getSortedRowModel: getSortedRowModel()
-  })
+  const pendingCount  = data.filter(d => d.status === 'PENDING').length
+  const approvedCount = data.filter(d => d.status === 'APPROVED').length
+  const rejectedCount = data.filter(d => d.status === 'REJECTED').length
 
   return (
     <>
-      {/* ── Main Card ── */}
-      <Card>
-        <CardHeader
-          title='Onboarding Mahasiswa'
-          subheader='Kelola pendaftaran mahasiswa via Telegram'
-          sx={{ pb: 0 }}
-          action={
-            <Button
-              variant='tonal'
-              color='secondary'
-              startIcon={<i className='ri-telegram-line' />}
-              onClick={() => setTelegramDrawerOpen(true)}
-            >
+      {/* Breadcrumb + Telegram button */}
+      <div className='flex items-center justify-between gap-2 mb-6'>
+        <div className='flex items-center gap-2 flex-shrink-0'>
+          <Typography variant='caption' color='text.secondary'>Mahasiswa</Typography>
+          <i className='ri-arrow-right-s-line text-sm opacity-50' />
+          <Typography variant='caption' fontWeight={500} color='text.primary'>Onboarding</Typography>
+        </div>
+        <Tooltip title='Daftarkan Telegram Saya'>
+          <Button variant='tonal' color='secondary' size='small'
+                  startIcon={<i className='ri-telegram-line' />}
+                  onClick={() => setTelegramOpen(true)}
+                  sx={{ flexShrink: 0, minWidth: 0,
+                    '& .MuiButton-startIcon': { mr: { xs: 0, sm: 0.5 } }
+                  }}>
+            <Box component='span' sx={{ display: { xs: 'none', sm: 'inline' } }}>
               Daftarkan Telegram Saya
-            </Button>
-          }
-        />
-        <div className='flex flex-wrap justify-between gap-4 p-6'>
-          <FormControl size='small' sx={{ minWidth: 160 }}>
-            <InputLabel>Status</InputLabel>
-            <Select label='Status' value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
-              <MenuItem value=''>Semua</MenuItem>
-              <MenuItem value='PENDING'>Menunggu</MenuItem>
-              <MenuItem value='APPROVED'>Disetujui</MenuItem>
-              <MenuItem value='REJECTED'>Ditolak</MenuItem>
-            </Select>
-          </FormControl>
-          <DebouncedInput
-            value={globalFilter}
-            onChange={val => { setGlobalFilter(val); setPage(0) }}
-            placeholder='Cari nama, NIM, email...'
-            InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-            sx={{ minWidth: 260 }}
-          />
-        </div>
-        <Divider />
-        <div className='overflow-x-auto'>
-          <table className={tableStyles.table}>
-            <thead>
-            {table.getHeaderGroups().map(hg => (
-              <tr key={hg.id}>{hg.headers.map(h => <th key={h.id}>{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>
-            ))}
-            </thead>
-            <tbody>
-            {loading ? (
-              <tr><td colSpan={columns.length} className='text-center py-10'><CircularProgress size={32} /></td></tr>
-            ) : table.getRowModel().rows.length === 0 ? (
-              <tr><td colSpan={columns.length} className='text-center py-10'><Typography color='text.secondary'>Tidak ada data</Typography></td></tr>
-            ) : (
-              table.getRowModel().rows.map(row => (
-                <tr key={row.id}>{row.getVisibleCells().map(cell => <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>
-              ))
-            )}
-            </tbody>
-          </table>
-        </div>
-        <TablePagination
-          component='div' count={total} page={page} rowsPerPage={pageSize}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage='Baris per halaman:'
-          labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
-        />
+            </Box>
+          </Button>
+        </Tooltip>
+      </div>
+
+      {/* Stats */}
+      <Grid container spacing={4} className='mb-6'>
+        {[
+          { label: 'Total Pendaftaran', value: total,         icon: 'ri-file-list-3-line',     color: '#7367F0', bg: '#F3EDFF' },
+          { label: 'Menunggu Review',   value: statusFilter === 'PENDING'  ? total : pendingCount,  icon: 'ri-time-line',            color: '#FF9F43', bg: '#FFF3E8' },
+          { label: 'Disetujui',         value: statusFilter === 'APPROVED' ? total : approvedCount, icon: 'ri-checkbox-circle-line', color: '#28C76F', bg: '#E6F9EE' },
+          { label: 'Ditolak',           value: statusFilter === 'REJECTED' ? total : rejectedCount, icon: 'ri-close-circle-line',    color: '#EA5455', bg: '#FFEDED' },
+        ].map(s => (
+          <Grid item xs={6} sm={3} key={s.label}>
+            <Card>
+              <CardContent sx={{ p: "0 !important" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: "12px", p: "12px" }}>
+                  <div style={{
+                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
+                    <Typography variant='caption' color='text.secondary'
+                                sx={{ display: 'block', fontSize: { xs: 10, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {s.label}
+                    </Typography>
+                  </div>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Filter */}
+      <Card className='mb-6'>
+        <CardContent>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={4}>
+              <FormControl fullWidth size='small'>
+                <InputLabel>Status</InputLabel>
+                <Select label='Status' value={statusFilter}
+                        onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
+                  <MenuItem value=''>Semua Status</MenuItem>
+                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                    <MenuItem key={key} value={key}>
+                      <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} sm={8}>
+              <DebouncedInput fullWidth value={globalFilter}
+                              onChange={v => { setGlobalFilter(v); setPage(0) }}
+                              placeholder='Cari nama, NIM, email...'
+                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
+              />
+            </Grid>
+          </Grid>
+        </CardContent>
       </Card>
 
-      {/* ── Detail Drawer ── */}
-      <Drawer open={detailOpen} anchor='right' variant='temporary' onClose={() => setDetailOpen(false)}
-              ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 420 } } }}>
-        <div className='flex items-center justify-between pli-6 plb-5'>
-          <Typography variant='h5'>Detail Pendaftaran</Typography>
-          <IconButton onClick={() => setDetailOpen(false)}><i className='ri-close-line text-2xl' /></IconButton>
+      {/* Content */}
+      {loading ? (
+        <Box className='flex justify-center py-10'><CircularProgress /></Box>
+      ) : isMobile ? (
+        <>
+          {data.length === 0 ? (
+            <Card>
+              <CardContent sx={{ py: 6 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <i className='ri-user-add-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                  <Typography variant='body2' color='text.secondary'>Tidak ada pendaftaran ditemukan.</Typography>
+                </Box>
+              </CardContent>
+            </Card>
+          ) : data.map(reg => (
+            <RegistrationMobileCard key={reg.id} reg={reg}
+                                    onDetail={r => { setDetailData(r); setDetailOpen(true) }}
+                                    onApprove={handleOpenApprove}
+                                    onReject={handleOpenReject}
+            />
+          ))}
+          <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
+                           onPageChange={(_, p) => setPage(p)}
+                           onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                           rowsPerPageOptions={[10, 25, 50]}
+                           labelRowsPerPage='Baris:'
+                           labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+          />
+        </>
+      ) : (
+        <Card>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
+                {['Pendaftar', 'Kontak', 'Telegram', 'Tanggal Daftar', 'Status', 'Aksi'].map(h => (
+                  <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                    {h}
+                  </TableCell>
+                ))}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} sx={{ py: 8 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <i className='ri-user-add-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada pendaftaran ditemukan.</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : data.map(reg => {
+                const cfg = STATUS_CONFIG[reg.status] || { label: reg.status, color: 'default' }
+                const isPending = reg.status === 'PENDING'
+                return (
+                  <TableRow key={reg.id} hover>
+                    <TableCell>
+                      <div className='flex items-center gap-2'>
+                        <Avatar sx={{ width: 32, height: 32, fontSize: 12, bgcolor: 'primary.main' }}>
+                          {getInitials(reg.full_name)}
+                        </Avatar>
+                        <div>
+                          <Typography variant='body2' fontWeight={600}>{reg.full_name}</Typography>
+                          <Typography variant='caption' color='text.secondary'>{reg.nim}</Typography>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant='body2'>{reg.email}</Typography>
+                      {reg.phone && <Typography variant='caption' color='text.secondary'>{reg.phone}</Typography>}
+                    </TableCell>
+                    <TableCell>
+                      {reg.telegram_username
+                        ? <Chip label={`@${reg.telegram_username}`} size='small' variant='tonal' color='info' icon={<i className='ri-telegram-line' />} />
+                        : <Typography variant='caption' color='text.secondary'>—</Typography>
+                      }
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant='body2'>{fmtDate(reg.created_at)}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex items-center gap-0.5'>
+                        <Tooltip title='Detail'>
+                          <IconButton size='small' onClick={() => { setDetailData(reg); setDetailOpen(true) }}>
+                            <i className='ri-eye-line text-[18px]' />
+                          </IconButton>
+                        </Tooltip>
+                        {isPending && (
+                          <>
+                            <Tooltip title='Setujui'>
+                              <IconButton size='small' color='success' onClick={() => handleOpenApprove(reg)}>
+                                <i className='ri-checkbox-circle-line text-[18px]' />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title='Tolak'>
+                              <IconButton size='small' color='error' onClick={() => handleOpenReject(reg)}>
+                                <i className='ri-close-circle-line text-[18px]' />
+                              </IconButton>
+                            </Tooltip>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
+          <TablePagination component='div' count={total} page={page} rowsPerPage={pageSize}
+                           onPageChange={(_, p) => setPage(p)}
+                           onRowsPerPageChange={e => { setPageSize(parseInt(e.target.value)); setPage(0) }}
+                           rowsPerPageOptions={[10, 25, 50]}
+                           labelRowsPerPage='Baris per halaman:'
+                           labelDisplayedRows={({ from, to, count }) => `${from}–${to} dari ${count}`}
+          />
+        </Card>
+      )}
+
+      {/* Drawer Detail */}
+      <Drawer anchor='right' open={detailOpen} onClose={() => setDetailOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
+          <Typography variant='h6'>Detail Pendaftaran</Typography>
+          <IconButton onClick={() => setDetailOpen(false)}><i className='ri-close-line' /></IconButton>
         </div>
-        <Divider />
         {detailData && (
-          <div className='p-6 flex flex-col gap-4'>
-            <Box className='flex items-center justify-between'>
-              <Typography variant='body2' color='text.secondary'>Status</Typography>
-              <Chip
-                label={statusMap[detailData.status]?.label || detailData.status}
-                color={statusMap[detailData.status]?.color || 'default'}
-                size='small' variant='tonal'
-              />
-            </Box>
+          <div className='p-4 flex flex-col gap-3 overflow-y-auto'>
+            <div className='flex flex-col items-center gap-2 py-2'>
+              <Avatar sx={{ width: 64, height: 64, fontSize: 22, bgcolor: 'primary.main' }}>
+                {getInitials(detailData.full_name)}
+              </Avatar>
+              <div className='text-center'>
+                <Typography variant='h6' fontWeight={600}>{detailData.full_name}</Typography>
+                <Typography variant='caption' color='text.secondary'>{detailData.nim}</Typography>
+              </div>
+              <Chip label={STATUS_CONFIG[detailData.status]?.label || detailData.status}
+                    color={STATUS_CONFIG[detailData.status]?.color || 'default'} size='small' variant='tonal' />
+            </div>
             <Divider />
             {[
-              { label: 'NIM', value: detailData.nim },
-              { label: 'Nama Lengkap', value: detailData.full_name },
-              { label: 'Tempat Lahir', value: detailData.birth_place },
-              { label: 'Tanggal Lahir', value: detailData.birth_date ? new Date(detailData.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-' },
-              { label: 'Telepon', value: detailData.phone },
-              { label: 'Email', value: detailData.email },
-              { label: 'Telegram', value: detailData.telegram_username ? `@${detailData.telegram_username}` : '-' },
-              { label: 'Tanggal Daftar', value: new Date(detailData.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) },
-            ].map(({ label, value }) => (
-              <Box key={label} className='flex items-start justify-between gap-4'>
-                <Typography variant='body2' color='text.secondary' sx={{ minWidth: 130 }}>{label}</Typography>
-                <Typography variant='body2' className='text-right'>{value}</Typography>
-              </Box>
-            ))}
-            {detailData.rejection_reason && (
-              <>
-                <Divider />
-                <Box>
-                  <Typography variant='body2' color='text.secondary' className='mb-1'>Alasan Penolakan</Typography>
-                  <Typography variant='body2' color='error'>{detailData.rejection_reason}</Typography>
+              { icon: 'ri-mail-line',      label: 'Email',         value: detailData.email },
+              { icon: 'ri-phone-line',     label: 'Telepon',       value: detailData.phone },
+              { icon: 'ri-telegram-line',  label: 'Telegram',      value: detailData.telegram_username ? `@${detailData.telegram_username}` : null },
+              { icon: 'ri-map-pin-line',   label: 'Tempat Lahir',  value: detailData.birth_place },
+              { icon: 'ri-cake-line',      label: 'Tanggal Lahir', value: fmtDate(detailData.birth_date) },
+              { icon: 'ri-calendar-line',  label: 'Tanggal Daftar',value: fmtDate(detailData.created_at) },
+            ].map(r => r.value ? (
+              <div key={r.label} className='flex items-center gap-3'>
+                <Box sx={{ width: 30, height: 30, borderRadius: 1, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <i className={`${r.icon} text-sm`} />
                 </Box>
-              </>
+                <div>
+                  <Typography variant='caption' color='text.secondary'>{r.label}</Typography>
+                  <Typography variant='body2' fontWeight={500}>{r.value}</Typography>
+                </div>
+              </div>
+            ) : null)}
+            {detailData.rejection_reason && (
+              <Alert severity='error'>
+                <strong>Alasan Penolakan:</strong> {detailData.rejection_reason}
+              </Alert>
             )}
             {detailData.status === 'PENDING' && (
-              <div className='flex gap-3 mt-2'>
+              <div className='flex gap-2 mt-2'>
                 <Button fullWidth variant='contained' color='success'
                         startIcon={<i className='ri-checkbox-circle-line' />}
                         onClick={() => { setDetailOpen(false); handleOpenApprove(detailData) }}>
@@ -416,129 +519,125 @@ const OnboardingView = () => {
         )}
       </Drawer>
 
-      {/* ── Approve Drawer ── */}
-      <Drawer open={approveOpen} anchor='right' variant='temporary' onClose={() => setApproveOpen(false)}
-              ModalProps={{ keepMounted: true }} sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}>
-        <div className='flex items-center justify-between pli-6 plb-5'>
+      {/* Drawer Approve */}
+      <Drawer anchor='right' open={approveOpen} onClose={() => setApproveOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
           <div>
-            <Typography variant='h5'>Setujui Pendaftaran</Typography>
-            {approveTarget && <Typography variant='body2' color='text.secondary'>{approveTarget.full_name}</Typography>}
+            <Typography variant='h6'>Setujui Pendaftaran</Typography>
+            {approveTarget && <Typography variant='caption' color='text.secondary'>{approveTarget.full_name}</Typography>}
           </div>
-          <IconButton onClick={() => setApproveOpen(false)}><i className='ri-close-line text-2xl' /></IconButton>
+          <IconButton onClick={() => setApproveOpen(false)}><i className='ri-close-line' /></IconButton>
         </div>
-        <Divider />
-        <div className='p-6'>
-          <form onSubmit={handleApproveSubmit(handleApprove)} className='flex flex-col gap-5'>
-            <Box className='p-4 rounded-lg' sx={{ bgcolor: 'action.hover' }}>
-              <Typography variant='body2' color='text.secondary' className='mb-2'>Data dari mahasiswa</Typography>
-              <Grid container spacing={1}>
-                {[
-                  ['Tempat Lahir', approveTarget?.birth_place],
-                  ['Tanggal Lahir', approveTarget?.birth_date ? new Date(approveTarget.birth_date).toLocaleDateString('id-ID') : '-'],
-                  ['Telepon', approveTarget?.phone],
-                  ['Email', approveTarget?.email],
-                ].map(([label, value]) => (
-                  <Grid item xs={6} key={label}>
-                    <Typography variant='caption' color='text.secondary'>{label}</Typography>
-                    <Typography variant='body2'>{value}</Typography>
-                  </Grid>
-                ))}
-              </Grid>
-            </Box>
-            <Divider><Typography variant='caption' color='text.secondary'>Lengkapi data berikut</Typography></Divider>
-            <Controller name='nim' control={approveControl} rules={{ required: 'NIM wajib diisi' }}
-                        render={({ field }) => (
-                          <TextField {...field} fullWidth label='NIM (konfirmasi/koreksi)'
-                                     error={!!approveErrors.nim} helperText={approveErrors.nim?.message} />
-                        )}
-            />
-            <Controller name='syndicate_id' control={approveControl} rules={{ required: 'Sindikat wajib dipilih' }}
-                        render={({ field }) => (
-                          <FormControl fullWidth error={!!approveErrors.syndicate_id}>
-                            <InputLabel>Sindikat</InputLabel>
-                            <Select {...field} label='Sindikat'>
-                              {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
-                            </Select>
-                            {approveErrors.syndicate_id && <Typography variant='caption' color='error' sx={{ ml: 1.75, mt: 0.5 }}>{approveErrors.syndicate_id.message}</Typography>}
-                          </FormControl>
-                        )}
-            />
-            <Controller name='batch_id' control={approveControl} rules={{ required: 'Angkatan wajib dipilih' }}
-                        render={({ field }) => (
-                          <FormControl fullWidth error={!!approveErrors.batch_id}>
-                            <InputLabel>Angkatan</InputLabel>
-                            <Select {...field} label='Angkatan'>
-                              {batches.map(b => <MenuItem key={b.id} value={b.id}>{b.name} ({b.year})</MenuItem>)}
-                            </Select>
-                            {approveErrors.batch_id && <Typography variant='caption' color='error' sx={{ ml: 1.75, mt: 0.5 }}>{approveErrors.batch_id.message}</Typography>}
-                          </FormControl>
-                        )}
-            />
-            <Controller name='academic_status_id' control={approveControl} rules={{ required: 'Status akademik wajib dipilih' }}
-                        render={({ field }) => (
-                          <FormControl fullWidth error={!!approveErrors.academic_status_id}>
-                            <InputLabel>Status Akademik</InputLabel>
-                            <Select {...field} label='Status Akademik'>
-                              {academicStatuses.map(a => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}
-                            </Select>
-                            {approveErrors.academic_status_id && <Typography variant='caption' color='error' sx={{ ml: 1.75, mt: 0.5 }}>{approveErrors.academic_status_id.message}</Typography>}
-                          </FormControl>
-                        )}
-            />
-            <Grid container spacing={3}>
-              <Grid item xs={6}>
-                <Controller name='gender' control={approveControl} rules={{ required: 'Wajib dipilih' }}
-                            render={({ field }) => (
-                              <FormControl fullWidth>
-                                <InputLabel>Jenis Kelamin</InputLabel>
-                                <Select {...field} label='Jenis Kelamin'>
-                                  <MenuItem value='M'>Laki-laki</MenuItem>
-                                  <MenuItem value='F'>Perempuan</MenuItem>
-                                </Select>
-                              </FormControl>
-                            )}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <Controller name='marital_status' control={approveControl} rules={{ required: 'Wajib dipilih' }}
-                            render={({ field }) => (
-                              <FormControl fullWidth>
-                                <InputLabel>Status Pernikahan</InputLabel>
-                                <Select {...field} label='Status Pernikahan'>
-                                  <MenuItem value='SINGLE'>Belum Menikah</MenuItem>
-                                  <MenuItem value='MARRIED'>Menikah</MenuItem>
-                                </Select>
-                              </FormControl>
-                            )}
-                />
-              </Grid>
+        <form onSubmit={handleApproveSubmit(handleApprove)} className='flex flex-col gap-4 p-4 overflow-y-auto'>
+          {/* Info dari mahasiswa */}
+          <Box sx={{ bgcolor: 'action.hover', borderRadius: 2, p: 2 }}>
+            <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 1, fontWeight: 600 }}>
+              DATA DARI MAHASISWA
+            </Typography>
+            <Grid container spacing={1}>
+              {[
+                ['Tempat Lahir', approveTarget?.birth_place],
+                ['Tanggal Lahir', fmtDate(approveTarget?.birth_date)],
+                ['Telepon', approveTarget?.phone],
+                ['Email', approveTarget?.email],
+              ].map(([label, value]) => value ? (
+                <Grid item xs={6} key={label}>
+                  <Typography variant='caption' color='text.secondary'>{label}</Typography>
+                  <Typography variant='body2' fontWeight={500}>{value}</Typography>
+                </Grid>
+              ) : null)}
             </Grid>
-            <Controller name='religion' control={approveControl} rules={{ required: 'Agama wajib diisi' }}
-                        render={({ field }) => (
-                          <FormControl fullWidth>
-                            <InputLabel>Agama</InputLabel>
-                            <Select {...field} label='Agama'>
-                              {['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'].map(r => (
-                                <MenuItem key={r} value={r}>{r}</MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        )}
-            />
-            <div className='flex gap-4 mt-2'>
-              <Button fullWidth type='submit' variant='contained' color='success' disabled={approveLoading}
-                      startIcon={approveLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-checkbox-circle-line' />}>
-                {approveLoading ? 'Memproses...' : 'Setujui & Buat Akun'}
-              </Button>
-              <Button fullWidth variant='tonal' color='secondary' onClick={() => setApproveOpen(false)} disabled={approveLoading}>
-                Batal
-              </Button>
-            </div>
-          </form>
-        </div>
+          </Box>
+          <Divider><Typography variant='caption'>Lengkapi Data</Typography></Divider>
+          <Controller name='nim' control={approveControl} rules={{ required: 'NIM wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth size='small' label='NIM (konfirmasi/koreksi)'
+                                   error={!!approveErrors.nim} helperText={approveErrors.nim?.message} />
+                      )}
+          />
+          <Controller name='syndicate_id' control={approveControl} rules={{ required: 'Wajib dipilih' }}
+                      render={({ field }) => (
+                        <FormControl fullWidth size='small' error={!!approveErrors.syndicate_id}>
+                          <InputLabel>Sindikat</InputLabel>
+                          <Select {...field} label='Sindikat'>
+                            {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+                          </Select>
+                        </FormControl>
+                      )}
+          />
+          <Controller name='batch_id' control={approveControl} rules={{ required: 'Wajib dipilih' }}
+                      render={({ field }) => (
+                        <FormControl fullWidth size='small' error={!!approveErrors.batch_id}>
+                          <InputLabel>Angkatan</InputLabel>
+                          <Select {...field} label='Angkatan'>
+                            {batches.map(b => <MenuItem key={b.id} value={b.id}>{b.name} ({b.year})</MenuItem>)}
+                          </Select>
+                        </FormControl>
+                      )}
+          />
+          <Controller name='academic_status_id' control={approveControl} rules={{ required: 'Wajib dipilih' }}
+                      render={({ field }) => (
+                        <FormControl fullWidth size='small' error={!!approveErrors.academic_status_id}>
+                          <InputLabel>Status Akademik</InputLabel>
+                          <Select {...field} label='Status Akademik'>
+                            {academicStatuses.map(a => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}
+                          </Select>
+                        </FormControl>
+                      )}
+          />
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <Controller name='gender' control={approveControl}
+                          render={({ field }) => (
+                            <FormControl fullWidth size='small'>
+                              <InputLabel>Jenis Kelamin</InputLabel>
+                              <Select {...field} label='Jenis Kelamin'>
+                                <MenuItem value='M'>Laki-laki</MenuItem>
+                                <MenuItem value='F'>Perempuan</MenuItem>
+                              </Select>
+                            </FormControl>
+                          )}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <Controller name='marital_status' control={approveControl}
+                          render={({ field }) => (
+                            <FormControl fullWidth size='small'>
+                              <InputLabel>Status Pernikahan</InputLabel>
+                              <Select {...field} label='Status Pernikahan'>
+                                <MenuItem value='SINGLE'>Belum Menikah</MenuItem>
+                                <MenuItem value='MARRIED'>Menikah</MenuItem>
+                              </Select>
+                            </FormControl>
+                          )}
+              />
+            </Grid>
+          </Grid>
+          <Controller name='religion' control={approveControl}
+                      render={({ field }) => (
+                        <FormControl fullWidth size='small'>
+                          <InputLabel>Agama</InputLabel>
+                          <Select {...field} label='Agama'>
+                            {['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu'].map(r => (
+                              <MenuItem key={r} value={r}>{r}</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      )}
+          />
+          <div className='flex gap-2 mt-2'>
+            <Button fullWidth variant='tonal' color='secondary'
+                    onClick={() => setApproveOpen(false)} disabled={approveLoading}>Batal</Button>
+            <Button fullWidth variant='contained' color='success' type='submit' disabled={approveLoading}
+                    startIcon={approveLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-checkbox-circle-line' />}>
+              {approveLoading ? 'Memproses...' : 'Setujui & Buat Akun'}
+            </Button>
+          </div>
+        </form>
       </Drawer>
 
-      {/* ── Reject Dialog ── */}
+      {/* Dialog Reject */}
       <Dialog open={rejectOpen} onClose={() => setRejectOpen(false)} maxWidth='sm' fullWidth>
         <DialogTitle>Tolak Pendaftaran</DialogTitle>
         <DialogContent>
@@ -557,8 +656,10 @@ const OnboardingView = () => {
             />
           </form>
         </DialogContent>
-        <DialogActions className='pli-5 plb-4'>
-          <Button onClick={() => setRejectOpen(false)} variant='tonal' color='secondary' disabled={rejectLoading}>Batal</Button>
+        <DialogActions className='p-4 gap-2'>
+          <Button variant='tonal' color='secondary' onClick={() => setRejectOpen(false)} disabled={rejectLoading}>
+            Batal
+          </Button>
           <Button type='submit' form='reject-form' variant='contained' color='error' disabled={rejectLoading}
                   startIcon={rejectLoading ? <CircularProgress size={16} color='inherit' /> : null}>
             {rejectLoading ? 'Memproses...' : 'Tolak Pendaftaran'}
@@ -566,56 +667,43 @@ const OnboardingView = () => {
         </DialogActions>
       </Dialog>
 
-      {/* ── Register Telegram Drawer ── */}
-      <Drawer open={telegramDrawerOpen} anchor='right' variant='temporary'
-              onClose={() => setTelegramDrawerOpen(false)}
-              ModalProps={{ keepMounted: true }}
-              sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 400 } } }}>
-        <div className='flex items-center justify-between pli-6 plb-5'>
+      {/* Drawer Telegram */}
+      <Drawer anchor='right' open={telegramOpen} onClose={() => setTelegramOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 400 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
           <div>
-            <Typography variant='h5'>Daftarkan Telegram</Typography>
-            <Typography variant='body2' color='text.secondary'>Untuk menerima notifikasi registrasi baru</Typography>
+            <Typography variant='h6'>Daftarkan Telegram</Typography>
+            <Typography variant='caption' color='text.secondary'>Untuk menerima notifikasi registrasi baru</Typography>
           </div>
-          <IconButton onClick={() => setTelegramDrawerOpen(false)}><i className='ri-close-line text-2xl' /></IconButton>
+          <IconButton onClick={() => setTelegramOpen(false)}><i className='ri-close-line' /></IconButton>
         </div>
-        <Divider />
-        <div className='p-6 flex flex-col gap-5'>
-          <Alert severity='info' variant='tonal'>
-            Cara mendapatkan Telegram User ID: buka Telegram, cari <strong>@userinfobot</strong>, lalu kirim pesan apapun. Bot akan membalas dengan ID kamu.
+        <div className='flex flex-col gap-4 p-4'>
+          <Alert severity='info'>
+            Cara mendapat Telegram User ID: buka Telegram, cari <strong>@userinfobot</strong>, kirim pesan apapun — bot akan membalas dengan ID kamu.
           </Alert>
-          <TextField
-            fullWidth
-            label='Telegram User ID'
-            type='number'
-            value={telegramForm.telegram_user_id}
-            onChange={e => setTelegramForm(f => ({ ...f, telegram_user_id: e.target.value }))}
-            placeholder='Contoh: 123456789'
+          <TextField fullWidth size='small' label='Telegram User ID' type='number'
+                     value={telegramForm.telegram_user_id}
+                     onChange={e => setTelegramForm(f => ({ ...f, telegram_user_id: e.target.value }))}
+                     placeholder='Contoh: 123456789' />
+          <TextField fullWidth size='small' label='Username Telegram (opsional)'
+                     value={telegramForm.telegram_username}
+                     onChange={e => setTelegramForm(f => ({ ...f, telegram_username: e.target.value }))}
+                     placeholder='tanpa @'
+                     InputProps={{ startAdornment: <InputAdornment position='start'>@</InputAdornment> }}
           />
-          <TextField
-            fullWidth
-            label='Username Telegram (opsional)'
-            value={telegramForm.telegram_username}
-            onChange={e => setTelegramForm(f => ({ ...f, telegram_username: e.target.value }))}
-            placeholder='Contoh: ayubi (tanpa @)'
-            InputProps={{
-              startAdornment: <InputAdornment position='start'>@</InputAdornment>
-            }}
-          />
-          <div className='flex gap-4 mt-2'>
-            <Button fullWidth variant='contained' disabled={!telegramForm.telegram_user_id || telegramLoading}
+          <div className='flex gap-2 mt-2'>
+            <Button fullWidth variant='tonal' color='secondary'
+                    onClick={() => setTelegramOpen(false)} disabled={telegramLoading}>Batal</Button>
+            <Button fullWidth variant='contained'
+                    disabled={!telegramForm.telegram_user_id || telegramLoading}
                     onClick={handleRegisterTelegram}
                     startIcon={telegramLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-telegram-line' />}>
               {telegramLoading ? 'Mendaftarkan...' : 'Daftarkan'}
-            </Button>
-            <Button fullWidth variant='tonal' color='secondary'
-                    onClick={() => setTelegramDrawerOpen(false)} disabled={telegramLoading}>
-              Batal
             </Button>
           </div>
         </div>
       </Drawer>
 
-      {/* ── Toast ── */}
       <Snackbar open={toast.open} autoHideDuration={4000}
                 onClose={() => setToast(t => ({ ...t, open: false }))}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
