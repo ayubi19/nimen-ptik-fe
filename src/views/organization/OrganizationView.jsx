@@ -45,6 +45,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker'
 import dayjs from 'dayjs'
 import 'dayjs/locale/id'
 import { studentPositionApi, positionAssignmentApi } from '@/libs/api/organizationApi'
+import { nimenIndicatorApi } from '@/libs/api/nimenMasterDataApi'
 import { batchApi } from '@/libs/api/masterDataApi'
 import { studentsApi } from '@/libs/api/studentsApi'
 import { getInitials } from '@/utils/getInitials'
@@ -483,6 +484,7 @@ const OrganizationStructureTab = () => {
 // ── Tab Master Jabatan ────────────────────────────────────────────────────────
 const PositionMasterTab = () => {
   const [positions, setPositions]   = useState([])
+  const [indicators, setIndicators] = useState([])
   const [loading, setLoading]       = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editData, setEditData]     = useState(null)
@@ -493,7 +495,7 @@ const PositionMasterTab = () => {
     setToast({ open: true, message: msg, severity }), [])
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: { name: '', display_name: '', description: '', is_active: true }
+    defaultValues: { name: '', display_name: '', description: '', indicator_id: '', is_active: true }
   })
 
   const fetchPositions = useCallback(async () => {
@@ -510,6 +512,13 @@ const PositionMasterTab = () => {
 
   useEffect(() => { fetchPositions() }, [fetchPositions])
 
+  useEffect(() => {
+    // Ambil indikator kategori AUTOMATIC (nilai jabatan) untuk dipilih
+    nimenIndicatorApi.getAll({ page: 1, page_size: 100, is_active: true })
+      .then(res => setIndicators(res.data.data?.data || []))
+      .catch(() => {})
+  }, [])
+
   const handleOpenCreate = useCallback(() => {
     setEditData(null)
     reset({ name: '', display_name: '', description: '', is_active: true })
@@ -518,7 +527,7 @@ const PositionMasterTab = () => {
 
   const handleOpenEdit = useCallback((pos) => {
     setEditData(pos)
-    reset({ name: pos.name, display_name: pos.display_name, description: pos.description || '', is_active: pos.is_active })
+    reset({ name: pos.name, display_name: pos.display_name, description: pos.description || '', indicator_id: pos.indicator_id || '', is_active: pos.is_active })
     setDrawerOpen(true)
   }, [reset])
 
@@ -529,6 +538,7 @@ const PositionMasterTab = () => {
         await studentPositionApi.update(editData.id, {
           display_name: values.display_name,
           description: values.description || '',
+          indicator_id: values.indicator_id ? parseInt(values.indicator_id) : null,
           is_active: values.is_active,
         })
         showToast('Jabatan berhasil diperbarui')
@@ -537,6 +547,7 @@ const PositionMasterTab = () => {
           name: values.name,
           display_name: values.display_name,
           description: values.description || '',
+          indicator_id: values.indicator_id ? parseInt(values.indicator_id) : null,
         })
         showToast('Jabatan berhasil dibuat')
       }
@@ -568,10 +579,14 @@ const PositionMasterTab = () => {
               <CardContent sx={{ p: '12px !important' }}>
                 <div className='flex items-center justify-between'>
                   <div>
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center gap-2 flex-wrap'>
                       <Typography variant='body2' fontWeight={600}>{pos.display_name}</Typography>
                       <Chip label={pos.is_active ? 'Aktif' : 'Nonaktif'}
                             color={pos.is_active ? 'success' : 'secondary'} size='small' variant='tonal' />
+                      {pos.indicator_id
+                        ? <Chip label='Ada nilai bulanan' color='info' size='small' variant='tonal' icon={<i className='ri-calendar-check-line' />} />
+                        : <Chip label='Belum ada nilai bulanan' color='warning' size='small' variant='tonal' icon={<i className='ri-alert-line' />} />
+                      }
                     </div>
                     <Typography variant='caption' color='text.secondary'>
                       <code>{pos.name}</code>
@@ -616,6 +631,37 @@ const PositionMasterTab = () => {
           <Controller name='description' control={control}
                       render={({ field }) => (
                         <TextField {...field} fullWidth multiline rows={2} label='Deskripsi (opsional)' />
+                      )}
+          />
+          <Controller name='indicator_id' control={control}
+                      render={({ field }) => (
+                        <Autocomplete
+                          options={[{ id: '', name: 'Tidak ada nilai bulanan', value: null, variable: null }, ...indicators]}
+                          getOptionLabel={opt => opt.name || ''}
+                          isOptionEqualToValue={(opt, val) => opt.id === val?.id}
+                          value={indicators.find(ind => ind.id === parseInt(field.value)) || (field.value === '' ? { id: '', name: 'Tidak ada nilai bulanan' } : null)}
+                          onChange={(_, val) => field.onChange(val?.id || '')}
+                          renderOption={(props, opt) => (
+                            <li {...props} key={opt.id}>
+                              {opt.id === '' ? (
+                                <Typography variant='body2' color='text.secondary'>Tidak ada nilai bulanan</Typography>
+                              ) : (
+                                <div>
+                                  <Typography variant='body2'>{opt.name}</Typography>
+                                  <Typography variant='caption' color='text.secondary'>
+                                    {opt.value > 0 ? `+${opt.value}` : opt.value} · {opt.variable?.name}
+                                  </Typography>
+                                </div>
+                              )}
+                            </li>
+                          )}
+                          renderInput={params => (
+                            <TextField {...params} label='Indikator Nilai Bulanan (opsional)'
+                                       placeholder='Cari indikator...'
+                                       helperText='Indikator ini diberikan otomatis setiap bulan kepada pejabat dengan jabatan ini'
+                            />
+                          )}
+                        />
                       )}
           />
           {editData && (
@@ -663,6 +709,9 @@ const OrganizationView = () => {
       </div>
 
       <Card>
+        <CardContent sx={{ pb: 0 }}>
+          <Typography variant='h5' fontWeight={700} className='mb-1'>Struktur Organisasi Mahasiswa</Typography>
+        </CardContent>
         <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}
               variant='fullWidth'
               sx={{ px: { xs: 0, sm: 4 }, borderBottom: 1, borderColor: 'divider' }}>
