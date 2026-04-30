@@ -84,7 +84,7 @@ const RegistrationMobileCard = ({ reg, onDetail, onApprove, onReject }) => {
         <div className='flex flex-col gap-0.5 mb-2'>
           <div className='flex items-center gap-1'>
             <i className='ri-mail-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
-            <Typography variant='caption' color='text.secondary' noWrap>{reg.email}</Typography>
+            <Typography variant='caption' color='text.secondary' sx={{ wordBreak: 'break-all' }}>{reg.email}</Typography>
           </div>
           {reg.phone && (
             <div className='flex items-center gap-1'>
@@ -265,9 +265,7 @@ const OnboardingView = () => {
           <Button variant='tonal' color='secondary' size='small'
                   startIcon={<i className='ri-telegram-line' />}
                   onClick={() => setTelegramOpen(true)}
-                  sx={{ flexShrink: 0, minWidth: 0,
-                    '& .MuiButton-startIcon': { mr: { xs: 0, sm: 0.5 } }
-                  }}>
+                  sx={{ flexShrink: 0, minWidth: 0, '& .MuiButton-startIcon': { mr: { xs: 0, sm: 0.5 } } }}>
             <Box component='span' sx={{ display: { xs: 'none', sm: 'inline' } }}>
               Daftarkan Telegram Saya
             </Box>
@@ -285,12 +283,9 @@ const OnboardingView = () => {
         ].map(s => (
           <Grid item xs={6} sm={3} key={s.label}>
             <Card>
-              <CardContent sx={{ p: "0 !important" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "12px", p: "12px" }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
+              <CardContent sx={{ p: '0 !important' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', p: '12px' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
                   </div>
                   <div style={{ minWidth: 0 }}>
@@ -490,9 +485,9 @@ const OnboardingView = () => {
                 <Box sx={{ width: 30, height: 30, borderRadius: 1, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <i className={`${r.icon} text-sm`} />
                 </Box>
-                <div>
+                <div className='min-w-0'>
                   <Typography variant='caption' color='text.secondary'>{r.label}</Typography>
-                  <Typography variant='body2' fontWeight={500}>{r.value}</Typography>
+                  <Typography variant='body2' fontWeight={500} sx={{ wordBreak: 'break-all' }}>{r.value}</Typography>
                 </div>
               </div>
             ) : null)}
@@ -537,14 +532,14 @@ const OnboardingView = () => {
             </Typography>
             <Grid container spacing={1}>
               {[
-                ['Tempat Lahir', approveTarget?.birth_place],
-                ['Tanggal Lahir', fmtDate(approveTarget?.birth_date)],
-                ['Telepon', approveTarget?.phone],
-                ['Email', approveTarget?.email],
-              ].map(([label, value]) => value ? (
-                <Grid item xs={6} key={label}>
+                ['Tempat Lahir', approveTarget?.birth_place, 6],
+                ['Tanggal Lahir', fmtDate(approveTarget?.birth_date), 6],
+                ['Telepon', approveTarget?.phone, 6],
+                ['Email', approveTarget?.email, 12],
+              ].map(([label, value, xs]) => value ? (
+                <Grid item xs={xs} key={label}>
                   <Typography variant='caption' color='text.secondary'>{label}</Typography>
-                  <Typography variant='body2' fontWeight={500}>{value}</Typography>
+                  <Typography variant='body2' fontWeight={500} sx={{ wordBreak: 'break-all' }}>{value}</Typography>
                 </Grid>
               ) : null)}
             </Grid>
