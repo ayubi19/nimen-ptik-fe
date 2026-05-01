@@ -2,37 +2,46 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Divider from '@mui/material/Divider'
+import Alert from '@mui/material/Alert'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import CardHeader from '@mui/material/CardHeader'
 import Chip from '@mui/material/Chip'
 import CircularProgress from '@mui/material/CircularProgress'
-import Typography from '@mui/material/Typography'
-import Alert from '@mui/material/Alert'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid'
+import LinearProgress from '@mui/material/LinearProgress'
 import Snackbar from '@mui/material/Snackbar'
-import Box from '@mui/material/Box'
-import List from '@mui/material/List'
-import ListItem from '@mui/material/ListItem'
-import ListItemIcon from '@mui/material/ListItemIcon'
-import ListItemText from '@mui/material/ListItemText'
+import Typography from '@mui/material/Typography'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { nimenSprintApi } from '@/libs/api/nimenSprintApi'
 import { nimenAttachmentApi, nimenParticipantDocApi } from '@/libs/api/nimenDocumentApi'
 import DocumentManager from '@/components/nimen/DocumentManager'
 
+const APPROVAL_CONFIG = {
+  VALID:               { label: 'Nilai Valid',     color: 'success', icon: 'ri-checkbox-circle-line' },
+  DISPENSED:           { label: 'Dispensasi',      color: 'info',    icon: 'ri-shield-check-line'    },
+  REJECTED_NO_DOC:     { label: 'Dokumen Kurang',  color: 'error',   icon: 'ri-file-warning-line'    },
+  REJECTED_PUNISHMENT: { label: 'Punishment',      color: 'error',   icon: 'ri-close-circle-line'    },
+  PENDING:             { label: 'Menunggu',        color: 'warning', icon: 'ri-time-line'            },
+}
+
 const MySprintDetailView = ({ sprintId }) => {
   const router = useRouter()
-  const [sprint, setSprint] = useState(null)
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+
+  const [sprint, setSprint]     = useState(null)
   const [attachments, setAttachments] = useState([])
   const [myDocData, setMyDocData] = useState({ participant: null, documents: [] })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading]   = useState(true)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
 
-  const showToast = useCallback((message, severity = 'success') => {
-    setToast({ open: true, message, severity })
-  }, [])
+  const showToast = useCallback((msg, severity = 'success') =>
+    setToast({ open: true, message: msg, severity }), [])
 
   const fetchData = useCallback(async () => {
     try {
@@ -53,109 +62,160 @@ const MySprintDetailView = ({ sprintId }) => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // Upload dokumen mahasiswa
   const handleUpload = useCallback(async (file) => {
     await nimenParticipantDocApi.upload(sprintId, file)
     showToast('Dokumen berhasil diupload')
     fetchData()
   }, [sprintId, fetchData, showToast])
 
-  // Hapus dokumen mahasiswa
   const handleDelete = useCallback(async (docId) => {
     await nimenParticipantDocApi.delete(sprintId, docId)
     showToast('Dokumen berhasil dihapus')
     fetchData()
   }, [sprintId, fetchData, showToast])
 
-  // Presign dokumen mahasiswa
-  const handlePresign = useCallback(async (docId) => {
-    return nimenParticipantDocApi.getPresignedURL(sprintId, docId)
-  }, [sprintId])
+  const handlePresign = useCallback(async (docId) =>
+    nimenParticipantDocApi.getPresignedURL(sprintId, docId), [sprintId])
 
-  // Presign attachment sprint
-  const handleAttachmentPresign = useCallback(async (attachId) => {
-    return nimenAttachmentApi.getPresignedURL(sprintId, attachId)
-  }, [sprintId])
+  const handleAttachmentPresign = useCallback(async (attachId) =>
+    nimenAttachmentApi.getPresignedURL(sprintId, attachId), [sprintId])
 
   if (loading) return <Box className='flex justify-center py-20'><CircularProgress /></Box>
   if (!sprint) return null
 
-  const now = new Date()
-  const eventDate = new Date(sprint.event_date)
-  const deadline = new Date(sprint.submission_deadline)
-  const isActive = sprint.status === 'ACTIVE'
-  const canUpload = isActive && now >= eventDate && now <= deadline
+  const now          = new Date()
+  const eventDate    = new Date(sprint.event_date)
+  const deadline     = new Date(sprint.submission_deadline)
+  const isActive     = sprint.status === 'ACTIVE'
+  const canUpload    = isActive && now >= eventDate && now <= deadline
   const isDeadlinePassed = now > deadline
-  const isBeforeEvent = now < eventDate
+  const isBeforeEvent    = now < eventDate
 
-  const participant = myDocData?.participant
-  const myDocuments = myDocData?.documents || []
+  const participant  = myDocData?.participant
+  const myDocuments  = myDocData?.documents || []
+  const approvalCfg  = APPROVAL_CONFIG[participant?.approval_status] || APPROVAL_CONFIG.PENDING
+  const indicatorVal = sprint.indicator?.value ?? 0
+  const isPlus       = indicatorVal >= 0
+
+  const fmtDate = (d, opts) => new Date(d).toLocaleDateString('id-ID', opts || { day: '2-digit', month: 'long', year: 'numeric' })
+
+  // Countdown deadline
+  const msLeft  = deadline - now
+  const daysLeft = Math.max(0, Math.floor(msLeft / (1000 * 60 * 60 * 24)))
 
   return (
     <>
-      <Grid container spacing={6}>
-
-        {/* Info Sprint */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <div className='flex items-start justify-between gap-4 flex-wrap'>
-                <div>
-                  <Typography variant='h5' className='mb-1'>{sprint.title}</Typography>
-                  <Typography variant='body2' color='text.secondary'>
-                    <i className='ri-file-list-3-line mr-1' />{sprint.sprint_number}
-                  </Typography>
-                  <Typography variant='body2' color='text.secondary' className='mt-1'>
-                    <i className='ri-calendar-line mr-1' />
-                    {eventDate.toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-                  </Typography>
-                  {sprint.location && (
-                    <Typography variant='body2' color='text.secondary'>
-                      <i className='ri-map-pin-line mr-1' />{sprint.location}
-                    </Typography>
-                  )}
-                </div>
-                <div className='flex flex-col items-end gap-2'>
-                  <Chip
-                    label={sprint.indicator?.value >= 0 ? `+${sprint.indicator?.value}` : `${sprint.indicator?.value}`}
-                    color={sprint.indicator?.value >= 0 ? 'success' : 'error'}
-                    sx={{ fontWeight: 700, fontSize: 16, height: 36 }}
-                  />
-                  {participant && (
-                    <Chip
-                      label={participant.approval_status === 'VALID' ? 'Nilai Valid' :
-                             participant.approval_status === 'DISPENSED' ? 'Dispensasi' :
-                             participant.approval_status === 'REJECTED_NO_DOC' ? 'Dokumen Kurang' :
-                             participant.approval_status === 'REJECTED_PUNISHMENT' ? 'Punishment' : 'Menunggu'}
-                      color={participant.approval_status === 'VALID' || participant.approval_status === 'DISPENSED' ? 'success' :
-                             participant.approval_status?.startsWith('REJECTED') ? 'error' : 'warning'}
-                      size='small'
-                      variant='tonal'
-                    />
-                  )}
-                  <Button variant='tonal' color='secondary' size='small'
-                    startIcon={<i className='ri-arrow-left-line' />}
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2 mb-6'>
+        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' color='text.secondary'
+                    className='cursor-pointer hover:underline'
                     onClick={() => router.push('/nimen/my-sprints')}>
-                    Kembali
-                  </Button>
+          Sprint Saya
+        </Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary' noWrap>{sprint.title}</Typography>
+      </div>
+
+      <Grid container spacing={4}>
+
+        {/* ── Hero Card ── */}
+        <Grid item xs={12}>
+          <Card sx={{
+            background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
+            border: `1px solid ${theme.palette.primary.main}20`,
+          }}>
+            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+              <div className='flex items-start justify-between gap-3 mb-3'>
+                <div className='flex-1 min-w-0'>
+                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} className='mb-1'>
+                    {sprint.title}
+                  </Typography>
+                  <div className='flex flex-wrap gap-2 mt-2'>
+                    <Chip label={sprint.sprint_number} size='small' color='primary' variant='tonal' />
+                    {sprint.batch?.name && (
+                      <Chip label={sprint.batch.name} size='small' variant='tonal' />
+                    )}
+                  </div>
                 </div>
+                {/* Nilai besar */}
+                <Box sx={{
+                  minWidth: 72, height: 72, borderRadius: 3, flexShrink: 0,
+                  bgcolor: isPlus ? 'success.main' : 'error.main',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Typography variant='h5' fontWeight={800} sx={{ color: '#fff', lineHeight: 1 }}>
+                    {isPlus ? `+${indicatorVal}` : indicatorVal}
+                  </Typography>
+                  <Typography variant='caption' sx={{ color: '#ffffff99', fontSize: 10 }}>poin</Typography>
+                </Box>
+              </div>
+
+              {/* Info rows */}
+              <div className='flex flex-col gap-1.5 mb-3'>
+                <div className='flex items-center gap-2'>
+                  <i className='ri-calendar-event-line' style={{ color: theme.palette.text.secondary }} />
+                  <Typography variant='body2' color='text.secondary'>
+                    {fmtDate(sprint.event_date, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                  </Typography>
+                </div>
+                {sprint.location && (
+                  <div className='flex items-center gap-2'>
+                    <i className='ri-map-pin-line' style={{ color: theme.palette.text.secondary }} />
+                    <Typography variant='body2' color='text.secondary'>{sprint.location}</Typography>
+                  </div>
+                )}
+                <div className='flex items-center gap-2'>
+                  <i className='ri-time-line' style={{ color: isDeadlinePassed ? theme.palette.error.main : theme.palette.text.secondary }} />
+                  <Typography variant='body2' color={isDeadlinePassed ? 'error.main' : 'text.secondary'}>
+                    Deadline: {fmtDate(sprint.submission_deadline)}
+                    {canUpload && ` · ${daysLeft} hari lagi`}
+                    {isDeadlinePassed && ' · Sudah lewat'}
+                  </Typography>
+                </div>
+              </div>
+
+              {/* Status + Kembali */}
+              <div className='flex items-center justify-between gap-2 flex-wrap'>
+                {participant && (
+                  <Chip
+                    label={approvalCfg.label}
+                    color={approvalCfg.color}
+                    variant='tonal'
+                    icon={<i className={approvalCfg.icon} />}
+                  />
+                )}
+                <Button variant='tonal' color='secondary' size='small'
+                        startIcon={<i className='ri-arrow-left-line' />}
+                        onClick={() => router.push('/nimen/my-sprints')}>
+                  Kembali
+                </Button>
               </div>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Info Batas Waktu */}
+        {/* ── Alert Status Upload ── */}
         {isActive && (
           <Grid item xs={12}>
             {isBeforeEvent && (
               <Alert severity='info' icon={<i className='ri-time-line' />}>
-                Pengumpulan dokumen dibuka setelah tanggal kegiatan (<strong>{eventDate.toLocaleDateString('id-ID')}</strong>).
+                Pengumpulan dokumen dibuka setelah tanggal kegiatan{' '}
+                (<strong>{fmtDate(sprint.event_date, { day: '2-digit', month: 'long', year: 'numeric' })}</strong>).
               </Alert>
             )}
             {canUpload && (
               <Alert severity='success' icon={<i className='ri-upload-cloud-line' />}>
-                Pengumpulan dokumen <strong>sedang dibuka</strong> sampai{' '}
-                <strong>{deadline.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</strong>.
+                Pengumpulan dokumen <strong>sedang dibuka</strong> — deadline{' '}
+                <strong>{fmtDate(sprint.submission_deadline)}</strong>
+                {daysLeft > 0 && ` (${daysLeft} hari lagi)`}.
+                <LinearProgress
+                  variant='determinate'
+                  value={Math.max(0, 100 - (msLeft / (deadline - eventDate)) * 100)}
+                  color='success'
+                  sx={{ mt: 1, borderRadius: 2, height: 4 }}
+                />
               </Alert>
             )}
             {isDeadlinePassed && (
@@ -166,14 +226,19 @@ const MySprintDetailView = ({ sprintId }) => {
           </Grid>
         )}
 
-        {/* Dokumen Penunjang Sprint (dari admin) */}
+        {/* ── Dokumen Penunjang Sprint ── */}
         {attachments.length > 0 && (
           <Grid item xs={12} md={5}>
-            <Card className='h-full'>
+            <Card sx={{ height: '100%' }}>
               <CardHeader
-                title='Dokumen Penunjang Sprint'
-                subheader='Dokumen yang dilampirkan admin sebagai referensi'
-                titleTypographyProps={{ variant: 'subtitle1' }}
+                title='Dokumen Penunjang'
+                subheader='Dilampirkan admin sebagai referensi'
+                titleTypographyProps={{ variant: 'subtitle1', fontWeight: 600 }}
+                avatar={
+                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: '#E0F9FC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <i className='ri-file-list-3-line' style={{ fontSize: 18, color: '#00CFE8' }} />
+                  </Box>
+                }
               />
               <Divider />
               <CardContent>
@@ -189,18 +254,27 @@ const MySprintDetailView = ({ sprintId }) => {
           </Grid>
         )}
 
-        {/* Dokumen Peserta (upload mahasiswa) */}
+        {/* ── Dokumen Kamu ── */}
         <Grid item xs={12} md={attachments.length > 0 ? 7 : 12}>
           <Card>
             <CardHeader
               title='Dokumen Kamu'
-              subheader={canUpload
-                ? 'Upload bukti keikutsertaan kamu di sprint ini'
-                : isDeadlinePassed
-                  ? 'Batas waktu sudah lewat'
-                  : 'Pengumpulan belum dibuka'
+              subheader={
+                canUpload ? 'Upload bukti keikutsertaan kamu di sprint ini'
+                  : isDeadlinePassed ? 'Batas waktu sudah lewat, tidak bisa upload'
+                    : 'Pengumpulan belum dibuka'
               }
-              titleTypographyProps={{ variant: 'subtitle1' }}
+              titleTypographyProps={{ variant: 'subtitle1', fontWeight: 600 }}
+              avatar={
+                <Box sx={{
+                  width: 36, height: 36, borderRadius: 2,
+                  bgcolor: canUpload ? '#E6F9EE' : '#F4F4F4',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <i className={canUpload ? 'ri-upload-cloud-2-line' : 'ri-lock-line'}
+                     style={{ fontSize: 18, color: canUpload ? '#28C76F' : '#A8AAAE' }} />
+                </Box>
+              }
             />
             <Divider />
             <CardContent>
@@ -211,7 +285,7 @@ const MySprintDetailView = ({ sprintId }) => {
                 onGetPresignedURL={handlePresign}
                 canUpload={canUpload}
                 canDelete={canUpload}
-                uploadHint={canUpload ? `Deadline: ${deadline.toLocaleDateString('id-ID')}` : ''}
+                uploadHint={canUpload ? `Deadline: ${fmtDate(sprint.submission_deadline)}` : ''}
                 emptyText='Kamu belum mengupload dokumen apapun.'
               />
             </CardContent>
@@ -221,10 +295,10 @@ const MySprintDetailView = ({ sprintId }) => {
       </Grid>
 
       <Snackbar open={toast.open} autoHideDuration={4000}
-        onClose={() => setToast(t => ({ ...t, open: false }))}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+                onClose={() => setToast(t => ({ ...t, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Alert severity={toast.severity} variant='filled'
-          onClose={() => setToast(t => ({ ...t, open: false }))}>
+               onClose={() => setToast(t => ({ ...t, open: false }))}>
           {toast.message}
         </Alert>
       </Snackbar>
