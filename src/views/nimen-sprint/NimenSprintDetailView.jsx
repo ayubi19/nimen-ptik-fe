@@ -43,6 +43,9 @@ import StepLabel from '@mui/material/StepLabel'
 import Stepper from '@mui/material/Stepper'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
+import Drawer from '@mui/material/Drawer'
+import { useForm, Controller } from 'react-hook-form'
+import { nimenIndicatorApi } from '@/libs/api/nimenMasterDataApi'
 import { nimenSprintApi } from '@/libs/api/nimenSprintApi'
 import { nimenAttachmentApi, nimenParticipantDocApi } from '@/libs/api/nimenDocumentApi'
 import DocumentManager from '@/components/nimen/DocumentManager'
@@ -105,8 +108,25 @@ const NimenSprintDetailView = ({ sprintId }) => {
   const [finalizeLoading, setFinalizeLoading] = useState(false)
   const [finalizeDiff, setFinalizeDiff] = useState(null)
   const [finalizeDiffLoading, setFinalizeDiffLoading] = useState(false)
+  const [customParticipants, setCustomParticipants] = useState([]) // untuk mode CUSTOM
+  const [customSearchResult, setCustomSearchResult] = useState([])
+  const [customSearchLoading, setCustomSearchLoading] = useState(false)
 
+  const [editOpen, setEditOpen]           = useState(false)
+  const [editLoading, setEditLoading]     = useState(false)
+  const [indicators, setIndicators]       = useState([])
+  const [deleteOpen, setDeleteOpen]       = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
+
+  const { control: editControl, handleSubmit: handleEditSubmit, reset: resetEdit,
+    watch: watchEdit, formState: { errors: editErrors } } = useForm({
+    defaultValues: {
+      sprint_number: '', title: '', description: '', indicator_id: '',
+      event_date: '', location: '', participant_quota: 1, submission_deadline: ''
+    }
+  })
+  const editQuota = watchEdit('participant_quota')
 
   const showToast = useCallback((msg, severity = 'success') => {
     setToast({ open: true, message: msg, severity })
@@ -139,6 +159,70 @@ const NimenSprintDetailView = ({ sprintId }) => {
 
   useEffect(() => { fetchSprint() }, [fetchSprint])
 
+  useEffect(() => {
+    nimenIndicatorApi.getAll({ page: 1, page_size: 100, is_active: true })
+      .then(r => setIndicators(r.data.data?.data || []))
+      .catch(() => {})
+  }, [])
+
+  // ── Edit Sprint ──
+  const handleOpenEdit = useCallback(() => {
+    if (!sprint) return
+    resetEdit({
+      sprint_number:       sprint.sprint_number,
+      title:               sprint.title,
+      description:         sprint.description || '',
+      indicator_id:        sprint.indicator_id,
+      event_date:          sprint.event_date ? sprint.event_date.split('T')[0] : '',
+      location:            sprint.location || '',
+      participant_quota:   sprint.participant_quota,
+      submission_deadline: sprint.submission_deadline ? sprint.submission_deadline.split('T')[0] : '',
+    })
+    setEditOpen(true)
+  }, [sprint, resetEdit])
+
+  const handleEdit = useCallback(async (values) => {
+    if (parseInt(values.participant_quota) < participants.length) {
+      showToast(`Kuota tidak bisa dikurangi di bawah jumlah peserta saat ini (${participants.length})`, 'error')
+      return
+    }
+    setEditLoading(true)
+    try {
+      await nimenSprintApi.update(sprintId, {
+        sprint_number:       values.sprint_number,
+        title:               values.title,
+        description:         values.description || '',
+        indicator_id:        parseInt(values.indicator_id),
+        event_date:          values.event_date,
+        location:            values.location || '',
+        participant_quota:   parseInt(values.participant_quota),
+        submission_deadline: values.submission_deadline,
+      })
+      showToast('Sprint berhasil diperbarui')
+      setEditOpen(false)
+      fetchSprint()
+    } catch (err) {
+      showToast(err.message || 'Gagal memperbarui sprint', 'error')
+    } finally {
+      setEditLoading(false)
+    }
+  }, [sprintId, participants.length, fetchSprint, showToast])
+
+  // ── Delete Sprint ──
+  const handleDelete = useCallback(async () => {
+    setDeleteLoading(true)
+    try {
+      await nimenSprintApi.delete(sprintId)
+      showToast('Sprint berhasil dihapus')
+      router.back()
+    } catch (err) {
+      showToast(err.message || 'Gagal menghapus sprint', 'error')
+      setDeleteOpen(false)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [sprintId, router, showToast])
+
   // ── Generator ──
   const handleGenerate = useCallback(async () => {
     if (!sprint) return
@@ -148,8 +232,19 @@ const NimenSprintDetailView = ({ sprintId }) => {
         batch_id: sprint.batch_id,
         quota: sprint.participant_quota,
       })
-      setGeneratorResult(res.data.data)
-      setSelectedStudents(res.data.data.suggested.map(s => s.student_id))
+      const raw = res.data.data
+
+      // Exclude mahasiswa yang sudah jadi peserta
+      const existingIds = new Set(participants.map(p => p.student_id))
+      const filteredSuggested = (raw.suggested || []).filter(s => !existingIds.has(s.student_id))
+      const filteredOthers    = (raw.others    || []).filter(s => !existingIds.has(s.student_id))
+
+      const filtered = { ...raw, suggested: filteredSuggested, others: filteredOthers }
+      setGeneratorResult(filtered)
+
+      // Auto-select hanya sesuai sisa kuota
+      const remaining = sprint.participant_quota - participants.length
+      setSelectedStudents(filteredSuggested.slice(0, remaining).map(s => s.student_id))
       setGeneratorOpen(true)
     } catch (err) {
       showToast(err.message || 'Gagal menjalankan generator', 'error')
@@ -159,6 +254,12 @@ const NimenSprintDetailView = ({ sprintId }) => {
   }, [sprint, sprintId, showToast])
 
   const handleAddFromGenerator = useCallback(async () => {
+    // Validasi: total peserta tidak boleh melebihi kuota
+    const remaining = sprint.participant_quota - participants.length
+    if (selectedStudents.length > remaining) {
+      showToast(`Hanya bisa menambah ${remaining} peserta lagi (kuota tersisa ${remaining} dari ${sprint.participant_quota})`, 'error')
+      return
+    }
     setAddingLoading(true)
     try {
       await nimenSprintApi.addParticipants(sprintId, { student_ids: selectedStudents })
@@ -170,7 +271,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
     } finally {
       setAddingLoading(false)
     }
-  }, [sprintId, selectedStudents, fetchSprint, showToast])
+  }, [sprintId, sprint, participants.length, selectedStudents, fetchSprint, showToast])
 
   const handleRemoveParticipant = useCallback(async (studentId) => {
     setRemoveLoading(studentId)
@@ -225,6 +326,12 @@ const NimenSprintDetailView = ({ sprintId }) => {
     setFinalizeOpen(true)
     setFinalizeDiff(null)
     setFinalizeDiffLoading(true)
+    // Inisialisasi custom dari peserta yang sudah ada
+    setCustomParticipants(participants.map(p => ({
+      student_id: p.student_id,
+      full_name:  p.student?.full_name || '',
+      nim:        p.student?.student_profile?.nim || '',
+    })))
     try {
       const res = await nimenSprintApi.getFinalizeDiff(sprintId)
       setFinalizeDiff(res.data.data)
@@ -238,7 +345,11 @@ const NimenSprintDetailView = ({ sprintId }) => {
   const handleFinalize = useCallback(async () => {
     setFinalizeLoading(true)
     try {
-      await nimenSprintApi.finalize(sprintId, { use_version: finalizeVersion })
+      const payload = { use_version: finalizeVersion }
+      if (finalizeVersion === 'CUSTOM') {
+        payload.custom_students = customParticipants.map(p => p.student_id)
+      }
+      await nimenSprintApi.finalize(sprintId, payload)
       showToast('Sprint berhasil difinalisasi dan sekarang AKTIF')
       setFinalizeOpen(false)
       fetchSprint()
@@ -393,8 +504,14 @@ const NimenSprintDetailView = ({ sprintId }) => {
                     <Button variant='tonal' color='secondary'
                             startIcon={<i className='ri-edit-line' />}
                             fullWidth={isMobile}
-                            onClick={() => router.push(`/nimen/sprints/${sprintId}/edit`)}>
+                            onClick={handleOpenEdit}>
                       Edit
+                    </Button>
+                    <Button variant='tonal' color='error'
+                            startIcon={<i className='ri-delete-bin-line' />}
+                            fullWidth={isMobile}
+                            onClick={() => setDeleteOpen(true)}>
+                      Hapus
                     </Button>
                     <Button variant='contained' color='warning'
                             startIcon={<i className='ri-send-plane-line' />}
@@ -568,7 +685,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
                             {isEditable && isAdmin && (
                               <Tooltip title='Hapus dari sprint'>
                                 <IconButton size='small' color='error'
-                                            onClick={() => handleRemoveParticipant(p.id)}>
+                                            onClick={() => handleRemoveParticipant(p.student_id)}>
                                   <i className='ri-delete-bin-line text-[16px]' />
                                 </IconButton>
                               </Tooltip>
@@ -616,7 +733,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
                           <TableCell align='center'>
                             <Tooltip title='Hapus dari sprint'>
                               <IconButton size='small' color='error'
-                                          onClick={() => handleRemoveParticipant(p.id)}>
+                                          onClick={() => handleRemoveParticipant(p.student_id)}>
                                 <i className='ri-delete-bin-line text-[18px]' />
                               </IconButton>
                             </Tooltip>
@@ -658,9 +775,18 @@ const NimenSprintDetailView = ({ sprintId }) => {
                     <TableCell padding='checkbox'>
                       <Checkbox
                         checked={selectedStudents.length === generatorResult.suggested?.length}
-                        onChange={e => setSelectedStudents(
-                          e.target.checked ? generatorResult.suggested.map(s => s.student_id) : []
-                        )}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            const remaining = sprint.participant_quota - participants.length
+                            const allowed = generatorResult.suggested.slice(0, remaining).map(s => s.student_id)
+                            setSelectedStudents(allowed)
+                            if (generatorResult.suggested.length > remaining) {
+                              showToast(`Hanya ${remaining} pertama yang dipilih sesuai sisa kuota`, 'info')
+                            }
+                          } else {
+                            setSelectedStudents([])
+                          }
+                        }}
                       />
                     </TableCell>
                     <TableCell>Nama</TableCell>
@@ -675,9 +801,16 @@ const NimenSprintDetailView = ({ sprintId }) => {
                     <TableRow key={s.student_id} selected={selectedStudents.includes(s.student_id)}>
                       <TableCell padding='checkbox'>
                         <Checkbox checked={selectedStudents.includes(s.student_id)}
-                                  onChange={e => setSelectedStudents(prev =>
-                                    e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
-                                  )} />
+                                  onChange={e => {
+                                    const remaining = sprint.participant_quota - participants.length
+                                    if (e.target.checked && selectedStudents.length >= remaining) {
+                                      showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
+                                      return
+                                    }
+                                    setSelectedStudents(prev =>
+                                      e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
+                                    )
+                                  }} />
                       </TableCell>
                       <TableCell><Typography variant='body2' fontWeight={600}>{s.full_name}</Typography></TableCell>
                       <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
@@ -699,9 +832,16 @@ const NimenSprintDetailView = ({ sprintId }) => {
                         <TableRow key={s.student_id}>
                           <TableCell padding='checkbox'>
                             <Checkbox checked={selectedStudents.includes(s.student_id)}
-                                      onChange={e => setSelectedStudents(prev =>
-                                        e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
-                                      )} />
+                                      onChange={e => {
+                                        const remaining = sprint.participant_quota - participants.length
+                                        if (e.target.checked && selectedStudents.length >= remaining) {
+                                          showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
+                                          return
+                                        }
+                                        setSelectedStudents(prev =>
+                                          e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
+                                        )
+                                      }} />
                           </TableCell>
                           <TableCell><Typography variant='body2'>{s.full_name}</Typography></TableCell>
                           <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
@@ -720,7 +860,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
         <Divider />
         <DialogActions className='p-4 gap-2'>
           <Typography variant='body2' color='text.secondary' className='flex-1'>
-            {selectedStudents.length} dipilih dari kuota {sprint.participant_quota}
+            {selectedStudents.length} dipilih · sisa kuota: {sprint.participant_quota - participants.length - selectedStudents.length >= 0 ? sprint.participant_quota - participants.length - selectedStudents.length : 0}
           </Typography>
           <Button variant='tonal' color='secondary' onClick={() => setGeneratorOpen(false)} disabled={addingLoading}>Batal</Button>
           <Button variant='contained' onClick={handleAddFromGenerator}
@@ -838,13 +978,26 @@ const NimenSprintDetailView = ({ sprintId }) => {
           <DialogContentText className='mb-4'>
             Pilih versi daftar peserta yang akan digunakan. Setelah difinalisasi, sprint berstatus <strong>AKTIF</strong> dan semua peserta menerima notifikasi.
           </DialogContentText>
-          <RadioGroup value={finalizeVersion} onChange={e => setFinalizeVersion(e.target.value)} className='mb-4'>
+          <RadioGroup value={finalizeVersion} onChange={e => {
+            setFinalizeVersion(e.target.value)
+            // Saat pilih CUSTOM, inisialisasi dari draft yang sedang aktif
+            if (e.target.value === 'CUSTOM' && finalizeDiff) {
+              const base = finalizeVersion === 'COORDINATOR_DRAFT'
+                ? finalizeDiff.coordinator_participants?.filter(p => p.change_type !== 'REMOVED')
+                : finalizeDiff.original_participants
+              setCustomParticipants((base || []).map(p => ({
+                student_id: p.student_id,
+                full_name:  p.full_name,
+                nim:        p.nim,
+              })))
+            }
+          }} className='mb-4'>
             <FormControlLabel value='DRAFT_ORIGINAL'
                               control={<Radio />}
                               label={
                                 <div>
-                                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Admin (awal)</Typography>
-                                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang dibuat admin, sebelum review koordinator</Typography>
+                                  <Typography variant='body2' fontWeight={600}>Draft Admin (awal)</Typography>
+                                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang dibuat admin sebelum review koordinator</Typography>
                                 </div>
                               }
             />
@@ -852,12 +1005,130 @@ const NimenSprintDetailView = ({ sprintId }) => {
                               control={<Radio />}
                               label={
                                 <div>
-                                  <Typography variant='body2' fontWeight={600}>Gunakan Draft Koordinator</Typography>
+                                  <Typography variant='body2' fontWeight={600}>Draft Koordinator</Typography>
                                   <Typography variant='caption' color='text.secondary'>Daftar peserta yang sudah direvisi koordinator</Typography>
                                 </div>
                               }
             />
+            <FormControlLabel value='CUSTOM'
+                              control={<Radio />}
+                              label={
+                                <div>
+                                  <Typography variant='body2' fontWeight={600}>Custom (edit manual)</Typography>
+                                  <Typography variant='caption' color='text.secondary'>Mulai dari salah satu draft lalu modifikasi bebas</Typography>
+                                </div>
+                              }
+            />
           </RadioGroup>
+
+          {/* ── Mode CUSTOM: editor peserta ── */}
+          {finalizeVersion === 'CUSTOM' && (
+            <Box sx={{ mb: 3 }}>
+              <Alert severity='info' className='mb-3' icon={<i className='ri-edit-line' />}>
+                Mode Custom — tambah atau hapus peserta bebas. Kuota: {sprint?.participant_quota} orang.
+              </Alert>
+
+              {/* Search tambah peserta */}
+              <Box className='flex gap-2 mb-3'>
+                <TextField
+                  size='small' fullWidth
+                  placeholder='Cari mahasiswa untuk ditambahkan...'
+                  onChange={async e => {
+                    const q = e.target.value
+                    if (q.length < 2) { setCustomSearchResult([]); return }
+                    setCustomSearchLoading(true)
+                    try {
+                      const { studentsApi } = await import('@/libs/api/studentsApi')
+                      const res = await studentsApi.getAll({
+                        batch_id: sprint.batch_id, search: q, page_size: 10
+                      })
+                      const all = res.data.data?.data || []
+                      // Exclude yang sudah ada di list
+                      const existIds = new Set(customParticipants.map(p => p.student_id))
+                      setCustomSearchResult(all.filter(s => !existIds.has(s.id)))
+                    } catch {}
+                    finally { setCustomSearchLoading(false) }
+                  }}
+                  InputProps={{
+                    startAdornment: customSearchLoading
+                      ? <CircularProgress size={16} sx={{ mr: 1 }} />
+                      : <i className='ri-search-line mr-2 opacity-50' />
+                  }}
+                />
+              </Box>
+
+              {/* Search results */}
+              {customSearchResult.length > 0 && (
+                <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, mb: 2, maxHeight: 160, overflow: 'auto' }}>
+                  {customSearchResult.map(s => (
+                    <Box key={s.id} className='flex items-center justify-between p-2 hover:bg-action-hover cursor-pointer'
+                         onClick={() => {
+                           if (customParticipants.length >= sprint.participant_quota) {
+                             showToast(`Kuota penuh (${sprint.participant_quota} peserta)`, 'error')
+                             return
+                           }
+                           setCustomParticipants(prev => [...prev, {
+                             student_id: s.id,
+                             full_name:  s.full_name,
+                             nim:        s.student_profile?.nim || '',
+                           }])
+                           setCustomSearchResult(prev => prev.filter(x => x.id !== s.id))
+                         }}>
+                      <div className='flex items-center gap-2'>
+                        <Avatar sx={{ width: 24, height: 24, fontSize: 10 }}>{getInitials(s.full_name)}</Avatar>
+                        <div>
+                          <Typography variant='body2' fontWeight={500}>{s.full_name}</Typography>
+                          <Typography variant='caption' color='text.secondary'>{s.student_profile?.nim}</Typography>
+                        </div>
+                      </div>
+                      <i className='ri-add-circle-line text-success-main text-lg' />
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
+              {/* Custom list */}
+              <div className='flex items-center justify-between mb-1'>
+                <Typography variant='caption' color='text.secondary'>
+                  {customParticipants.length} / {sprint?.participant_quota} peserta
+                </Typography>
+              </div>
+              <Table size='small'>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    <TableCell>Nama</TableCell>
+                    <TableCell>NIM</TableCell>
+                    <TableCell align='center'>Hapus</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {customParticipants.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} align='center' sx={{ py: 3 }}>
+                        <Typography variant='body2' color='text.secondary'>Belum ada peserta</Typography>
+                      </TableCell>
+                    </TableRow>
+                  ) : customParticipants.map(p => (
+                    <TableRow key={p.student_id}>
+                      <TableCell>
+                        <div className='flex items-center gap-2'>
+                          <Avatar sx={{ width: 28, height: 28, fontSize: 11 }}>{getInitials(p.full_name)}</Avatar>
+                          <Typography variant='body2' fontWeight={600}>{p.full_name}</Typography>
+                        </div>
+                      </TableCell>
+                      <TableCell><Typography variant='body2'>{p.nim}</Typography></TableCell>
+                      <TableCell align='center'>
+                        <IconButton size='small' color='error'
+                                    onClick={() => setCustomParticipants(prev => prev.filter(x => x.student_id !== p.student_id))}>
+                          <i className='ri-delete-bin-line text-[16px]' />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          )}
 
           {/* Diff Peserta */}
           {finalizeDiffLoading && (
@@ -934,9 +1205,137 @@ const NimenSprintDetailView = ({ sprintId }) => {
         <DialogActions className='p-4 gap-2'>
           <Button variant='tonal' color='secondary' onClick={() => setFinalizeOpen(false)} disabled={finalizeLoading}>Batal</Button>
           <Button variant='contained' color='success' onClick={handleFinalize}
-                  disabled={finalizeLoading || finalizeDiffLoading}
+                  disabled={
+                    finalizeLoading || finalizeDiffLoading ||
+                    (finalizeVersion === 'CUSTOM' && customParticipants.length === 0)
+                  }
                   startIcon={finalizeLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-check-double-line' />}>
             {finalizeLoading ? 'Memfinalisasi...' : 'Finalisasi Sprint'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Drawer Edit Sprint ── */}
+      <Drawer anchor='right' open={editOpen} onClose={() => setEditOpen(false)}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}>
+        <div className='flex items-center justify-between p-4 border-b'>
+          <Typography variant='h6'>Edit Sprint</Typography>
+          <IconButton onClick={() => setEditOpen(false)}><i className='ri-close-line' /></IconButton>
+        </div>
+        <form onSubmit={handleEditSubmit(handleEdit)} className='flex flex-col gap-4 p-4 overflow-y-auto'>
+          <Controller name='sprint_number' control={editControl}
+                      rules={{ required: 'Wajib diisi', minLength: { value: 3, message: 'Min 3 karakter' } }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label='Nomor Sprint'
+                                   error={!!editErrors.sprint_number} helperText={editErrors.sprint_number?.message} />
+                      )}
+          />
+          <Controller name='title' control={editControl}
+                      rules={{ required: 'Wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label='Judul Kegiatan'
+                                   error={!!editErrors.title} helperText={editErrors.title?.message} />
+                      )}
+          />
+          <Controller name='description' control={editControl}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth multiline rows={2} label='Deskripsi (opsional)' />
+                      )}
+          />
+          <Controller name='indicator_id' control={editControl}
+                      rules={{ required: 'Wajib dipilih' }}
+                      render={({ field }) => (
+                        <Autocomplete
+                          options={indicators}
+                          getOptionLabel={opt => opt?.name || ''}
+                          isOptionEqualToValue={(opt, val) => opt.id === (val?.id ?? val)}
+                          value={indicators.find(i => i.id === field.value) || null}
+                          onChange={(_, val) => field.onChange(val?.id ?? '')}
+                          renderOption={(props, opt) => (
+                            <li {...props} key={opt.id}>
+                              <div>
+                                <Typography variant='body2'>{opt.name}</Typography>
+                                <Typography variant='caption' color='text.secondary'>
+                                  {opt.value > 0 ? `+${opt.value}` : opt.value} · {opt.variable?.name}
+                                </Typography>
+                              </div>
+                            </li>
+                          )}
+                          renderInput={params => (
+                            <TextField {...params} label='Indikator Nilai'
+                                       placeholder='Cari indikator...'
+                                       error={!!editErrors.indicator_id}
+                                       helperText={editErrors.indicator_id?.message}
+                            />
+                          )}
+                        />
+                      )}
+          />
+          <Controller name='event_date' control={editControl}
+                      rules={{ required: 'Wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth type='date' label='Tanggal Kegiatan'
+                                   InputLabelProps={{ shrink: true }}
+                                   error={!!editErrors.event_date} helperText={editErrors.event_date?.message} />
+                      )}
+          />
+          <Controller name='location' control={editControl}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth label='Lokasi (opsional)' />
+                      )}
+          />
+          <Controller name='participant_quota' control={editControl}
+                      rules={{ required: 'Wajib diisi', min: { value: 1, message: 'Min 1' } }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth type='number' label='Kuota Peserta'
+                                   inputProps={{ min: 1 }}
+                                   error={!!editErrors.participant_quota}
+                                   helperText={
+                                     parseInt(editQuota) < participants.length
+                                       ? `⚠️ Kuota tidak bisa kurang dari jumlah peserta saat ini (${participants.length})`
+                                       : editErrors.participant_quota?.message
+                                   }
+                                   FormHelperTextProps={{
+                                     sx: { color: parseInt(editQuota) < participants.length ? 'error.main' : undefined }
+                                   }}
+                        />
+                      )}
+          />
+          <Controller name='submission_deadline' control={editControl}
+                      rules={{ required: 'Wajib diisi' }}
+                      render={({ field }) => (
+                        <TextField {...field} fullWidth type='date' label='Batas Pengumpulan Dokumen'
+                                   InputLabelProps={{ shrink: true }}
+                                   error={!!editErrors.submission_deadline} helperText={editErrors.submission_deadline?.message} />
+                      )}
+          />
+          <div className='flex gap-2 mt-2'>
+            <Button fullWidth variant='tonal' color='secondary'
+                    onClick={() => setEditOpen(false)} disabled={editLoading}>Batal</Button>
+            <Button fullWidth variant='contained' type='submit'
+                    disabled={editLoading || parseInt(editQuota) < participants.length}
+                    startIcon={editLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+              {editLoading ? 'Menyimpan...' : 'Simpan'}
+            </Button>
+          </div>
+        </form>
+      </Drawer>
+
+      {/* ── Dialog Hapus Sprint ── */}
+      <Dialog open={deleteOpen} onClose={() => setDeleteOpen(false)} maxWidth='xs' fullWidth>
+        <DialogTitle>Hapus Sprint?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Hapus sprint <strong>{sprint?.sprint_number}</strong> — {sprint?.title}?
+            Semua data peserta dan dokumen akan ikut terhapus. Tindakan ini tidak dapat dibatalkan.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions className='p-4 gap-2'>
+          <Button variant='tonal' color='secondary'
+                  onClick={() => setDeleteOpen(false)} disabled={deleteLoading}>Batal</Button>
+          <Button variant='contained' color='error' onClick={handleDelete} disabled={deleteLoading}
+                  startIcon={deleteLoading ? <CircularProgress size={16} color='inherit' /> : null}>
+            {deleteLoading ? 'Menghapus...' : 'Hapus Sprint'}
           </Button>
         </DialogActions>
       </Dialog>
