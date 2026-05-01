@@ -2,53 +2,58 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import Grid from '@mui/material/Grid'
-import Card from '@mui/material/Card'
-import CardHeader from '@mui/material/CardHeader'
-import CardContent from '@mui/material/CardContent'
-import Divider from '@mui/material/Divider'
-import Button from '@mui/material/Button'
-import Typography from '@mui/material/Typography'
-import Chip from '@mui/material/Chip'
-import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
-import Snackbar from '@mui/material/Snackbar'
-import Dialog from '@mui/material/Dialog'
-import DialogTitle from '@mui/material/DialogTitle'
-import DialogContent from '@mui/material/DialogContent'
-import DialogActions from '@mui/material/DialogActions'
-import IconButton from '@mui/material/IconButton'
-import Table from '@mui/material/Table'
-import TableHead from '@mui/material/TableHead'
-import TableBody from '@mui/material/TableBody'
-import TableRow from '@mui/material/TableRow'
-import TableCell from '@mui/material/TableCell'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
-import TextField from '@mui/material/TextField'
+import Button from '@mui/material/Button'
+import Card from '@mui/material/Card'
+import CardContent from '@mui/material/CardContent'
+import CardHeader from '@mui/material/CardHeader'
+import Chip from '@mui/material/Chip'
+import CircularProgress from '@mui/material/CircularProgress'
+import Dialog from '@mui/material/Dialog'
+import DialogContent from '@mui/material/DialogContent'
+import DialogTitle from '@mui/material/DialogTitle'
+import Divider from '@mui/material/Divider'
+import Grid from '@mui/material/Grid'
+import IconButton from '@mui/material/IconButton'
 import InputAdornment from '@mui/material/InputAdornment'
+import Snackbar from '@mui/material/Snackbar'
+import Table from '@mui/material/Table'
+import TableBody from '@mui/material/TableBody'
+import TableCell from '@mui/material/TableCell'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TextField from '@mui/material/TextField'
+import Typography from '@mui/material/Typography'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { nimenSprintApi } from '@/libs/api/nimenSprintApi'
 import { getInitials } from '@/utils/getInitials'
 
+const fmtDate = (d) => d
+  ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+  : '—'
+
 const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
   const router = useRouter()
-  const [sprint, setSprint] = useState(null)
-  const [participants, setParticipants] = useState([]) // daftar peserta saat ini (bisa dimodifikasi)
-  const [availableStudents, setAvailableStudents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [submitLoading, setSubmitLoading] = useState(false)
-  const [note, setNote] = useState('')
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  // Swap dialog
-  const [swapOpen, setSwapOpen] = useState(false)
-  const [swapTarget, setSwapTarget] = useState(null) // peserta yang akan diganti
+  const [sprint, setSprint]                   = useState(null)
+  const [participants, setParticipants]       = useState([])
+  const [availableStudents, setAvailableStudents] = useState([])
+  const [loading, setLoading]                 = useState(true)
+  const [submitLoading, setSubmitLoading]     = useState(false)
+  const [note, setNote]                       = useState('')
+
+  const [swapOpen, setSwapOpen]     = useState(false)
+  const [swapTarget, setSwapTarget] = useState(null)
   const [swapSearch, setSwapSearch] = useState('')
-  const [swapLoading, setSwapLoading] = useState(false)
 
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
-  const showToast = useCallback((msg, severity = 'success') => {
-    setToast({ open: true, message: msg, severity })
-  }, [])
+  const showToast = useCallback((msg, severity = 'success') =>
+    setToast({ open: true, message: msg, severity }), [])
 
   const fetchData = useCallback(async () => {
     try {
@@ -56,23 +61,22 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
         nimenSprintApi.getCoordinatorReview(sprintId),
         nimenSprintApi.getAvailableStudents(sprintId),
       ])
-      const reviewData = reviewRes.data.data
+      const d = reviewRes.data.data
       setSprint({
-        sprint_number: reviewData.sprint_number,
-        title: reviewData.title,
-        event_date: reviewData.event_date,
-        participant_quota: reviewData.participant_quota,
+        sprint_number:     d.sprint_number,
+        title:             d.title,
+        event_date:        d.event_date,
+        participant_quota: d.participant_quota,
       })
-      // Map coordinator review participants ke format lokal
-      setParticipants(reviewData.participants.map(p => ({
-        id: p.student_id,
+      setParticipants(d.participants.map(p => ({
+        id:         p.student_id,
         student_id: p.student_id,
         student: {
-          id: p.student_id,
-          full_name: p.full_name,
+          id:         p.student_id,
+          full_name:  p.full_name,
           student_profile: { nim: p.nim },
         },
-        change_type: p.change_type, // "ADDED" | "REMOVED" | ""
+        change_type: p.change_type,
       })))
       setAvailableStudents(availableRes.data.data || [])
     } catch (err) {
@@ -84,41 +88,36 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // ── Swap peserta ──
-  const handleOpenSwap = useCallback((participant) => {
-    setSwapTarget(participant)
+  const handleOpenSwap = useCallback((p) => {
+    setSwapTarget(p)
     setSwapSearch('')
     setSwapOpen(true)
   }, [])
 
   const handleSwap = useCallback((newStudent) => {
-    // Ganti peserta di state lokal (belum submit ke BE)
     setParticipants(prev => prev.map(p =>
       p.id === swapTarget.id
         ? { ...p, student_id: newStudent.student_id, student: { id: newStudent.student_id, full_name: newStudent.full_name, student_profile: { nim: newStudent.nim } } }
         : p
     ))
-    // Pindahkan mahasiswa lama ke available, hapus mahasiswa baru dari available
     setAvailableStudents(prev => {
       const filtered = prev.filter(s => s.student_id !== newStudent.student_id)
       return [...filtered, {
         student_id: swapTarget.student_id,
-        full_name: swapTarget.student?.full_name,
-        nim: swapTarget.student?.student_profile?.nim,
+        full_name:  swapTarget.student?.full_name,
+        nim:        swapTarget.student?.student_profile?.nim,
       }]
     })
     setSwapOpen(false)
-    setSwapTarget(null)
     showToast(`${swapTarget.student?.full_name} diganti dengan ${newStudent.full_name}`, 'info')
   }, [swapTarget, showToast])
 
   const handleSubmit = useCallback(async () => {
     setSubmitLoading(true)
     try {
-      const participantIDs = participants.map(p => p.student_id)
       await nimenSprintApi.coordinatorSubmit(sprintId, {
-        participant_ids: participantIDs,
-        note: note,
+        participant_ids: participants.map(p => p.student_id),
+        note,
       })
       showToast('Revisi peserta berhasil disubmit ke admin')
       setTimeout(() => router.push(`/nimen/sprints/${sprintId}`), 1000)
@@ -134,30 +133,39 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
     s.nim?.includes(swapSearch)
   )
 
-  if (loading) return <div className='flex justify-center py-20'><CircularProgress /></div>
+  if (loading) return <Box className='flex justify-center py-20'><CircularProgress /></Box>
   if (!sprint) return null
 
   return (
     <>
-      <Grid container spacing={6}>
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2 mb-6'>
+        <Typography variant='caption' color='text.secondary'>NIMEN › Sprint</Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary'>Review Koordinator</Typography>
+      </div>
+
+      <Grid container spacing={4}>
 
         {/* Header */}
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <div className='flex items-start justify-between gap-4'>
-                <div>
-                  <Typography variant='h5' className='mb-1'>Review Daftar Peserta</Typography>
-                  <Typography variant='body2' color='text.secondary'>
-                    <i className='ri-file-list-3-line mr-1' />{sprint.sprint_number} — {sprint.title}
-                  </Typography>
-                  <Typography variant='body2' color='text.secondary'>
-                    <i className='ri-calendar-line mr-1' />
-                    {new Date(sprint.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+              <div className='flex items-start justify-between gap-2'>
+                <div className='flex-1 min-w-0'>
+                  <Typography variant='h6' fontWeight={700} className='mb-1'>Review Daftar Peserta</Typography>
+                  <div className='flex items-center gap-2 flex-wrap'>
+                    <Chip label={sprint.sprint_number} size='small' color='primary' variant='tonal' />
+                    <Typography variant='body2' color='text.secondary' noWrap>{sprint.title}</Typography>
+                  </div>
+                  <Typography variant='caption' color='text.secondary' sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                    <i className='ri-calendar-line' />{fmtDate(sprint.event_date)}
                   </Typography>
                 </div>
-                <Button variant='tonal' color='secondary' startIcon={<i className='ri-arrow-left-line' />}
-                  onClick={() => router.back()}>
+                <Button variant='tonal' color='secondary' size='small'
+                        startIcon={<i className='ri-arrow-left-line' />}
+                        onClick={() => router.back()}
+                        sx={{ flexShrink: 0 }}>
                   Batal
                 </Button>
               </div>
@@ -170,106 +178,147 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
           <Alert severity='info' icon={<i className='ri-information-line' />}>
             Kamu dapat mengganti peserta dengan mahasiswa lain dari <strong>angkatan yang sama</strong>.
             Jumlah peserta tidak boleh berubah (<strong>{sprint.participant_quota} orang</strong>).
-            Klik tombol <strong>Ganti</strong> pada baris peserta yang ingin diganti.
+            Klik tombol <strong>Ganti</strong> pada peserta yang ingin diganti.
           </Alert>
         </Grid>
 
-        {/* Tabel Peserta */}
+        {/* Daftar Peserta */}
         <Grid item xs={12}>
           <Card>
             <CardHeader
               title={
-                <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-2'>
                   <span>Daftar Peserta</span>
                   <Chip label={`${participants.length} / ${sprint.participant_quota}`}
-                    size='small' color='primary' variant='tonal' />
+                        size='small' color='primary' variant='tonal' />
                 </div>
               }
             />
             <Divider />
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell width={50}>#</TableCell>
-                  <TableCell>Nama</TableCell>
-                  <TableCell>NIM</TableCell>
-                  <TableCell>Sindikat</TableCell>
-                  <TableCell align='center'>Status</TableCell>
-                  <TableCell align='center' width={100}>Ganti</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
+
+            {isMobile ? (
+              // ── Mobile: Card List ──
+              <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {participants.map((p, idx) => {
                   const student = p.student
                   const profile = student?.student_profile
                   return (
-                    <TableRow key={p.id || idx}
-                      sx={p.change_type === 'ADDED' ? { bgcolor: 'success.lighter' } : {}}>
-                      <TableCell>
-                        <Typography variant='body2' color='text.secondary'>{idx + 1}</Typography>
-                      </TableCell>
-                      <TableCell>
+                    <Card key={p.id || idx} variant='outlined'
+                          sx={p.change_type === 'ADDED' ? { borderColor: 'success.main', bgcolor: 'success.lighter' } : {}}>
+                      <CardContent sx={{ p: '12px !important' }}>
                         <div className='flex items-center gap-2'>
-                          <Avatar sx={{ width: 32, height: 32, fontSize: 12 }}>
+                          <Typography variant='caption' color='text.secondary' sx={{ width: 20, flexShrink: 0 }}>
+                            {idx + 1}
+                          </Typography>
+                          <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
                             {getInitials(student?.full_name || '')}
                           </Avatar>
-                          <Typography variant='body2' fontWeight={600}>{student?.full_name}</Typography>
+                          <div className='flex-1 min-w-0'>
+                            <Typography variant='body2' fontWeight={600} noWrap>{student?.full_name}</Typography>
+                            <Typography variant='caption' color='text.secondary'>{profile?.nim || '—'}</Typography>
+                          </div>
+                          {p.change_type === 'ADDED' && (
+                            <Chip label='Baru' color='success' size='small' variant='tonal' sx={{ flexShrink: 0 }} />
+                          )}
                         </div>
-                      </TableCell>
-                      <TableCell><Typography variant='body2'>{profile?.nim || '-'}</Typography></TableCell>
-                      <TableCell><Typography variant='body2'>{profile?.syndicate?.name || '-'}</Typography></TableCell>
-                      <TableCell align='center'>
-                        {p.change_type === 'ADDED'
-                          ? <Chip label='Baru ditambah' color='success' size='small' variant='tonal' />
-                          : <Typography variant='caption' color='text.secondary'>—</Typography>
-                        }
-                      </TableCell>
-                      <TableCell align='center'>
-                        <Button size='small' variant='tonal' color='warning'
-                          startIcon={<i className='ri-swap-line' />}
-                          onClick={() => handleOpenSwap(p)}>
-                          Ganti
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                        <Box className='mt-2'>
+                          <Button fullWidth size='small' variant='tonal' color='warning'
+                                  startIcon={<i className='ri-arrow-left-right-line' />}
+                                  onClick={() => handleOpenSwap(p)}>
+                            Ganti Peserta Ini
+                          </Button>
+                        </Box>
+                      </CardContent>
+                    </Card>
                   )
                 })}
-              </TableBody>
-            </Table>
+              </Box>
+            ) : (
+              // ── Desktop: Table ──
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    {['#', 'Nama', 'NIM', 'Sindikat', 'Status', 'Aksi'].map(h => (
+                      <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                        {h}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {participants.map((p, idx) => {
+                    const student = p.student
+                    const profile = student?.student_profile
+                    return (
+                      <TableRow key={p.id || idx} hover
+                                sx={p.change_type === 'ADDED' ? { bgcolor: 'success.lighter' } : {}}>
+                        <TableCell width={50}>
+                          <Typography variant='body2' color='text.secondary'>{idx + 1}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <div className='flex items-center gap-2'>
+                            <Avatar sx={{ width: 32, height: 32, fontSize: 12 }}>
+                              {getInitials(student?.full_name || '')}
+                            </Avatar>
+                            <Typography variant='body2' fontWeight={600}>{student?.full_name}</Typography>
+                          </div>
+                        </TableCell>
+                        <TableCell><Typography variant='body2'>{profile?.nim || '—'}</Typography></TableCell>
+                        <TableCell><Typography variant='body2'>{profile?.syndicate?.name || '—'}</Typography></TableCell>
+                        <TableCell>
+                          {p.change_type === 'ADDED'
+                            ? <Chip label='Baru ditambah' color='success' size='small' variant='tonal' />
+                            : <Typography variant='caption' color='text.secondary'>—</Typography>
+                          }
+                        </TableCell>
+                        <TableCell>
+                          <Button size='small' variant='tonal' color='warning'
+                                  startIcon={<i className='ri-swap-line' />}
+                                  onClick={() => handleOpenSwap(p)}>
+                            Ganti
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </Card>
         </Grid>
 
         {/* Catatan & Submit */}
         <Grid item xs={12}>
           <Card>
-            <CardHeader title='Catatan & Submit' subheader='Tambahkan catatan untuk admin sebelum submit (opsional)' />
+            <CardHeader title='Catatan & Submit'
+                        subheader='Tambahkan catatan untuk admin sebelum submit (opsional)' />
             <Divider />
             <CardContent>
-              <Grid container spacing={4} alignItems='flex-end'>
-                <Grid item xs={12} md={8}>
-                  <TextField fullWidth multiline rows={3}
-                    label='Catatan untuk admin (opsional)'
-                    placeholder='Contoh: Peserta nomor 3 diganti karena sedang tugas luar kota'
-                    value={note}
-                    onChange={e => setNote(e.target.value)}
-                  />
-                </Grid>
-                <Grid item xs={12} md={4}>
-                  <Button fullWidth variant='contained' color='success' size='large'
-                    onClick={handleSubmit} disabled={submitLoading}
-                    startIcon={submitLoading ? <CircularProgress size={18} color='inherit' /> : <i className='ri-send-plane-line' />}>
-                    {submitLoading ? 'Mengirim...' : 'Submit ke Admin'}
-                  </Button>
-                </Grid>
-              </Grid>
+              <div className='flex flex-col gap-4'>
+                <TextField fullWidth multiline rows={3}
+                           label='Catatan untuk admin (opsional)'
+                           placeholder='Contoh: Peserta nomor 3 diganti karena sedang tugas luar kota'
+                           value={note}
+                           onChange={e => setNote(e.target.value)}
+                />
+                <Button fullWidth variant='contained' color='success'
+                        size={isMobile ? 'large' : 'medium'}
+                        onClick={handleSubmit} disabled={submitLoading}
+                        startIcon={submitLoading
+                          ? <CircularProgress size={18} color='inherit' />
+                          : <i className='ri-send-plane-line' />}>
+                  {submitLoading ? 'Mengirim...' : 'Submit ke Admin'}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* ── Dialog Swap ── */}
-      <Dialog open={swapOpen} onClose={() => setSwapOpen(false)} maxWidth='sm' fullWidth>
-        <DialogTitle>
+      {/* ── Dialog Ganti Peserta ── */}
+      <Dialog open={swapOpen} onClose={() => setSwapOpen(false)}
+              maxWidth='sm' fullWidth fullScreen={isMobile}>
+        <DialogTitle sx={{ pb: 1 }}>
           <div className='flex items-center justify-between'>
             <div>
               <Typography variant='h6'>Ganti Peserta</Typography>
@@ -283,23 +332,46 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
         <Divider />
         <DialogContent>
           <TextField fullWidth size='small' className='mb-4'
-            placeholder='Cari nama atau NIM...'
-            value={swapSearch}
-            onChange={e => setSwapSearch(e.target.value)}
-            InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
+                     placeholder='Cari nama atau NIM...'
+                     value={swapSearch}
+                     onChange={e => setSwapSearch(e.target.value)}
+                     InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
           />
           {filteredAvailable.length === 0 ? (
-            <Box className='flex flex-col items-center py-6 gap-2' sx={{ color: 'text.secondary' }}>
+            <Box className='flex flex-col items-center py-8 gap-2' sx={{ color: 'text.secondary' }}>
               <i className='ri-user-search-line text-4xl opacity-30' />
               <Typography variant='body2'>Tidak ada mahasiswa tersedia</Typography>
             </Box>
+          ) : isMobile ? (
+            // Mobile: card list
+            <div className='flex flex-col gap-2'>
+              {filteredAvailable.map(s => (
+                <Box key={s.student_id}
+                     onClick={() => handleSwap(s)}
+                     sx={{
+                       display: 'flex', alignItems: 'center', gap: 2, p: 1.5,
+                       borderRadius: 2, border: 1, borderColor: 'divider',
+                       cursor: 'pointer', '&:active': { bgcolor: 'action.selected' }
+                     }}>
+                  <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
+                    {getInitials(s.full_name || '')}
+                  </Avatar>
+                  <div className='flex-1 min-w-0'>
+                    <Typography variant='body2' fontWeight={600} noWrap>{s.full_name}</Typography>
+                    <Typography variant='caption' color='text.secondary'>{s.nim}</Typography>
+                  </div>
+                  <i className='ri-arrow-right-line opacity-40' />
+                </Box>
+              ))}
+            </div>
           ) : (
+            // Desktop: table
             <Table size='small'>
               <TableHead>
-                <TableRow>
-                  <TableCell>Nama</TableCell>
-                  <TableCell>NIM</TableCell>
-                  <TableCell align='center'>Pilih</TableCell>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  {['Nama', 'NIM', 'Aksi'].map(h => (
+                    <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>{h}</TableCell>
+                  ))}
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -314,7 +386,7 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
                       </div>
                     </TableCell>
                     <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
-                    <TableCell align='center'>
+                    <TableCell>
                       <Button size='small' variant='contained' onClick={() => handleSwap(s)}>
                         Pilih
                       </Button>
@@ -327,8 +399,13 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
         </DialogContent>
       </Dialog>
 
-      <Snackbar open={toast.open} autoHideDuration={4000} onClose={() => setToast(t => ({ ...t, open: false }))} anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-        <Alert severity={toast.severity} variant='filled' onClose={() => setToast(t => ({ ...t, open: false }))}>{toast.message}</Alert>
+      <Snackbar open={toast.open} autoHideDuration={4000}
+                onClose={() => setToast(t => ({ ...t, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert severity={toast.severity} variant='filled'
+               onClose={() => setToast(t => ({ ...t, open: false }))}>
+          {toast.message}
+        </Alert>
       </Snackbar>
     </>
   )

@@ -751,108 +751,204 @@ const NimenSprintDetailView = ({ sprintId }) => {
       </Grid>
 
       {/* ── Dialog Generator ── */}
-      <Dialog open={generatorOpen} onClose={() => setGeneratorOpen(false)} maxWidth='md' fullWidth>
-        <DialogTitle>
+      <Dialog open={generatorOpen} onClose={() => setGeneratorOpen(false)}
+              maxWidth='md' fullWidth
+              fullScreen={isMobile}>
+        <DialogTitle sx={{ pb: 1 }}>
           <div className='flex items-center justify-between'>
             <div>
               <Typography variant='h6'>Generator Peserta</Typography>
               <Typography variant='caption' color='text.secondary'>
-                Urutan berdasarkan prioritas — sprint sedikit & pelanggaran tinggi = lebih diprioritaskan
+                Sprint sedikit & pelanggaran tinggi = prioritas lebih tinggi
               </Typography>
             </div>
             <IconButton onClick={() => setGeneratorOpen(false)}><i className='ri-close-line' /></IconButton>
           </div>
         </DialogTitle>
         <Divider />
-        <DialogContent>
+        <DialogContent sx={{ p: isMobile ? 1.5 : 3 }}>
           {generatorResult && (
             <>
-              <Typography variant='subtitle2' className='mb-3'>
-                ✅ Rekomendasi ({generatorResult.suggested?.length} mahasiswa)
-              </Typography>
-              <Table size='small'>
-                <TableHead>
-                  <TableRow>
-                    <TableCell padding='checkbox'>
-                      <Checkbox
-                        checked={selectedStudents.length === generatorResult.suggested?.length}
-                        onChange={e => {
-                          if (e.target.checked) {
-                            const remaining = sprint.participant_quota - participants.length
-                            const allowed = generatorResult.suggested.slice(0, remaining).map(s => s.student_id)
-                            setSelectedStudents(allowed)
-                            if (generatorResult.suggested.length > remaining) {
-                              showToast(`Hanya ${remaining} pertama yang dipilih sesuai sisa kuota`, 'info')
-                            }
-                          } else {
-                            setSelectedStudents([])
-                          }
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell>Nama</TableCell>
-                    <TableCell>NIM</TableCell>
-                    <TableCell align='center'>Sprint</TableCell>
-                    <TableCell align='center'>Pelanggaran</TableCell>
-                    <TableCell align='center'>Skor</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {generatorResult.suggested?.map(s => (
-                    <TableRow key={s.student_id} selected={selectedStudents.includes(s.student_id)}>
-                      <TableCell padding='checkbox'>
-                        <Checkbox checked={selectedStudents.includes(s.student_id)}
-                                  onChange={e => {
-                                    const remaining = sprint.participant_quota - participants.length
-                                    if (e.target.checked && selectedStudents.length >= remaining) {
-                                      showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
-                                      return
-                                    }
-                                    setSelectedStudents(prev =>
-                                      e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
-                                    )
-                                  }} />
-                      </TableCell>
-                      <TableCell><Typography variant='body2' fontWeight={600}>{s.full_name}</Typography></TableCell>
-                      <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
-                      <TableCell align='center'><Chip label={s.sprint_count} size='small' color='info' variant='tonal' /></TableCell>
-                      <TableCell align='center'><Chip label={s.violation_count} size='small' color={s.violation_count > 0 ? 'error' : 'success'} variant='tonal' /></TableCell>
-                      <TableCell align='center'><Typography variant='body2' fontWeight={700}>{s.priority_score?.toFixed(1)}</Typography></TableCell>
+              {/* ── Select All + label ── */}
+              <Box className='flex items-center gap-2 mb-2'>
+                <Checkbox
+                  checked={selectedStudents.length > 0 && selectedStudents.length === generatorResult.suggested?.length}
+                  indeterminate={selectedStudents.length > 0 && selectedStudents.length < (generatorResult.suggested?.length || 0)}
+                  onChange={e => {
+                    if (e.target.checked) {
+                      const remaining = sprint.participant_quota - participants.length
+                      const allowed = generatorResult.suggested.slice(0, remaining).map(s => s.student_id)
+                      setSelectedStudents(allowed)
+                      if (generatorResult.suggested.length > remaining) {
+                        showToast(`Hanya ${remaining} pertama yang dipilih sesuai sisa kuota`, 'info')
+                      }
+                    } else {
+                      setSelectedStudents([])
+                    }
+                  }}
+                />
+                <Typography variant='subtitle2'>
+                  ✅ Rekomendasi ({generatorResult.suggested?.length} mahasiswa)
+                </Typography>
+              </Box>
+
+              {isMobile ? (
+                // ── Mobile: Card List ──
+                <div className='flex flex-col gap-2 mb-3'>
+                  {generatorResult.suggested?.map(s => {
+                    const isChecked = selectedStudents.includes(s.student_id)
+                    return (
+                      <Box key={s.student_id}
+                           onClick={() => {
+                             const remaining = sprint.participant_quota - participants.length
+                             if (!isChecked && selectedStudents.length >= remaining) {
+                               showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
+                               return
+                             }
+                             setSelectedStudents(prev =>
+                               isChecked ? prev.filter(id => id !== s.student_id) : [...prev, s.student_id]
+                             )
+                           }}
+                           sx={{
+                             display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5,
+                             borderRadius: 2, cursor: 'pointer',
+                             border: 1, borderColor: isChecked ? 'primary.main' : 'divider',
+                             bgcolor: isChecked ? 'primary.lighter' : 'background.paper',
+                           }}>
+                        <Checkbox checked={isChecked} size='small' sx={{ p: 0 }} />
+                        <Avatar sx={{ width: 32, height: 32, fontSize: 11, flexShrink: 0 }}>
+                          {getInitials(s.full_name)}
+                        </Avatar>
+                        <div className='flex-1 min-w-0'>
+                          <Typography variant='body2' fontWeight={600} noWrap>{s.full_name}</Typography>
+                          <Typography variant='caption' color='text.secondary'>{s.nim}</Typography>
+                        </div>
+                        <div className='flex flex-col items-end gap-1 flex-shrink-0'>
+                          <div className='flex gap-1'>
+                            <Chip label={`S:${s.sprint_count}`} size='small' color='info' variant='tonal' sx={{ height: 18, fontSize: 10 }} />
+                            <Chip label={`P:${s.violation_count}`} size='small' color={s.violation_count > 0 ? 'error' : 'success'} variant='tonal' sx={{ height: 18, fontSize: 10 }} />
+                          </div>
+                          <Typography variant='caption' fontWeight={700}>{s.priority_score?.toFixed(1)}</Typography>
+                        </div>
+                      </Box>
+                    )
+                  })}
+                </div>
+              ) : (
+                // ── Desktop: Table ──
+                <Table size='small' className='mb-3'>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: 'action.hover' }}>
+                      <TableCell padding='checkbox' />
+                      <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Nama</TableCell>
+                      <TableCell sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>NIM</TableCell>
+                      <TableCell align='center' sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Sprint</TableCell>
+                      <TableCell align='center' sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Pelanggaran</TableCell>
+                      <TableCell align='center' sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase' }}>Skor</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHead>
+                  <TableBody>
+                    {generatorResult.suggested?.map(s => (
+                      <TableRow key={s.student_id} selected={selectedStudents.includes(s.student_id)} hover>
+                        <TableCell padding='checkbox'>
+                          <Checkbox checked={selectedStudents.includes(s.student_id)}
+                                    onChange={e => {
+                                      const remaining = sprint.participant_quota - participants.length
+                                      if (e.target.checked && selectedStudents.length >= remaining) {
+                                        showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
+                                        return
+                                      }
+                                      setSelectedStudents(prev =>
+                                        e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
+                                      )
+                                    }} />
+                        </TableCell>
+                        <TableCell><Typography variant='body2' fontWeight={600}>{s.full_name}</Typography></TableCell>
+                        <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
+                        <TableCell align='center'><Chip label={s.sprint_count} size='small' color='info' variant='tonal' /></TableCell>
+                        <TableCell align='center'><Chip label={s.violation_count} size='small' color={s.violation_count > 0 ? 'error' : 'success'} variant='tonal' /></TableCell>
+                        <TableCell align='center'><Typography variant='body2' fontWeight={700}>{s.priority_score?.toFixed(1)}</Typography></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {/* ── Mahasiswa lainnya ── */}
               {generatorResult.others?.length > 0 && (
                 <>
-                  <Typography variant='subtitle2' color='text.secondary' className='mt-4 mb-2'>
+                  <Typography variant='subtitle2' color='text.secondary' className='mb-2'>
                     Mahasiswa lainnya ({generatorResult.others.length})
                   </Typography>
-                  <Table size='small'>
-                    <TableBody>
-                      {generatorResult.others.map(s => (
-                        <TableRow key={s.student_id}>
-                          <TableCell padding='checkbox'>
-                            <Checkbox checked={selectedStudents.includes(s.student_id)}
-                                      onChange={e => {
-                                        const remaining = sprint.participant_quota - participants.length
-                                        if (e.target.checked && selectedStudents.length >= remaining) {
-                                          showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
-                                          return
-                                        }
-                                        setSelectedStudents(prev =>
-                                          e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
-                                        )
-                                      }} />
-                          </TableCell>
-                          <TableCell><Typography variant='body2'>{s.full_name}</Typography></TableCell>
-                          <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
-                          <TableCell align='center'><Chip label={s.sprint_count} size='small' color='info' variant='tonal' /></TableCell>
-                          <TableCell align='center'><Chip label={s.violation_count} size='small' color={s.violation_count > 0 ? 'error' : 'success'} variant='tonal' /></TableCell>
-                          <TableCell align='center'><Typography variant='body2'>{s.priority_score?.toFixed(1)}</Typography></TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  {isMobile ? (
+                    <div className='flex flex-col gap-2'>
+                      {generatorResult.others.map(s => {
+                        const isChecked = selectedStudents.includes(s.student_id)
+                        return (
+                          <Box key={s.student_id}
+                               onClick={() => {
+                                 const remaining = sprint.participant_quota - participants.length
+                                 if (!isChecked && selectedStudents.length >= remaining) {
+                                   showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
+                                   return
+                                 }
+                                 setSelectedStudents(prev =>
+                                   isChecked ? prev.filter(id => id !== s.student_id) : [...prev, s.student_id]
+                                 )
+                               }}
+                               sx={{
+                                 display: 'flex', alignItems: 'center', gap: 1.5, p: 1.5,
+                                 borderRadius: 2, cursor: 'pointer',
+                                 border: 1, borderColor: isChecked ? 'primary.main' : 'divider',
+                                 bgcolor: isChecked ? 'primary.lighter' : 'background.paper',
+                               }}>
+                            <Checkbox checked={isChecked} size='small' sx={{ p: 0 }} />
+                            <Avatar sx={{ width: 32, height: 32, fontSize: 11, flexShrink: 0 }}>
+                              {getInitials(s.full_name)}
+                            </Avatar>
+                            <div className='flex-1 min-w-0'>
+                              <Typography variant='body2' noWrap>{s.full_name}</Typography>
+                              <Typography variant='caption' color='text.secondary'>{s.nim}</Typography>
+                            </div>
+                            <div className='flex flex-col items-end gap-1 flex-shrink-0'>
+                              <div className='flex gap-1'>
+                                <Chip label={`S:${s.sprint_count}`} size='small' color='info' variant='tonal' sx={{ height: 18, fontSize: 10 }} />
+                                <Chip label={`P:${s.violation_count}`} size='small' color={s.violation_count > 0 ? 'error' : 'success'} variant='tonal' sx={{ height: 18, fontSize: 10 }} />
+                              </div>
+                              <Typography variant='caption' fontWeight={700}>{s.priority_score?.toFixed(1)}</Typography>
+                            </div>
+                          </Box>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <Table size='small'>
+                      <TableBody>
+                        {generatorResult.others.map(s => (
+                          <TableRow key={s.student_id} hover>
+                            <TableCell padding='checkbox'>
+                              <Checkbox checked={selectedStudents.includes(s.student_id)}
+                                        onChange={e => {
+                                          const remaining = sprint.participant_quota - participants.length
+                                          if (e.target.checked && selectedStudents.length >= remaining) {
+                                            showToast(`Maksimal ${remaining} peserta lagi (sisa kuota)`, 'warning')
+                                            return
+                                          }
+                                          setSelectedStudents(prev =>
+                                            e.target.checked ? [...prev, s.student_id] : prev.filter(id => id !== s.student_id)
+                                          )
+                                        }} />
+                            </TableCell>
+                            <TableCell><Typography variant='body2'>{s.full_name}</Typography></TableCell>
+                            <TableCell><Typography variant='body2'>{s.nim}</Typography></TableCell>
+                            <TableCell align='center'><Chip label={s.sprint_count} size='small' color='info' variant='tonal' /></TableCell>
+                            <TableCell align='center'><Chip label={s.violation_count} size='small' color={s.violation_count > 0 ? 'error' : 'success'} variant='tonal' /></TableCell>
+                            <TableCell align='center'><Typography variant='body2'>{s.priority_score?.toFixed(1)}</Typography></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                 </>
               )}
             </>
@@ -861,7 +957,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
         <Divider />
         <DialogActions className='p-4 gap-2'>
           <Typography variant='body2' color='text.secondary' className='flex-1'>
-            {selectedStudents.length} dipilih · sisa kuota: {sprint.participant_quota - participants.length - selectedStudents.length >= 0 ? sprint.participant_quota - participants.length - selectedStudents.length : 0}
+            {selectedStudents.length} dipilih · sisa kuota: {Math.max(0, sprint.participant_quota - participants.length - selectedStudents.length)}
           </Typography>
           <Button variant='tonal' color='secondary' onClick={() => setGeneratorOpen(false)} disabled={addingLoading}>Batal</Button>
           <Button variant='contained' onClick={handleAddFromGenerator}

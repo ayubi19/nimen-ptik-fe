@@ -2,6 +2,7 @@ import NimenSprintApprovalView from '@/views/nimen-sprint/NimenSprintApprovalVie
 
 export const metadata = { title: 'Approval Sprint' }
 
-export default function SprintApprovalPage({ params }) {
-  return <NimenSprintApprovalView sprintId={params.id} />
+export default async function SprintApprovalPage({ params }) {
+  const { id } = await params
+  return <NimenSprintApprovalView sprintId={id} />
 }
