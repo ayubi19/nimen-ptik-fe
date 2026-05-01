@@ -225,7 +225,7 @@ const NimenIndicatorsView = () => {
     } catch (err) {
       showToast(err.message || 'Gagal menyimpan', 'error')
     } finally { setSaveLoading(false) }
-  }, [editData, variables, fetchData, showToast])
+  }, [editData, variables, fetchData, fetchStats, showToast])
 
   const handleDelete = useCallback(async () => {
     setDeleteLoading(true)
@@ -238,7 +238,7 @@ const NimenIndicatorsView = () => {
     } catch (err) {
       showToast(err.message || 'Gagal menghapus', 'error')
     } finally { setDeleteLoading(false) }
-  }, [deleteTarget, fetchData, showToast])
+  }, [deleteTarget, fetchData, fetchStats, showToast])
 
   // Stats — total dari API, plus/minus/mandiri dari semua data halaman ini
   // Untuk akurasi penuh perlu fetch semua, tapi approximation dari current page OK

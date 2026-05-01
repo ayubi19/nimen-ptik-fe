@@ -26,6 +26,7 @@ import TableBody from '@mui/material/TableBody'
 import TableRow from '@mui/material/TableRow'
 import TableCell from '@mui/material/TableCell'
 import Checkbox from '@mui/material/Checkbox'
+import Autocomplete from '@mui/material/Autocomplete'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Tooltip from '@mui/material/Tooltip'
@@ -271,7 +272,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
     } finally {
       setAddingLoading(false)
     }
-  }, [sprintId, sprint, participants.length, selectedStudents, fetchSprint, showToast])
+  }, [sprintId, sprint, participants, selectedStudents, fetchSprint, showToast])
 
   const handleRemoveParticipant = useCallback(async (studentId) => {
     setRemoveLoading(studentId)
@@ -340,7 +341,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
     } finally {
       setFinalizeDiffLoading(false)
     }
-  }, [sprintId, showToast])
+  }, [sprintId, participants, showToast])
 
   const handleFinalize = useCallback(async () => {
     setFinalizeLoading(true)
@@ -358,7 +359,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
     } finally {
       setFinalizeLoading(false)
     }
-  }, [sprintId, finalizeVersion, fetchSprint, showToast])
+  }, [sprintId, finalizeVersion, customParticipants, fetchSprint, showToast])
 
   if (loading) return <div className='flex justify-center py-20'><CircularProgress /></div>
   if (!sprint) return null
