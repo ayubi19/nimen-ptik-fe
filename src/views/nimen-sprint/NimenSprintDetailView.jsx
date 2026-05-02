@@ -252,7 +252,7 @@ const NimenSprintDetailView = ({ sprintId }) => {
     } finally {
       setGeneratorLoading(false)
     }
-  }, [sprint, sprintId, showToast])
+  }, [sprint, sprintId, participants, showToast])
 
   const handleAddFromGenerator = useCallback(async () => {
     // Validasi: total peserta tidak boleh melebihi kuota

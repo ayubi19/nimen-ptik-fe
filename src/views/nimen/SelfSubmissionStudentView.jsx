@@ -595,6 +595,7 @@ const SelfSubmissionStudentView = () => {
           {localPreview && (
             ['jpg','jpeg','png','webp'].includes(localPreview.type) ? (
               <Box className='flex justify-center p-4'>
+                {/* eslint-disable-next-line @next/next/no-img-element -- blob URL lokal dari File object, tidak kompatibel dengan next/image */}
                 <img
                   src={localPreview.url}
                   alt={localPreview.name}

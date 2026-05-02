@@ -326,7 +326,7 @@ const DocumentManager = ({
           ) : viewerURL ? (
             IMAGE_TYPES.includes(viewerType) ? (
               <Box className='flex justify-center p-4'>
-                {/* Pakai <img> biasa — URL sudah aman via BE proxy, tidak perlu next/image */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- URL dinamis dari BE proxy/presigned, tidak kompatibel dengan next/image */}
                 <img
                   src={viewerURL}
                   alt={viewerName}
