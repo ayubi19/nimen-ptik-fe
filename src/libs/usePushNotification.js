@@ -53,10 +53,16 @@ export function usePushNotification() {
         console.log('[PWA] registering SW...')
         const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
         console.log('[PWA] SW registered:', reg.scope)
-        await navigator.serviceWorker.ready
+        console.log('[PWA] waiting for SW ready...')
+        const readyReg = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('SW ready timeout')), 5000))
+        ])
+        console.log('[PWA] SW ready:', readyReg.scope)
 
         // 2. Cek permission — jangan minta langsung, tunggu user interact dulu
         //    Kalau sudah granted sebelumnya, langsung subscribe
+        console.log('[PWA] checking permission:', Notification.permission)
         if (Notification.permission === 'denied') { console.log('[PWA] permission denied'); return }
 
         if (Notification.permission === 'default') {
@@ -77,7 +83,7 @@ export function usePushNotification() {
         }
 
         console.log('[PWA] subscribing to push...')
-        const subscription = await reg.pushManager.subscribe({
+        const subscription = await readyReg.pushManager.subscribe({
           userVisibleOnly:      true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         })
