@@ -36,6 +36,7 @@ import { useTheme } from '@mui/material/styles'
 import { nimenSprintApi } from '@/libs/api/nimenSprintApi'
 import { nimenParticipantDocApi } from '@/libs/api/nimenDocumentApi'
 import { getInitials } from '@/utils/getInitials'
+import DocumentManager from '@/components/nimen/DocumentManager'
 
 const DECISION_OPTIONS = [
   { value: 'VALID',               label: 'Terima — Nilai Masuk',          color: 'success' },
@@ -193,12 +194,9 @@ const NimenSprintApprovalView = ({ sprintId }) => {
     finally { setDocLoading(false) }
   }, [sprintId])
 
-  const handleOpenDoc = useCallback(async (doc) => {
-    try {
-      const res = await nimenParticipantDocApi.getParticipantDocPresignedURL(sprintId, docTarget?.student_id, doc.id)
-      if (res) window.open(res.data.data.url, '_blank')
-    } catch {}
-  }, [sprintId, docTarget])
+  const handleGetPresignedURL = useCallback(async (docId) =>
+      nimenParticipantDocApi.getParticipantDocPresignedURL(sprintId, docTarget?.student_id, docId),
+    [sprintId, docTarget])
 
   if (loading) return <Box className='flex justify-center py-20'><CircularProgress /></Box>
   if (!summary) return null
@@ -303,25 +301,38 @@ const NimenSprintApprovalView = ({ sprintId }) => {
         <Grid item xs={12}>
           <Card>
             <CardContent>
-              <div className='flex items-start justify-between gap-3 flex-wrap'>
-                <div>
-                  <Typography variant='h6' fontWeight={700} className='mb-1'>Approval Sprint</Typography>
-                  <Typography variant='body2' color='text.secondary'>
-                    {summary.sprint_number} — {summary.title}
-                  </Typography>
-                  <div className='flex items-center gap-2 mt-2 flex-wrap'>
-                    <Chip
-                      label={summary.indicator_value >= 0 ? `+${summary.indicator_value}` : `${summary.indicator_value}`}
-                      color={summary.is_positive ? 'success' : 'error'}
-                      sx={{ fontWeight: 700 }}
-                    />
-                    <Typography variant='caption' color='text.secondary'>
-                      {totalPending} peserta menunggu • {summary.auto_approve?.length || 0} bisa langsung diapprove
+              <div className='flex flex-col gap-3'>
+                {/* Info sprint */}
+                <div className='flex items-start justify-between gap-3 flex-wrap'>
+                  <div>
+                    <Typography variant='h6' fontWeight={700} className='mb-1'>Approval Sprint</Typography>
+                    <Typography variant='body2' color='text.secondary'>
+                      {summary.sprint_number} — {summary.title}
                     </Typography>
+                    <div className='flex items-center gap-2 mt-2 flex-wrap'>
+                      <Chip
+                        label={summary.indicator_value >= 0 ? `+${summary.indicator_value}` : `${summary.indicator_value}`}
+                        color={summary.is_positive ? 'success' : 'error'}
+                        sx={{ fontWeight: 700 }}
+                      />
+                      <Typography variant='caption' color='text.secondary'>
+                        {totalPending} peserta menunggu • {summary.auto_approve?.length || 0} bisa langsung diapprove
+                      </Typography>
+                    </div>
                   </div>
-                </div>
-                <div className='flex flex-col gap-2 items-end'>
+                  {/* Kembali — di desktop tampil di kanan */}
                   <Button variant='tonal' color='secondary' size='small'
+                          sx={{ display: { xs: 'none', md: 'inline-flex' } }}
+                          startIcon={<i className='ri-arrow-left-line' />}
+                          onClick={() => router.push(`/nimen/sprints/${sprintId}`)}>
+                    Kembali
+                  </Button>
+                </div>
+
+                {/* Tombol aksi — full width di mobile, normal di desktop */}
+                <div className='flex flex-col gap-2 sm:flex-row sm:justify-end'>
+                  <Button variant='tonal' color='secondary' size='small'
+                          sx={{ display: { xs: 'flex', md: 'none' } }}
                           startIcon={<i className='ri-arrow-left-line' />}
                           onClick={() => router.push(`/nimen/sprints/${sprintId}`)}>
                     Kembali
@@ -331,7 +342,7 @@ const NimenSprintApprovalView = ({ sprintId }) => {
                             startIcon={bulkLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-check-double-line' />}
                             onClick={handleBulkApprove}
                             disabled={bulkLoading}>
-                      {bulkLoading ? 'Memproses...' : `Bulk Approve ${summary.auto_approve.length} Peserta`}
+                      {bulkLoading ? 'Memproses...' : `Setujui ${summary.auto_approve.length} Peserta Sekaligus`}
                     </Button>
                   )}
                 </div>
@@ -452,29 +463,14 @@ const NimenSprintApprovalView = ({ sprintId }) => {
         </DialogTitle>
         <Divider />
         <DialogContent>
-          {docLoading ? (
-            <Box className='flex justify-center py-4'><CircularProgress size={24} /></Box>
-          ) : docs.length === 0 ? (
-            <Typography variant='body2' color='text.secondary' className='text-center py-4'>
-              Tidak ada dokumen
-            </Typography>
-          ) : (
-            <div className='flex flex-col gap-2'>
-              {docs.map(doc => (
-                <div key={doc.id} className='flex items-center justify-between p-2 border rounded gap-2'>
-                  <div className='flex-1 min-w-0'>
-                    <Typography variant='body2' noWrap>{doc.file_name}</Typography>
-                    <Typography variant='caption' color='text.secondary'>{doc.file_type?.toUpperCase()}</Typography>
-                  </div>
-                  <Tooltip title='Buka / Download'>
-                    <IconButton size='small' onClick={() => handleOpenDoc(doc)}>
-                      <i className='ri-external-link-line' />
-                    </IconButton>
-                  </Tooltip>
-                </div>
-              ))}
-            </div>
-          )}
+          <DocumentManager
+            documents={docs}
+            onGetPresignedURL={handleGetPresignedURL}
+            canUpload={false}
+            canDelete={false}
+            loading={docLoading}
+            emptyText='Tidak ada dokumen yang diupload.'
+          />
         </DialogContent>
       </Dialog>
 
