@@ -155,7 +155,7 @@ const NotificationDropdown = () => {
   const hidden            = useMediaQuery(theme => theme.breakpoints.down('lg'))
   const isSmall           = useMediaQuery(theme => theme.breakpoints.down('sm'))
   const { settings }      = useSettings()
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
 
   const accessToken = session?.user?.accessToken
 
@@ -169,10 +169,10 @@ const NotificationDropdown = () => {
     } catch { /* silent */ }
   }, [])
 
-  // ── Load awal saat punya token ────────────────────────────────────────────
+  // ── Load awal — tunggu session authenticated ──────────────────────────────
   useEffect(() => {
-    if (accessToken) fetchAll()
-  }, [accessToken, fetchAll])
+    if (status === 'authenticated' && accessToken) fetchAll()
+  }, [status, accessToken, fetchAll])
 
   // ── Handler notif baru dari SSE ───────────────────────────────────────────
   const handleNewNotification = useCallback((notif) => {
