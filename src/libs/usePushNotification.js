@@ -73,12 +73,16 @@ export function usePushNotification() {
           if (result !== 'granted') return
         }
 
-        // 3. Subscribe ke Web Push
-        const existing = await reg.pushManager.getSubscription()
+        // 3. Subscribe ke Web Push (pakai readyReg konsisten)
+        console.log('[PWA] checking existing subscription...')
+        const existing = await readyReg.pushManager.getSubscription()
+        console.log('[PWA] existing subscription:', existing ? 'found' : 'none')
+
         if (existing) {
-          // Sudah ada subscription, kirim ulang ke BE (token bisa beda setelah login ulang)
+          console.log('[PWA] sending existing subscription to BE...')
           await saveSubscription(existing)
           subscribedRef.current = true
+          console.log('[PWA] existing subscription saved!')
           return
         }
 
@@ -87,6 +91,7 @@ export function usePushNotification() {
           userVisibleOnly:      true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         })
+        console.log('[PWA] subscribed! endpoint:', subscription.endpoint.slice(0, 50))
 
         console.log('[PWA] sending subscription to BE...')
         await saveSubscription(subscription)

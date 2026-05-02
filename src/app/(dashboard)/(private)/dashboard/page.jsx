@@ -8,7 +8,7 @@ const DashboardPage = () => {
       <div>
         <h4 className='text-xl font-semibold'>Selamat Datang di Nimen PTIK</h4>
         <p className='text-sm text-textSecondary mt-1'>
-          Sistem Manajemen Nilai & Inisiatif Mahasiswa PTIK
+          Sistem Manajemen Nilai Mental Mahasiswa STIK PTIK
         </p>
       </div>
     </div>
