@@ -156,7 +156,7 @@ const DocumentManager = ({
 
   return (
     <Box>
-      {/* Upload area */}
+      {/* Upload area — dashed zone */}
       {canUpload && (
         <Box className='mb-3'>
           <input
@@ -166,27 +166,54 @@ const DocumentManager = ({
             accept='.pdf,.docx,.xlsx,.jpg,.jpeg,.png,.webp'
             onChange={handleFileChange}
           />
-          <Button
-            variant='tonal'
-            color='primary'
-            size='small'
-            startIcon={uploading
-              ? <CircularProgress size={14} color='inherit' />
-              : <i className='ri-upload-2-line' />
-            }
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading || documents.length >= MAX_FILES}
+          <div className='flex items-center justify-between mb-1'>
+            <Typography variant='caption' color='text.secondary' fontWeight={500}>
+              Dokumen Bukti
+            </Typography>
+            <Typography variant='caption' color='text.secondary'>
+              {documents.length}/{MAX_FILES} file
+              {uploadHint && ` · ${uploadHint}`}
+            </Typography>
+          </div>
+          <Box
+            onClick={() => !uploading && documents.length < MAX_FILES && fileInputRef.current?.click()}
+            sx={{
+              border: '2px dashed',
+              borderColor: uploading ? 'primary.main' : 'divider',
+              borderRadius: 2,
+              p: 3,
+              textAlign: 'center',
+              cursor: uploading || documents.length >= MAX_FILES ? 'not-allowed' : 'pointer',
+              transition: 'all .2s',
+              bgcolor: uploading ? 'action.hover' : 'transparent',
+              '&:hover': documents.length < MAX_FILES && !uploading
+                ? { borderColor: 'primary.main', bgcolor: 'action.hover' }
+                : {},
+            }}
           >
-            {uploading ? 'Mengupload...' : 'Upload Dokumen'}
-          </Button>
-          <Typography variant='caption' color='text.secondary' sx={{ ml: 2 }}>
-            {documents.length}/{MAX_FILES} file
-            {uploadHint && ` · ${uploadHint}`}
-          </Typography>
+            {uploading ? (
+              <>
+                <CircularProgress size={32} sx={{ mb: 1, opacity: 0.6 }} />
+                <Typography variant='body2' color='text.secondary'>Mengupload...</Typography>
+                <LinearProgress sx={{ mt: 1.5, borderRadius: 1 }} />
+              </>
+            ) : documents.length >= MAX_FILES ? (
+              <>
+                <i className='ri-checkbox-circle-line text-4xl block mb-1' style={{ opacity: 0.4 }} />
+                <Typography variant='body2' color='text.secondary'>Maksimal {MAX_FILES} file tercapai</Typography>
+              </>
+            ) : (
+              <>
+                <i className='ri-upload-cloud-2-line text-4xl block mb-1' style={{ opacity: 0.4 }} />
+                <Typography variant='body2' color='text.secondary'>Klik untuk pilih file</Typography>
+                <Typography variant='caption' color='text.secondary'>
+                  PDF, DOCX, JPG, PNG, WEBP · maks {MAX_SIZE_MB}MB per file
+                </Typography>
+              </>
+            )}
+          </Box>
         </Box>
       )}
-
-      {uploading && <LinearProgress sx={{ mb: 2, borderRadius: 1 }} />}
 
       {error && (
         <Alert severity='error' onClose={() => setError('')} sx={{ mb: 2 }} size='small'>

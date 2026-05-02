@@ -472,12 +472,16 @@ const SelfSubmissionStudentView = () => {
               <Typography variant='caption' color='text.secondary'>{pendingFiles.length}/10 file</Typography>
             </div>
 
-            {pendingFiles.length === 0 ? (
+            {/* Dashed zone — selalu tampil selama belum penuh */}
+            {pendingFiles.length < 10 && (
               <Box onClick={() => !createLoading && fileInputRef.current?.click()} sx={{
-                border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 3,
-                textAlign: 'center', cursor: createLoading ? 'not-allowed' : 'pointer',
-                transition: 'all .2s',
-                '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' },
+                border: '2px dashed',
+                borderColor: createLoading ? 'divider' : 'divider',
+                borderRadius: 2, p: 3,
+                textAlign: 'center',
+                cursor: createLoading ? 'not-allowed' : 'pointer',
+                transition: 'all .2s', mb: pendingFiles.length > 0 ? 2 : 0,
+                '&:hover': !createLoading ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {},
               }}>
                 <i className='ri-upload-cloud-2-line text-4xl opacity-40 block mb-1' />
                 <Typography variant='body2' color='text.secondary'>Klik untuk pilih file</Typography>
@@ -485,7 +489,10 @@ const SelfSubmissionStudentView = () => {
                   PDF, DOCX, JPG, PNG, WEBP · maks {MAX_SIZE_MB}MB per file
                 </Typography>
               </Box>
-            ) : (
+            )}
+
+            {/* List file yang sudah dipilih */}
+            {pendingFiles.length > 0 && (
               <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                 {pendingFiles.map((f, idx) => (
                   <ListItem key={idx} divider={idx < pendingFiles.length - 1}
@@ -504,16 +511,20 @@ const SelfSubmissionStudentView = () => {
                     />
                   </ListItem>
                 ))}
-                {pendingFiles.length < 10 && (
-                  <ListItem>
-                    <Button size='small' startIcon={<i className='ri-add-line' />}
-                            onClick={() => fileInputRef.current?.click()} disabled={createLoading}>
-                      Tambah file
-                    </Button>
-                  </ListItem>
-                )}
               </List>
             )}
+
+            {/* Penuh */}
+            {pendingFiles.length >= 10 && (
+              <Box sx={{
+                border: '2px dashed', borderColor: 'divider', borderRadius: 2, p: 2,
+                textAlign: 'center', opacity: 0.5,
+              }}>
+                <i className='ri-checkbox-circle-line text-3xl block mb-1' />
+                <Typography variant='caption' color='text.secondary'>Maksimal 10 file tercapai</Typography>
+              </Box>
+            )}
+
             <input ref={fileInputRef} type='file' hidden multiple
                    accept='.pdf,.docx,.xlsx,.jpg,.jpeg,.png,.webp' onChange={handlePickFile} />
           </div>
