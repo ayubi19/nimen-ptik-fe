@@ -169,9 +169,17 @@ const NotificationDropdown = () => {
     } catch { /* silent */ }
   }, [])
 
-  // ── Load awal — tunggu session authenticated ──────────────────────────────
+  // ── Load awal — tunggu session authenticated, retry sekali jika perlu ──────
   useEffect(() => {
-    if (status === 'authenticated' && accessToken) fetchAll()
+    if (status === 'authenticated' && accessToken) {
+      fetchAll()
+    } else if (status === 'loading') {
+      // Session masih hydrating — retry setelah 1 detik
+      const t = setTimeout(() => {
+        if (accessToken) fetchAll()
+      }, 1000)
+      return () => clearTimeout(t)
+    }
   }, [status, accessToken, fetchAll])
 
   // Refetch saat tab kembali aktif — catch-up notif yang terlewat saat SSE putus
