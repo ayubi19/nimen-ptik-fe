@@ -174,7 +174,18 @@ const NotificationDropdown = () => {
     if (status === 'authenticated' && accessToken) fetchAll()
   }, [status, accessToken, fetchAll])
 
-  // ── Handler notif baru dari SSE ───────────────────────────────────────────
+  // Refetch saat tab kembali aktif — catch-up notif yang terlewat saat SSE putus
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && status === 'authenticated' && accessToken) {
+        fetchAll()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [status, accessToken, fetchAll])
+
+  // Handler notif baru dari SSE
   const handleNewNotification = useCallback((notif) => {
     setItems(prev => {
       if (prev.some(n => n.id === notif.id)) return prev // hindari duplikat
