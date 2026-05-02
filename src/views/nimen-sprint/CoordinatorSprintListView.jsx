@@ -186,7 +186,8 @@ const CoordinatorSprintListView = () => {
           {isDone ? 'Belum ada sprint yang sudah direview' : 'Tidak ada sprint yang perlu direview saat ini'}
         </Typography>
         {!isDone && (
-          <Typography variant='caption'>Admin akan mengirim notifikasi Telegram saat ada sprint baru</Typography>
+          <Typography variant='caption'  sx={{ textAlign: 'center', maxWidth: '280px', wordBreak: 'break-word'
+          }}>Admin akan mengirim notifikasi Telegram saat ada sprint baru</Typography>
         )}
       </Box>
     )

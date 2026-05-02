@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import Alert from '@mui/material/Alert'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -32,6 +33,8 @@ import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
+import { useSession } from 'next-auth/react'
+import { profileApi } from '@/libs/api/profileApi'
 import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
 import { batchApi, syndicateApi } from '@/libs/api/masterDataApi'
 import { exportBatchPDF, exportBatchXLSX } from '@/utils/exportUtils'
@@ -110,6 +113,15 @@ const RankingMobileCard = ({ row, onViewHistory }) => {
 const RankingView = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const { data: session } = useSession()
+
+  const roles = session?.user?.roles || []
+  const jwtPayload = session?.user?.accessToken
+    ? (() => { try { return JSON.parse(atob(session.user.accessToken.split('.')[1])) } catch { return {} } })()
+    : {}
+  const isDeveloper = jwtPayload?.is_developer === true
+  const isAdmin = isDeveloper || roles.some(r => (typeof r === 'string' ? r : r.name) === 'admin_nimen')
+  const studentId = session?.user?.id
 
   const [batches, setBatches]         = useState([])
   const [batchID, setBatchID]         = useState('')
@@ -128,24 +140,56 @@ const RankingView = () => {
   const [history, setHistory]               = useState([])
   const [historyLoading, setHistoryLoading] = useState(false)
 
-  // Load batches
-  useEffect(() => {
-    batchApi.getAllActive()
-      .then(res => {
-        const list = res.data.data || []
-        setBatches(list)
-        if (list.length > 0) setBatchID(String(list[0].id))
-      })
-      .catch(() => {})
-  }, [])
+  // State khusus mahasiswa
+  const [myRanking, setMyRanking]     = useState(null)
+  const [myHistory, setMyHistory]     = useState([])
+  const [myLoading, setMyLoading]     = useState(false)
 
-  // Load sindikat saat batch dipilih
+  // Load batches — admin: semua angkatan, mahasiswa: auto-set dari profile
   useEffect(() => {
-    if (!batchID) { setSyndicates([]); return }
+    if (isAdmin) {
+      batchApi.getAllActive()
+        .then(res => {
+          const list = res.data.data || []
+          setBatches(list)
+          if (list.length > 0) setBatchID(String(list[0].id))
+        })
+        .catch(() => {})
+    } else if (studentId) {
+      // Mahasiswa: ambil batch_id dari profile
+      profileApi.getProfile()
+        .then(res => {
+          const profile = res.data.data
+          const batchId = profile?.student_profile?.batch_id
+          if (batchId) setBatchID(String(batchId))
+        })
+        .catch(() => {})
+    }
+  }, [isAdmin, studentId])
+
+  // Load sindikat saat batch dipilih (admin only)
+  useEffect(() => {
+    if (!isAdmin || !batchID) { setSyndicates([]); return }
     syndicateApi.getAll({ is_active: true, page_size: 100 })
       .then(res => setSyndicates(res.data.data?.data || []))
       .catch(() => {})
-  }, [batchID])
+  }, [isAdmin, batchID])
+
+  // Load data peringkat & riwayat untuk mahasiswa
+  useEffect(() => {
+    if (isAdmin || !studentId || !batchID) return
+    setMyLoading(true)
+    Promise.all([
+      nimenRankingApi.getRankings({ batch_id: parseInt(batchID), page: 1, page_size: 999 }),
+      nimenRankingApi.getValueHistory(studentId),
+    ]).then(([rankRes, histRes]) => {
+      const allRows = rankRes.data.data?.data || []
+      const me = allRows.find(r => String(r.student_id) === String(studentId))
+      setMyRanking({ ...me, total: allRows.length })
+      setMyHistory(histRes.data.data || [])
+    }).catch(() => {})
+      .finally(() => setMyLoading(false))
+  }, [isAdmin, studentId, batchID])
 
   // Fetch rankings
   const fetchRankings = useCallback(async () => {
@@ -232,6 +276,244 @@ const RankingView = () => {
     ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
     : '—'
 
+  // ── Student Personal View ────────────────────────────────────────────────────
+  if (!isAdmin) {
+    const SOURCE_CONFIG = {
+      SPRINT:          { label: 'Sprint',            color: 'primary' },
+      SELF_SUBMISSION: { label: 'Pengajuan Mandiri', color: 'info'    },
+      AUTOMATIC:       { label: 'Otomatis',          color: 'success' },
+    }
+    const maxValue = myRanking?.max_value || 95
+    const totalValue = myRanking?.total_value || 0
+    const pct = Math.min((totalValue / maxValue) * 100, 100)
+    const rank = myRanking?.rank_position
+    const totalStudents = myRanking?.total || 0
+
+    const bySource = myHistory.reduce((acc, e) => {
+      const key = e.source_type
+      acc[key] = (acc[key] || 0) + e.value
+      return acc
+    }, {})
+
+    return (
+      <>
+        {/* Breadcrumb */}
+        <div className='flex items-center gap-2 mb-6'>
+          <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
+          <i className='ri-arrow-right-s-line text-sm opacity-50' />
+          <Typography variant='caption' fontWeight={500} color='text.primary'>Peringkat Saya</Typography>
+        </div>
+
+        {myLoading ? (
+          <Box className='flex justify-center py-20'><CircularProgress /></Box>
+        ) : (
+          <Grid container spacing={4}>
+
+            {/* Hero Card — Posisi */}
+            <Grid item xs={12}>
+              <Card sx={{
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
+                border: `1px solid ${theme.palette.primary.main}20`,
+              }}>
+                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                  <div className='flex items-start gap-4 flex-wrap'>
+                    {/* Ranking badge */}
+                    <Box sx={{
+                      width: isMobile ? 80 : 100, height: isMobile ? 80 : 100,
+                      borderRadius: 4, flexShrink: 0,
+                      background: rank === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                        : rank === 2 ? 'linear-gradient(135deg, #C0C0C0, #A8A8A8)'
+                          : rank === 3 ? 'linear-gradient(135deg, #CD7F32, #A0522D)'
+                            : `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: 3,
+                    }}>
+                      {rank && rank <= 3 ? (
+                        <Typography sx={{ fontSize: isMobile ? 32 : 40 }}>
+                          {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
+                        </Typography>
+                      ) : (
+                        <>
+                          <Typography variant='caption' sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>
+                            PERINGKAT
+                          </Typography>
+                          <Typography variant='h4' fontWeight={800} sx={{ color: '#fff', lineHeight: 1 }}>
+                            {rank || '—'}
+                          </Typography>
+                          {totalStudents > 0 && (
+                            <Typography variant='caption' sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>
+                              dari {totalStudents}
+                            </Typography>
+                          )}
+                        </>
+                      )}
+                    </Box>
+
+                    {/* Info nilai */}
+                    <div className='flex-1 min-w-0'>
+                      <div className='flex items-center gap-2 mb-1 flex-wrap'>
+                        <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight={800} color='primary.main'>
+                          {totalValue.toFixed(2)}
+                        </Typography>
+                        <Typography variant='body2' color='text.secondary'>/ {maxValue.toFixed(0)} poin</Typography>
+                      </div>
+                      {rank && rank <= 3 && (
+                        <Typography variant='caption' color='text.secondary'>
+                          Peringkat {rank} dari {totalStudents} mahasiswa
+                        </Typography>
+                      )}
+                      <Box sx={{ mt: 1.5, mb: 0.5 }}>
+                        <LinearProgress variant='determinate' value={pct}
+                                        color={pct >= 100 ? 'success' : pct >= 70 ? 'primary' : 'warning'}
+                                        sx={{ height: 10, borderRadius: 5 }} />
+                      </Box>
+                      <div className='flex justify-between'>
+                        <Typography variant='caption' color='text.secondary'>0</Typography>
+                        <Typography variant='caption' color='text.secondary' fontWeight={500}>
+                          {pct.toFixed(1)}% dari maksimum
+                        </Typography>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Rincian per Sumber */}
+            {Object.keys(bySource).length > 0 && (
+              <Grid item xs={12} md={4}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Typography variant='subtitle1' fontWeight={700} className='mb-3'>
+                      Rincian per Sumber
+                    </Typography>
+                    <div className='flex flex-col gap-3'>
+                      {Object.entries(bySource).map(([src, val]) => {
+                        const cfg = SOURCE_CONFIG[src] || { label: src, color: 'default' }
+                        const srcPct = Math.min(Math.abs(val) / maxValue * 100, 100)
+                        return (
+                          <div key={src}>
+                            <div className='flex items-center justify-between mb-1'>
+                              <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
+                              <Typography variant='body2' fontWeight={700}
+                                          color={val >= 0 ? 'success.main' : 'error.main'}>
+                                {val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2)}
+                              </Typography>
+                            </div>
+                            <LinearProgress variant='determinate' value={srcPct}
+                                            color={val >= 0 ? 'success' : 'error'}
+                                            sx={{ height: 6, borderRadius: 3 }} />
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Grid>
+            )}
+
+            {/* Riwayat Nilai */}
+            <Grid item xs={12} md={Object.keys(bySource).length > 0 ? 8 : 12}>
+              <Card>
+                <CardContent sx={{ pb: '8px !important' }}>
+                  <Typography variant='subtitle1' fontWeight={700} className='mb-3'>
+                    Riwayat Nilai
+                    <Chip label={myHistory.length} size='small' variant='tonal' sx={{ ml: 1 }} />
+                  </Typography>
+                  {myHistory.length === 0 ? (
+                    <Box className='flex flex-col items-center py-8 gap-2' sx={{ color: 'text.secondary' }}>
+                      <i className='ri-inbox-line text-5xl opacity-30' />
+                      <Typography variant='body2'>Belum ada riwayat nilai.</Typography>
+                    </Box>
+                  ) : isMobile ? (
+                    // Mobile: card list
+                    <div className='flex flex-col gap-2'>
+                      {myHistory.map(e => {
+                        const isPlus = e.value >= 0
+                        const srcCfg = SOURCE_CONFIG[e.source_type] || { label: e.source_type, color: 'default' }
+                        return (
+                          <Box key={e.id} sx={{ p: 1.5, borderRadius: 2, border: 1, borderColor: 'divider' }}>
+                            <div className='flex items-start justify-between gap-2'>
+                              <div className='flex-1 min-w-0'>
+                                <Typography variant='body2' fontWeight={600} noWrap>
+                                  {e.indicator?.name}
+                                </Typography>
+                                <Typography variant='caption' color='text.secondary'>
+                                  {e.indicator?.variable?.category?.name}
+                                </Typography>
+                              </div>
+                              <Typography variant='body2' fontWeight={700} flexShrink={0}
+                                          color={isPlus ? 'success.main' : 'error.main'}>
+                                {isPlus ? `+${e.value}` : e.value}
+                              </Typography>
+                            </div>
+                            <div className='flex items-center gap-2 mt-1 flex-wrap'>
+                              <Typography variant='caption' color='text.secondary'>
+                                {new Date(e.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </Typography>
+                              <Chip label={srcCfg.label} color={srcCfg.color} size='small' variant='tonal'
+                                    sx={{ height: 18, fontSize: 10 }} />
+                            </div>
+                          </Box>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    // Desktop: table
+                    <Table size='small'>
+                      <TableHead>
+                        <TableRow sx={{ bgcolor: 'action.hover' }}>
+                          {['Tanggal', 'Indikator', 'Kategori', 'Sumber', 'Nilai'].map(h => (
+                            <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                              {h}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {myHistory.map(e => {
+                          const isPlus = e.value >= 0
+                          const srcCfg = SOURCE_CONFIG[e.source_type] || { label: e.source_type, color: 'default' }
+                          return (
+                            <TableRow key={e.id} hover>
+                              <TableCell>
+                                <Typography variant='caption'>
+                                  {new Date(e.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant='body2' fontWeight={500}>{e.indicator?.name}</Typography>
+                                <Typography variant='caption' color='text.secondary'>{e.indicator?.variable?.name}</Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant='caption' color='text.secondary'>
+                                  {e.indicator?.variable?.category?.name}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Chip label={srcCfg.label} color={srcCfg.color} size='small' variant='tonal' />
+                              </TableCell>
+                              <TableCell align='right'>
+                                <Typography variant='body2' fontWeight={700}
+                                            color={isPlus ? 'success.main' : 'error.main'}>
+                                  {isPlus ? `+${e.value}` : e.value}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        )}
+      </>
+    )
+  }
+
   return (
     <>
       {/* Breadcrumb */}
@@ -245,8 +527,8 @@ const RankingView = () => {
       <Card className='mb-6'>
         <CardContent>
           <Grid container spacing={3} alignItems='center'>
-            {/* Row 1: Angkatan, Sindikat, Search */}
-            <Grid item xs={12} sm={4}>
+            {/* Angkatan + Sindikat — hanya admin */}
+            {isAdmin && <Grid item xs={12} sm={4}>
               <FormControl fullWidth size='small'>
                 <InputLabel>Angkatan</InputLabel>
                 <Select label='Angkatan' value={batchID}
@@ -279,9 +561,9 @@ const RankingView = () => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
+            </Grid>}
 
-            <Grid item xs={12} sm={4}>
+            {isAdmin && <Grid item xs={12} sm={4}>
               <FormControl fullWidth size='small'>
                 <InputLabel>Sindikat</InputLabel>
                 <Select label='Sindikat' value={syndicateID}
@@ -293,9 +575,9 @@ const RankingView = () => {
                   ))}
                 </Select>
               </FormControl>
-            </Grid>
+            </Grid>}
 
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={isAdmin ? 4 : 12}>
               <DebouncedInput fullWidth value={search}
                               onChange={v => { setSearch(v); setPage(0) }}
                               placeholder='Cari nama atau NIM...'
@@ -303,8 +585,8 @@ const RankingView = () => {
               />
             </Grid>
 
-            {/* Export — rata kanan */}
-            {rows.length > 0 && (
+            {/* Export — hanya admin */}
+            {isAdmin && rows.length > 0 && (
               <>
                 <Grid item xs={12} sm={8} sx={{ display: { xs: 'none', sm: 'block' } }} />
                 <Grid item xs={12} sm={4}>
@@ -330,6 +612,14 @@ const RankingView = () => {
           </Grid>
         </CardContent>
       </Card>
+
+      {/* Info angkatan untuk mahasiswa */}
+      {!isAdmin && selectedBatch && (
+        <Alert severity='info' icon={<i className='ri-group-line' />} className='mb-6'>
+          Menampilkan peringkat angkatan <strong>{selectedBatch.name}</strong>
+          {selectedBatch.program_type && ` · ${selectedBatch.program_type}`}
+        </Alert>
+      )}
 
       {/* Stats */}
       <Grid container spacing={4} className='mb-6'>

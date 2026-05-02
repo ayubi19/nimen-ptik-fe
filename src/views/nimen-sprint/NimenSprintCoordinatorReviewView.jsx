@@ -74,7 +74,10 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
         student: {
           id:         p.student_id,
           full_name:  p.full_name,
-          student_profile: { nim: p.nim },
+          student_profile: {
+            nim:      p.nim,
+            syndicate: p.syndicate_name ? { name: p.syndicate_name } : null,
+          },
         },
         change_type: p.change_type,
       })))
@@ -217,9 +220,11 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
                             <Typography variant='body2' fontWeight={600} noWrap>{student?.full_name}</Typography>
                             <Typography variant='caption' color='text.secondary'>{profile?.nim || '—'}</Typography>
                           </div>
-                          {p.change_type === 'ADDED' && (
-                            <Chip label='Baru' color='success' size='small' variant='tonal' sx={{ flexShrink: 0 }} />
-                          )}
+                          <Chip
+                            label={p.change_type === 'ADDED' ? 'Ditambah' : p.change_type === 'REMOVED' ? 'Dihapus' : 'Original'}
+                            color={p.change_type === 'ADDED' ? 'success' : p.change_type === 'REMOVED' ? 'error' : 'default'}
+                            size='small' variant='tonal' sx={{ flexShrink: 0 }}
+                          />
                         </div>
                         <Box className='mt-2'>
                           <Button fullWidth size='small' variant='tonal' color='warning'
@@ -238,7 +243,7 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
               <Table>
                 <TableHead>
                   <TableRow sx={{ bgcolor: 'action.hover' }}>
-                    {['#', 'Nama', 'NIM', 'Sindikat', 'Status', 'Aksi'].map(h => (
+                    {['#', 'Nama', 'NIM', 'Sindikat', 'Perubahan', 'Aksi'].map(h => (
                       <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                         {h}
                       </TableCell>
@@ -267,8 +272,10 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
                         <TableCell><Typography variant='body2'>{profile?.syndicate?.name || '—'}</Typography></TableCell>
                         <TableCell>
                           {p.change_type === 'ADDED'
-                            ? <Chip label='Baru ditambah' color='success' size='small' variant='tonal' />
-                            : <Typography variant='caption' color='text.secondary'>—</Typography>
+                            ? <Chip label='Ditambah' color='success' size='small' variant='tonal' />
+                            : p.change_type === 'REMOVED'
+                              ? <Chip label='Dihapus' color='error' size='small' variant='tonal' />
+                              : <Chip label='Original' color='default' size='small' variant='tonal' />
                           }
                         </TableCell>
                         <TableCell>
