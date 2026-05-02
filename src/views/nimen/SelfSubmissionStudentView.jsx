@@ -129,6 +129,21 @@ const SelfSubmissionStudentView = () => {
   const [cancelTarget, setCancelTarget]       = useState(null)
   const [cancelLoading, setCancelLoading]     = useState(false)
 
+  // Preview file lokal (sebelum upload)
+  const [localPreview, setLocalPreview]       = useState(null) // { url, type, name }
+
+  const handleLocalPreview = useCallback((file) => {
+    const ext = file.name.split('.').pop().toLowerCase()
+    if (!['pdf', 'jpg', 'jpeg', 'png', 'webp'].includes(ext)) return
+    const url = URL.createObjectURL(file)
+    setLocalPreview({ url, type: ext, name: file.name })
+  }, [])
+
+  const closeLocalPreview = useCallback(() => {
+    if (localPreview?.url) URL.revokeObjectURL(localPreview.url)
+    setLocalPreview(null)
+  }, [localPreview])
+
   const showToast = useCallback((msg, severity = 'success') =>
     setToast({ open: true, message: msg, severity }), [])
 
@@ -494,23 +509,37 @@ const SelfSubmissionStudentView = () => {
             {/* List file yang sudah dipilih */}
             {pendingFiles.length > 0 && (
               <List dense disablePadding sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-                {pendingFiles.map((f, idx) => (
-                  <ListItem key={idx} divider={idx < pendingFiles.length - 1}
-                            secondaryAction={
-                              <IconButton edge='end' size='small' disabled={createLoading}
-                                          onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))}>
-                                <i className='ri-close-line' />
-                              </IconButton>
-                            }>
-                    <ListItemIcon sx={{ minWidth: 32 }}>
-                      <i className={`${fileIcon(f.name)} text-[18px]`} />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={<Typography variant='body2' noWrap sx={{ maxWidth: 260 }}>{f.name}</Typography>}
-                      secondary={`${(f.size / 1024 / 1024).toFixed(2)} MB`}
-                    />
-                  </ListItem>
-                ))}
+                {pendingFiles.map((f, idx) => {
+                  const ext = f.name.split('.').pop().toLowerCase()
+                  const isViewable = ['pdf', 'jpg', 'jpeg', 'png', 'webp'].includes(ext)
+                  return (
+                    <ListItem key={idx} divider={idx < pendingFiles.length - 1}
+                              secondaryAction={
+                                <Box className='flex items-center gap-0.5'>
+                                  {isViewable && (
+                                    <Tooltip title='Preview'>
+                                      <IconButton size='small' disabled={createLoading}
+                                                  onClick={() => handleLocalPreview(f)}>
+                                        <i className='ri-eye-line text-[16px]' />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                  <IconButton edge='end' size='small' disabled={createLoading}
+                                              onClick={() => setPendingFiles(prev => prev.filter((_, i) => i !== idx))}>
+                                    <i className='ri-close-line' />
+                                  </IconButton>
+                                </Box>
+                              }>
+                      <ListItemIcon sx={{ minWidth: 32 }}>
+                        <i className={`${fileIcon(f.name)} text-[18px]`} />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={<Typography variant='body2' noWrap sx={{ maxWidth: 220 }}>{f.name}</Typography>}
+                        secondary={`${(f.size / 1024 / 1024).toFixed(2)} MB`}
+                      />
+                    </ListItem>
+                  )
+                })}
               </List>
             )}
 
@@ -550,6 +579,39 @@ const SelfSubmissionStudentView = () => {
             {createLoading ? 'Menyimpan...' : 'Kirim Pengajuan'}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Dialog Preview File Lokal (sebelum upload) */}
+      <Dialog open={!!localPreview} onClose={closeLocalPreview} maxWidth='lg' fullWidth fullScreen={isMobile}>
+        <DialogTitle sx={{ pb: 1 }}>
+          <div className='flex items-center justify-between'>
+            <Typography variant='subtitle1' noWrap sx={{ maxWidth: '80%' }}>
+              {localPreview?.name}
+            </Typography>
+            <IconButton onClick={closeLocalPreview}><i className='ri-close-line' /></IconButton>
+          </div>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, minHeight: 400 }}>
+          {localPreview && (
+            ['jpg','jpeg','png','webp'].includes(localPreview.type) ? (
+              <Box className='flex justify-center p-4'>
+                <img
+                  src={localPreview.url}
+                  alt={localPreview.name}
+                  style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain' }}
+                />
+              </Box>
+            ) : (
+              <iframe
+                src={localPreview.url}
+                title={localPreview.name}
+                width='100%'
+                height='700px'
+                style={{ border: 'none' }}
+              />
+            )
+          )}
+        </DialogContent>
       </Dialog>
 
       {/* Dialog Lihat Dokumen */}
