@@ -31,6 +31,7 @@ const getNotifUrl = (type, refId) => {
     case 'SPRINT_CREATED':           return refId ? `/nimen/sprints/${refId}` : '/nimen/sprints'
     case 'SPRINT_ACTIVE':            return refId ? `/nimen/my-sprints/${refId}` : '/nimen/my-sprints'
     case 'SPRINT_APPROVED':          return '/ranking'
+    case 'SPRINT_REJECTED':          return refId ? `/nimen/sprints/${refId}` : '/nimen/sprints'
     case 'SPRINT_SENT_TO_COORD':     return refId ? `/nimen/sprints/${refId}/coordinator-review` : '/nimen/sprints/coordinator-review'
     case 'SPRINT_COORD_SUBMITTED':   return refId ? `/nimen/sprints/${refId}` : '/nimen/sprints'
     case 'ONBOARDING_APPROVED':      return '/dashboard'
@@ -48,6 +49,7 @@ const TYPE_CONFIG = {
   SPRINT_CREATED:           { icon: 'ri-file-list-3-line',     color: 'primary' },
   SPRINT_ACTIVE:            { icon: 'ri-run-line',             color: 'warning' },
   SPRINT_APPROVED:          { icon: 'ri-medal-line',           color: 'success' },
+  SPRINT_REJECTED:          { icon: 'ri-close-circle-line',    color: 'error'   },
   SPRINT_SENT_TO_COORD:     { icon: 'ri-send-plane-line',      color: 'info'    },
   SPRINT_COORD_SUBMITTED:   { icon: 'ri-checkbox-circle-line', color: 'info'    },
   ONBOARDING_NEW:           { icon: 'ri-user-add-line',        color: 'info'    },
