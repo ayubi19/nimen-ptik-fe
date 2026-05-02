@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import Alert from '@mui/material/Alert'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
@@ -215,6 +216,38 @@ const RankingView = () => {
   }, [batchID, syndicateID, search, page, pageSize])
 
   useEffect(() => { fetchRankings() }, [fetchRankings])
+
+  // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
+  const pathname = usePathname()
+  const refetchAll = useCallback(() => {
+    fetchRankings()
+    // Trigger ulang student data dengan update batchID (workaround untuk re-run useEffect)
+    if (!isAdmin && studentId && batchID) {
+      setMyLoading(true)
+      Promise.all([
+        nimenRankingApi.getRankings({ batch_id: parseInt(batchID), page: 1, page_size: 999 }),
+        nimenRankingApi.getValueHistory(studentId),
+      ]).then(([rankRes, histRes]) => {
+        const allRows = rankRes.data.data?.data || []
+        const me = allRows.find(r => String(r.student_id) === String(studentId))
+        setMyRanking({ ...me, total: allRows.length })
+        setMyHistory(histRes.data.data || [])
+      }).catch(() => {}).finally(() => setMyLoading(false))
+    }
+  }, [fetchRankings, isAdmin, studentId, batchID])
+
+  useEffect(() => {
+    const onFocus = () => refetchAll()
+    const onVisible = () => { if (document.visibilityState === 'visible') refetchAll() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [refetchAll])
+
+  useEffect(() => { refetchAll() }, [pathname, refetchAll])
 
   const handleViewHistory = useCallback(async (row) => {
     setHistoryStudent(row)

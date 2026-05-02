@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
@@ -61,6 +62,21 @@ const MySprintDetailView = ({ sprintId }) => {
   }, [sprintId, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
+  const pathname = usePathname()
+  useEffect(() => {
+    const onFocus = () => fetchData()
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchData() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [fetchData])
+
+  useEffect(() => { fetchData() }, [pathname, fetchData])
 
   const handleUpload = useCallback(async (file) => {
     await nimenParticipantDocApi.upload(sprintId, file)

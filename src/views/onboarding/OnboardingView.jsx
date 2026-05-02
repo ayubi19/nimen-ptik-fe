@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import Alert from '@mui/material/Alert'
 import Avatar from '@mui/material/Avatar'
 import Box from '@mui/material/Box'
@@ -190,6 +191,21 @@ const OnboardingView = () => {
   }, [page, pageSize, globalFilter, statusFilter, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
+  const pathname = usePathname()
+  useEffect(() => {
+    const onFocus = () => fetchData()
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchData() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [fetchData])
+
+  useEffect(() => { fetchData() }, [pathname, fetchData])
 
   const handleOpenApprove = useCallback((row) => {
     setApproveTarget(row)

@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import dayjs from 'dayjs'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
@@ -164,6 +165,22 @@ const SelfSubmissionStudentView = () => {
   }, [showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Refetch saat halaman mendapat fokus kembali (misal: klik notif → redirect ke halaman ini)
+  const pathname = usePathname()
+  useEffect(() => {
+    const onFocus = () => fetchData()
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchData() }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [fetchData])
+
+  // Refetch saat pathname berubah (navigasi dari notif ke halaman ini)
+  useEffect(() => { fetchData() }, [pathname, fetchData])
 
   const resetCreate = useCallback(() => {
     setEventDate(null); setNotes(''); setPendingFiles([])

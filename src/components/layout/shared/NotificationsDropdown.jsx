@@ -144,6 +144,8 @@ const NotificationDropdown = () => {
     if (url) {
       setOpen(false)
       router.push(url)
+      // Force refresh data di halaman tujuan
+      setTimeout(() => router.refresh(), 100)
     }
   }, [router])
 
