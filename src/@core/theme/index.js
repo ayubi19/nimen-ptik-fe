@@ -9,7 +9,7 @@ import shadows from './shadows'
 import customShadows from './customShadows'
 import typography from './typography'
 
-const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'] })
+const inter = Inter({ subsets: ['latin'], weight: ['400', '500', '600'], display: 'swap' })
 
 const theme = (settings, mode, direction) => {
   return {

@@ -11,7 +11,6 @@ const Logo = () => {
         alt='Nimen PTIK'
         width={100}
         height={44}
-        priority
         style={{ objectFit: 'contain' }}
       />
     </div>
