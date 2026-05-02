@@ -217,6 +217,15 @@ const RankingView = () => {
 
   useEffect(() => { fetchRankings() }, [fetchRankings])
 
+
+  // Refetch saat tab kembali aktif
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchRankings()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [fetchRankings])
   // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
   const pathname = usePathname()
   const refetchAll = useCallback(() => {

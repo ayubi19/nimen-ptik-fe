@@ -160,6 +160,16 @@ const NimenSprintDetailView = ({ sprintId }) => {
 
   useEffect(() => { fetchSprint() }, [fetchSprint])
 
+  // Refetch saat tab kembali aktif (dari notifikasi atau pindah tab)
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchSprint()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [fetchSprint])
+
+
   useEffect(() => {
     nimenIndicatorApi.getAll({ page: 1, page_size: 100, is_active: true })
       .then(r => setIndicators(r.data.data?.data || []))

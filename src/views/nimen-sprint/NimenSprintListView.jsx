@@ -185,6 +185,15 @@ const NimenSprintListView = () => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+
+  // Refetch saat tab kembali aktif
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchData()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [fetchData])
   const handleDelete = useCallback(async () => {
     setDeleteLoading(true)
     try {

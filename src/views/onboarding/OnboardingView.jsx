@@ -192,6 +192,15 @@ const OnboardingView = () => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
+
+  // Refetch saat tab kembali aktif
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') fetchData()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [fetchData])
   // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
   const pathname = usePathname()
   useEffect(() => {
