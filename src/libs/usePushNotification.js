@@ -47,14 +47,17 @@ export function usePushNotification() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
 
     const setup = async () => {
+      console.log('[PWA] setup started, permission:', Notification.permission)
       try {
         // 1. Register Service Worker
+        console.log('[PWA] registering SW...')
         const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' })
+        console.log('[PWA] SW registered:', reg.scope)
         await navigator.serviceWorker.ready
 
         // 2. Cek permission — jangan minta langsung, tunggu user interact dulu
         //    Kalau sudah granted sebelumnya, langsung subscribe
-        if (Notification.permission === 'denied') return
+        if (Notification.permission === 'denied') { console.log('[PWA] permission denied'); return }
 
         if (Notification.permission === 'default') {
           // Minta permission saat user pertama kali login
@@ -73,14 +76,16 @@ export function usePushNotification() {
           return
         }
 
+        console.log('[PWA] subscribing to push...')
         const subscription = await reg.pushManager.subscribe({
           userVisibleOnly:      true,
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         })
 
-        // 4. Kirim ke BE
+        console.log('[PWA] sending subscription to BE...')
         await saveSubscription(subscription)
         subscribedRef.current = true
+        console.log('[PWA] subscription saved!')
       } catch (err) {
         // Gagal subscribe — tidak perlu crash app, Web Push opsional
         console.warn('[PWA] push subscription failed:', err)
