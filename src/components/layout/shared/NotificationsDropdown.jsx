@@ -1,267 +1,276 @@
 'use client'
 
-// React Imports
-import { useRef, useState, useEffect } from 'react'
-
-// MUI Imports
-import IconButton from '@mui/material/IconButton'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Badge from '@mui/material/Badge'
-import Popper from '@mui/material/Popper'
-import Fade from '@mui/material/Fade'
-import Paper from '@mui/material/Paper'
-import ClickAwayListener from '@mui/material/ClickAwayListener'
-import Typography from '@mui/material/Typography'
-import Chip from '@mui/material/Chip'
-import Tooltip from '@mui/material/Tooltip'
-import Divider from '@mui/material/Divider'
-import Avatar from '@mui/material/Avatar'
-import useMediaQuery from '@mui/material/useMediaQuery'
+import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-
-// Third Party Components
+import Chip from '@mui/material/Chip'
+import CircularProgress from '@mui/material/CircularProgress'
+import ClickAwayListener from '@mui/material/ClickAwayListener'
+import Divider from '@mui/material/Divider'
+import Fade from '@mui/material/Fade'
+import IconButton from '@mui/material/IconButton'
+import Paper from '@mui/material/Paper'
+import Popper from '@mui/material/Popper'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import useMediaQuery from '@mui/material/useMediaQuery'
 import classnames from 'classnames'
 import PerfectScrollbar from 'react-perfect-scrollbar'
-
-// Component Imports
-import CustomAvatar from '@core/components/mui/Avatar'
-
-// Config Imports
-import themeConfig from '@configs/themeConfig'
-
-// Hook Imports
+import { useRouter } from 'next/navigation'
 import { useSettings } from '@core/hooks/useSettings'
+import { notificationApi } from '@/libs/api/notificationApi'
 
-// Util Imports
-import { getInitials } from '@/utils/getInitials'
-
-const ScrollWrapper = ({ children, hidden }) => {
-  if (hidden) {
-    return <div className='overflow-x-hidden bs-full'>{children}</div>
-  } else {
-    return (
-      <PerfectScrollbar className='bs-full' options={{ wheelPropagation: false, suppressScrollX: true }}>
-        {children}
-      </PerfectScrollbar>
-    )
+// ── Mapping tipe notifikasi → URL tujuan ─────────────────────────────────────
+const getNotifUrl = (type, refId) => {
+  switch (type) {
+    case 'SELF_SUBMISSION_NEW':      return '/nimen/self-submissions'
+    case 'SELF_SUBMISSION_APPROVED': return '/nimen/self-submissions/my'
+    case 'SELF_SUBMISSION_REJECTED': return '/nimen/self-submissions/my'
+    case 'SPRINT_ACTIVE':            return refId ? `/nimen/my-sprints/${refId}` : '/nimen/my-sprints'
+    case 'SPRINT_APPROVED':          return '/ranking'
+    case 'ONBOARDING_APPROVED':      return '/dashboard'
+    case 'ONBOARDING_REJECTED':      return '/dashboard'
+    default:                         return null
   }
 }
 
-const getAvatar = params => {
-  const { avatarImage, avatarIcon, avatarText, title, avatarColor, avatarSkin } = params
+const POLL_INTERVAL = 30_000
 
-  if (avatarImage) {
-    return <Avatar src={avatarImage} />
-  } else if (avatarIcon) {
-    return (
-      <CustomAvatar color={avatarColor} skin={avatarSkin || 'light-static'}>
-        <i className={avatarIcon} />
-      </CustomAvatar>
-    )
-  } else {
-    return (
-      <CustomAvatar color={avatarColor} skin={avatarSkin || 'light-static'}>
-        {avatarText || getInitials(title)}
-      </CustomAvatar>
-    )
-  }
+const TYPE_CONFIG = {
+  SELF_SUBMISSION_NEW:      { icon: 'ri-file-add-line',        color: 'primary' },
+  SELF_SUBMISSION_APPROVED: { icon: 'ri-checkbox-circle-line', color: 'success' },
+  SELF_SUBMISSION_REJECTED: { icon: 'ri-close-circle-line',    color: 'error'   },
+  SPRINT_ACTIVE:            { icon: 'ri-run-line',             color: 'warning' },
+  SPRINT_APPROVED:          { icon: 'ri-medal-line',           color: 'success' },
+  ONBOARDING_APPROVED:      { icon: 'ri-user-follow-line',     color: 'success' },
+  ONBOARDING_REJECTED:      { icon: 'ri-user-unfollow-line',   color: 'error'   },
 }
 
-const NotificationDropdown = ({ notifications }) => {
-  // States
-  const [open, setOpen] = useState(false)
-  const [notificationsState, setNotificationsState] = useState(notifications)
+const getTypeConfig = (type) =>
+  TYPE_CONFIG[type] || { icon: 'ri-notification-line', color: 'info' }
 
-  // Vars
-  const notificationCount = notificationsState.filter(notification => !notification.read).length
-  const readAll = notificationsState.every(notification => notification.read)
+const fmtTime = (iso) => {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const now = new Date()
+  const diffMin = Math.floor((now - d) / 60_000)
+  const diffHr  = Math.floor((now - d) / 3_600_000)
+  const diffDay = Math.floor((now - d) / 86_400_000)
+  if (diffMin < 1)  return 'Baru saja'
+  if (diffMin < 60) return `${diffMin} menit lalu`
+  if (diffHr < 24)  return `${diffHr} jam lalu`
+  if (diffDay < 7)  return `${diffDay} hari lalu`
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+}
 
-  // Refs
-  const anchorRef = useRef(null)
-  const ref = useRef(null)
+const ScrollWrapper = ({ children, hidden }) =>
+  hidden ? (
+    <div className='overflow-x-hidden bs-full'>{children}</div>
+  ) : (
+    <PerfectScrollbar className='bs-full' options={{ wheelPropagation: false, suppressScrollX: true }}>
+      {children}
+    </PerfectScrollbar>
+  )
 
-  // Hooks
-  const hidden = useMediaQuery(theme => theme.breakpoints.down('lg'))
-  const isSmallScreen = useMediaQuery(theme => theme.breakpoints.down('sm'))
+const NotificationDropdown = () => {
+  const [open, setOpen]               = useState(false)
+  const [items, setItems]             = useState([])
+  const [unreadCount, setUnreadCount] = useState(0)
+  const [loading, setLoading]         = useState(false)
+
+  const router       = useRouter()
+  const anchorRef    = useRef(null)
+  const popperRef    = useRef(null)
+  const hidden       = useMediaQuery(theme => theme.breakpoints.down('lg'))
+  const isSmall      = useMediaQuery(theme => theme.breakpoints.down('sm'))
   const { settings } = useSettings()
 
-  const handleClose = () => {
-    setOpen(false)
-  }
+  const fetchAll = useCallback(async () => {
+    try {
+      const res  = await notificationApi.getAll()
+      const data = res.data.data
+      setItems(data.items || [])
+      setUnreadCount(data.unread_count || 0)
+    } catch { /* silent */ }
+  }, [])
 
-  const handleToggle = () => {
-    setOpen(prevOpen => !prevOpen)
-  }
-
-  // Read notification when notification is clicked
-  const handleReadNotification = (event, value, index) => {
-    event.stopPropagation()
-    const newNotifications = [...notificationsState]
-
-    newNotifications[index].read = value
-    setNotificationsState(newNotifications)
-  }
-
-  // Remove notification when close icon is clicked
-  const handleRemoveNotification = (event, index) => {
-    event.stopPropagation()
-    const newNotifications = [...notificationsState]
-
-    newNotifications.splice(index, 1)
-    setNotificationsState(newNotifications)
-  }
-
-  // Read or unread all notifications when read all icon is clicked
-  const readAllNotifications = () => {
-    const newNotifications = [...notificationsState]
-
-    newNotifications.forEach(notification => {
-      notification.read = !readAll
-    })
-    setNotificationsState(newNotifications)
-  }
+  const fetchCount = useCallback(async () => {
+    try {
+      const res = await notificationApi.getUnreadCount()
+      setUnreadCount(res.data.data?.unread_count || 0)
+    } catch { /* silent */ }
+  }, [])
 
   useEffect(() => {
-    const adjustPopoverHeight = () => {
-      if (ref.current) {
-        // Calculate available height, subtracting any fixed UI elements' height as necessary
-        const availableHeight = window.innerHeight - 100
+    fetchAll()
+    const interval = setInterval(fetchCount, POLL_INTERVAL)
+    return () => clearInterval(interval)
+  }, [fetchAll, fetchCount])
 
-        ref.current.style.height = `${Math.min(availableHeight, 550)}px`
-      }
+  const handleToggle = useCallback(async () => {
+    const nextOpen = !open
+    setOpen(nextOpen)
+    if (nextOpen) {
+      setLoading(true)
+      await fetchAll()
+      setLoading(false)
     }
+  }, [open, fetchAll])
 
-    window.addEventListener('resize', adjustPopoverHeight)
+  const handleMarkRead = useCallback(async (id) => {
+    setItems(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+    setUnreadCount(prev => Math.max(0, prev - 1))
+    try { await notificationApi.markRead(id) } catch { fetchAll() }
+  }, [fetchAll])
+
+  const handleClick = useCallback(async (n) => {
+    // Mark read jika belum
+    if (!n.is_read) {
+      setItems(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x))
+      setUnreadCount(prev => Math.max(0, prev - 1))
+      try { await notificationApi.markRead(n.id) } catch { /* silent */ }
+    }
+    // Navigate jika ada URL tujuan
+    const url = getNotifUrl(n.type, n.ref_id)
+    if (url) {
+      setOpen(false)
+      router.push(url)
+    }
+  }, [router])
+
+  const handleMarkAllRead = useCallback(async () => {
+    setItems(prev => prev.map(n => ({ ...n, is_read: true })))
+    setUnreadCount(0)
+    try { await notificationApi.markAllRead() } catch { fetchAll() }
+  }, [fetchAll])
+
+  const allRead = items.length === 0 || items.every(n => n.is_read)
+
+  useEffect(() => {
+    const adjust = () => {
+      if (popperRef.current)
+        popperRef.current.style.height = `${Math.min(window.innerHeight - 100, 550)}px`
+    }
+    window.addEventListener('resize', adjust)
+    return () => window.removeEventListener('resize', adjust)
   }, [])
 
   return (
     <>
       <IconButton ref={anchorRef} onClick={handleToggle} className='text-textPrimary'>
-        <Badge
-          color='error'
-          className='cursor-pointer'
-          variant='dot'
-          overlap='circular'
-          invisible={notificationCount === 0}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
+        <Badge color='error' variant='dot' overlap='circular'
+               invisible={unreadCount === 0}
+               anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
           <i className='ri-notification-2-line' />
         </Badge>
       </IconButton>
-      <Popper
-        open={open}
-        transition
-        disablePortal
-        placement='bottom-end'
-        ref={ref}
-        anchorEl={anchorRef.current}
-        {...(isSmallScreen
-          ? {
-              className: 'is-full !mbs-4 z-[1] max-bs-[550px] bs-[550px]',
-              modifiers: [
-                {
-                  name: 'preventOverflow',
-                  options: {
-                    padding: themeConfig.layoutPadding
-                  }
-                }
-              ]
-            }
-          : { className: 'is-96 !mbs-4 z-[1] max-bs-[550px] bs-[550px]' })}
-      >
-        {({ TransitionProps, placement }) => (
-          <Fade {...TransitionProps} style={{ transformOrigin: placement === 'bottom-end' ? 'right top' : 'left top' }}>
-            <Paper className={classnames('bs-full', settings.skin === 'bordered' ? 'border shadow-none' : 'shadow-lg')}>
-              <ClickAwayListener onClickAway={handleClose}>
-                <div className='bs-full flex flex-col'>
-                  <div className='flex items-center justify-between plb-3 pli-4 is-full gap-2'>
-                    <Typography variant='h6' className='flex-auto'>
-                      Notifications
-                    </Typography>
-                    {notificationCount > 0 && (
-                      <Chip variant='tonal' size='small' color='primary' label={`${notificationCount} New`} />
-                    )}
-                    <Tooltip
-                      title={readAll ? 'Mark all as unread' : 'Mark all as read'}
-                      placement={placement === 'bottom-end' ? 'left' : 'right'}
-                      slotProps={{
-                        popper: {
-                          sx: {
-                            '& .MuiTooltip-tooltip': {
-                              transformOrigin:
-                                placement === 'bottom-end' ? 'right center !important' : 'right center !important'
-                            }
-                          }
-                        }
-                      }}
-                    >
-                      {notificationsState.length > 0 ? (
-                        <IconButton size='small' onClick={() => readAllNotifications()} className='text-textPrimary'>
-                          <i className={classnames(readAll ? 'ri-mail-line' : 'ri-mail-open-line', 'text-xl')} />
-                        </IconButton>
-                      ) : (
-                        <></>
-                      )}
-                    </Tooltip>
-                  </div>
-                  <Divider />
-                  <ScrollWrapper hidden={hidden}>
-                    {notificationsState.map((notification, index) => {
-                      const {
-                        title,
-                        subtitle,
-                        time,
-                        read,
-                        avatarImage,
-                        avatarIcon,
-                        avatarText,
-                        avatarColor,
-                        avatarSkin
-                      } = notification
 
-                      return (
-                        <div
-                          key={index}
-                          className={classnames('flex plb-3 pli-4 gap-3 cursor-pointer hover:bg-actionHover group', {
-                            'border-be': index !== notificationsState.length - 1
-                          })}
-                          onClick={e => handleReadNotification(e, true, index)}
-                        >
-                          {getAvatar({ avatarImage, avatarIcon, title, avatarText, avatarColor, avatarSkin })}
-                          <div className='flex flex-col flex-auto'>
-                            <Typography variant='body2' className='font-medium mbe-1' color='text.primary'>
-                              {title}
-                            </Typography>
-                            <Typography variant='caption' className='mbe-2' color='text.secondary'>
-                              {subtitle}
-                            </Typography>
-                            <Typography variant='caption' color='text.disabled'>
-                              {time}
-                            </Typography>
+      <Popper open={open} transition disablePortal placement='bottom-end'
+              ref={popperRef} anchorEl={anchorRef.current}
+              {...(isSmall
+                ? { className: 'is-full !mbs-4 z-[1] max-bs-[550px] bs-[550px]', modifiers: [{ name: 'preventOverflow', options: { padding: 16 } }] }
+                : { className: 'is-96 !mbs-4 z-[1] max-bs-[550px] bs-[550px]' })}>
+        {({ TransitionProps, placement }) => (
+          <Fade {...TransitionProps}
+                style={{ transformOrigin: placement === 'bottom-end' ? 'right top' : 'left top' }}>
+            <Paper className={classnames('bs-full', settings.skin === 'bordered' ? 'border shadow-none' : 'shadow-lg')}>
+              <ClickAwayListener onClickAway={() => setOpen(false)}>
+                <div className='bs-full flex flex-col'>
+
+                  {/* Header */}
+                  <div className='flex items-center justify-between plb-3 pli-4 gap-2'>
+                    <Typography variant='h6' className='flex-auto'>Notifikasi</Typography>
+                    {unreadCount > 0 && (
+                      <Chip variant='tonal' size='small' color='primary' label={`${unreadCount} baru`} />
+                    )}
+                    {items.length > 0 && (
+                      <Tooltip title='Tandai semua sudah dibaca'
+                               placement={placement === 'bottom-end' ? 'left' : 'right'}>
+                        <IconButton size='small' onClick={handleMarkAllRead}
+                                    disabled={allRead} className='text-textPrimary'>
+                          <i className={classnames(allRead ? 'ri-mail-line' : 'ri-mail-open-line', 'text-xl')} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </div>
+
+                  <Divider />
+
+                  {/* Body */}
+                  <ScrollWrapper hidden={hidden}>
+                    {loading ? (
+                      <Box className='flex justify-center py-8'><CircularProgress size={28} /></Box>
+                    ) : items.length === 0 ? (
+                      <Box className='flex flex-col items-center py-10 gap-2' sx={{ color: 'text.secondary' }}>
+                        <i className='ri-notification-off-line text-5xl opacity-30' />
+                        <Typography variant='body2'>Belum ada notifikasi</Typography>
+                      </Box>
+                    ) : (
+                      items.map((n, idx) => {
+                        const cfg = getTypeConfig(n.type)
+                        return (
+                          <div
+                            key={n.id}
+                            className={classnames(
+                              'flex plb-3 pli-4 gap-3 cursor-pointer hover:bg-actionHover',
+                              { 'border-be': idx !== items.length - 1 },
+                              { 'bg-actionSelected': !n.is_read }
+                            )}
+                            onClick={() => handleClick(n)}
+                          >
+                            {/* Icon avatar */}
+                            <Box sx={{
+                              width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              bgcolor: `var(--mui-palette-${cfg.color}-lightOpacity)`,
+                            }}>
+                              <i className={`${cfg.icon} text-[18px]`}
+                                 style={{ color: `var(--mui-palette-${cfg.color}-main)` }} />
+                            </Box>
+
+                            {/* Text */}
+                            <div className='flex flex-col flex-auto min-w-0'>
+                              <Typography variant='body2' fontWeight={n.is_read ? 400 : 600}
+                                          color='text.primary' noWrap>
+                                {n.title}
+                              </Typography>
+                              <Typography variant='caption' color='text.secondary'
+                                          sx={{ display: 'block', mb: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {n.body}
+                              </Typography>
+                              <Typography variant='caption' color='text.disabled'>
+                                {fmtTime(n.created_at)}
+                              </Typography>
+                            </div>
+
+                            {/* Unread dot + navigable cue */}
+                            <div className='flex flex-col items-center gap-1 flex-shrink-0'>
+                              {!n.is_read && (
+                                <Box sx={{
+                                  width: 8, height: 8, borderRadius: '50%',
+                                  bgcolor: 'primary.main', mt: 0.5,
+                                }} />
+                              )}
+                              {getNotifUrl(n.type, n.ref_id) && (
+                                <i className='ri-arrow-right-s-line text-[16px] opacity-30 group-hover:opacity-70'
+                                   style={{ color: 'var(--mui-palette-text-secondary)' }} />
+                              )}
+                            </div>
                           </div>
-                          <div className='flex flex-col items-end gap-2'>
-                            <Badge
-                              variant='dot'
-                              color={read ? 'secondary' : 'primary'}
-                              onClick={e => handleReadNotification(e, !read, index)}
-                              className={classnames('mbs-1 mie-1', {
-                                'invisible group-hover:visible': read
-                              })}
-                            />
-                            <i
-                              className='ri-close-line text-xl invisible group-hover:visible text-textSecondary'
-                              onClick={e => handleRemoveNotification(e, index)}
-                            />
-                          </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })
+                    )}
                   </ScrollWrapper>
+
                   <Divider />
                   <div className='p-4'>
-                    <Button fullWidth variant='contained' size='small'>
-                      View All Notifications
+                    <Button fullWidth variant='tonal' color='secondary' size='small'
+                            onClick={handleMarkAllRead} disabled={allRead || items.length === 0}>
+                      Tandai Semua Sudah Dibaca
                     </Button>
                   </div>
+
                 </div>
               </ClickAwayListener>
             </Paper>
