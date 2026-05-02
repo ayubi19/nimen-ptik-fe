@@ -18,6 +18,7 @@ import useMediaQuery from '@mui/material/useMediaQuery'
 import classnames from 'classnames'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { useSettings } from '@core/hooks/useSettings'
 import { notificationApi } from '@/libs/api/notificationApi'
 
@@ -39,8 +40,6 @@ const getNotifUrl = (type, refId) => {
     default:                         return null
   }
 }
-
-const POLL_INTERVAL = 30_000
 
 const TYPE_CONFIG = {
   SELF_SUBMISSION_NEW:      { icon: 'ri-file-add-line',        color: 'primary' },
@@ -83,19 +82,84 @@ const ScrollWrapper = ({ children, hidden }) =>
     </PerfectScrollbar>
   )
 
+// ── Hook SSE ──────────────────────────────────────────────────────────────────
+// Mengelola koneksi EventSource ke BE, auto-reconnect dengan exponential backoff
+function useSSE({ accessToken, onNotification }) {
+  const esRef = useRef(null)
+
+  useEffect(() => {
+    if (!accessToken) return
+
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL
+    const url = `${baseUrl}/api/v1/sse?token=${accessToken}`
+
+    let retryTimeout = null
+    let retryCount = 0
+    const MAX_RETRY = 10
+
+    const connect = () => {
+      if (esRef.current) {
+        esRef.current.close()
+        esRef.current = null
+      }
+
+      const es = new EventSource(url)
+      esRef.current = es
+
+      es.addEventListener('connected', () => {
+        retryCount = 0
+      })
+
+      es.addEventListener('notification', (e) => {
+        try {
+          const notif = JSON.parse(e.data)
+          onNotification(notif)
+        } catch { /* malformed JSON, skip */ }
+      })
+
+      // 'ping' tidak perlu di-handle — hanya keep-alive
+
+      es.onerror = () => {
+        es.close()
+        esRef.current = null
+        if (retryCount >= MAX_RETRY) return
+        // Exponential backoff: 2s, 4s, 8s, ... max 30s
+        const delay = Math.min(2_000 * Math.pow(2, retryCount), 30_000)
+        retryCount++
+        retryTimeout = setTimeout(connect, delay)
+      }
+    }
+
+    connect()
+
+    return () => {
+      clearTimeout(retryTimeout)
+      if (esRef.current) {
+        esRef.current.close()
+        esRef.current = null
+      }
+    }
+  }, [accessToken, onNotification])
+}
+
+// ── Komponen utama ────────────────────────────────────────────────────────────
 const NotificationDropdown = () => {
   const [open, setOpen]               = useState(false)
   const [items, setItems]             = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading]         = useState(false)
 
-  const router       = useRouter()
-  const anchorRef    = useRef(null)
-  const popperRef    = useRef(null)
-  const hidden       = useMediaQuery(theme => theme.breakpoints.down('lg'))
-  const isSmall      = useMediaQuery(theme => theme.breakpoints.down('sm'))
-  const { settings } = useSettings()
+  const router            = useRouter()
+  const anchorRef         = useRef(null)
+  const popperRef         = useRef(null)
+  const hidden            = useMediaQuery(theme => theme.breakpoints.down('lg'))
+  const isSmall           = useMediaQuery(theme => theme.breakpoints.down('sm'))
+  const { settings }      = useSettings()
+  const { data: session } = useSession()
 
+  const accessToken = session?.user?.accessToken
+
+  // ── Fetch semua notifikasi ────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
     try {
       const res  = await notificationApi.getAll()
@@ -105,19 +169,24 @@ const NotificationDropdown = () => {
     } catch { /* silent */ }
   }, [])
 
-  const fetchCount = useCallback(async () => {
-    try {
-      const res = await notificationApi.getUnreadCount()
-      setUnreadCount(res.data.data?.unread_count || 0)
-    } catch { /* silent */ }
+  // ── Load awal saat punya token ────────────────────────────────────────────
+  useEffect(() => {
+    if (accessToken) fetchAll()
+  }, [accessToken, fetchAll])
+
+  // ── Handler notif baru dari SSE ───────────────────────────────────────────
+  const handleNewNotification = useCallback((notif) => {
+    setItems(prev => {
+      if (prev.some(n => n.id === notif.id)) return prev // hindari duplikat
+      return [notif, ...prev].slice(0, 30)
+    })
+    setUnreadCount(prev => prev + 1)
   }, [])
 
-  useEffect(() => {
-    fetchAll()
-    const interval = setInterval(fetchCount, POLL_INTERVAL)
-    return () => clearInterval(interval)
-  }, [fetchAll, fetchCount])
+  // ── Koneksi SSE ───────────────────────────────────────────────────────────
+  useSSE({ accessToken, onNotification: handleNewNotification })
 
+  // ── Toggle dropdown ───────────────────────────────────────────────────────
   const handleToggle = useCallback(async () => {
     const nextOpen = !open
     setOpen(nextOpen)
@@ -135,18 +204,15 @@ const NotificationDropdown = () => {
   }, [fetchAll])
 
   const handleClick = useCallback(async (n) => {
-    // Mark read jika belum
     if (!n.is_read) {
       setItems(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x))
       setUnreadCount(prev => Math.max(0, prev - 1))
       try { await notificationApi.markRead(n.id) } catch { /* silent */ }
     }
-    // Navigate jika ada URL tujuan
     const url = getNotifUrl(n.type, n.ref_id)
     if (url) {
       setOpen(false)
       router.push(url)
-      // Force refresh data di halaman tujuan
       setTimeout(() => router.refresh(), 100)
     }
   }, [router])
@@ -231,7 +297,6 @@ const NotificationDropdown = () => {
                             )}
                             onClick={() => handleClick(n)}
                           >
-                            {/* Icon avatar */}
                             <Box sx={{
                               width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -241,7 +306,6 @@ const NotificationDropdown = () => {
                                  style={{ color: `var(--mui-palette-${cfg.color}-main)` }} />
                             </Box>
 
-                            {/* Text */}
                             <div className='flex flex-col flex-auto min-w-0'>
                               <Typography variant='body2' fontWeight={n.is_read ? 400 : 600}
                                           color='text.primary' noWrap>
@@ -256,7 +320,6 @@ const NotificationDropdown = () => {
                               </Typography>
                             </div>
 
-                            {/* Unread dot + navigable cue */}
                             <div className='flex flex-col items-center gap-1 flex-shrink-0'>
                               {!n.is_read && (
                                 <Box sx={{
