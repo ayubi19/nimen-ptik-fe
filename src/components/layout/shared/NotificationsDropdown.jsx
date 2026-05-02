@@ -25,6 +25,7 @@ import { notificationApi } from '@/libs/api/notificationApi'
 const getNotifUrl = (type, refId) => {
   switch (type) {
     case 'SELF_SUBMISSION_NEW':      return '/nimen/self-submissions'
+    case 'ONBOARDING_NEW':           return '/onboarding'
     case 'SELF_SUBMISSION_APPROVED': return '/nimen/self-submissions/my'
     case 'SELF_SUBMISSION_REJECTED': return '/nimen/self-submissions/my'
     case 'SPRINT_ACTIVE':            return refId ? `/nimen/my-sprints/${refId}` : '/nimen/my-sprints'
@@ -43,6 +44,7 @@ const TYPE_CONFIG = {
   SELF_SUBMISSION_REJECTED: { icon: 'ri-close-circle-line',    color: 'error'   },
   SPRINT_ACTIVE:            { icon: 'ri-run-line',             color: 'warning' },
   SPRINT_APPROVED:          { icon: 'ri-medal-line',           color: 'success' },
+  ONBOARDING_NEW:           { icon: 'ri-user-add-line',        color: 'info'    },
   ONBOARDING_APPROVED:      { icon: 'ri-user-follow-line',     color: 'success' },
   ONBOARDING_REJECTED:      { icon: 'ri-user-unfollow-line',   color: 'error'   },
 }
