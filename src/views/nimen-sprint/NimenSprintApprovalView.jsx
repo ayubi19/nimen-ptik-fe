@@ -133,11 +133,18 @@ const NimenSprintApprovalView = ({ sprintId }) => {
       const res = await nimenSprintApi.getApprovalSummary(sprintId)
       setSummary(res.data.data)
     } catch (err) {
+      // 409 = sprint sudah tidak ACTIVE (selesai di-approve / status berubah)
+      // Redirect ke detail sprint agar tidak stuck di halaman yang tidak bisa diakses
+      if (err?.message?.includes('harus berstatus') || err?.message?.includes('sudah diproses')) {
+        showToast('Sprint sudah selesai diproses, kembali ke detail sprint', 'info')
+        setTimeout(() => router.push(`/nimen/sprints/${sprintId}`), 1500)
+        return
+      }
       showToast(err.message || 'Gagal memuat data', 'error')
     } finally {
       setLoading(false)
     }
-  }, [sprintId, showToast])
+  }, [sprintId, showToast, router])
 
   useEffect(() => { fetchSummary() }, [fetchSummary])
 
