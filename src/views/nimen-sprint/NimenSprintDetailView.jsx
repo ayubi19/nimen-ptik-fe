@@ -2,7 +2,7 @@
 import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import Grid from '@mui/material/Grid'
 import Card from '@mui/material/Card'
@@ -162,6 +162,10 @@ const NimenSprintDetailView = ({ sprintId }) => {
   useEffect(() => { fetchSprint() }, [fetchSprint])
   // Refetch saat tab visible dengan cooldown 30 detik
   useVisibilityRefetch(fetchSprint)
+
+  // Refetch saat navigasi masuk ke halaman ini (misal: klik notif)
+  const pathname = usePathname()
+  useEffect(() => { fetchSprint() }, [pathname, fetchSprint])
 
 
 

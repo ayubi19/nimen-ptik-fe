@@ -2,7 +2,7 @@
 import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -187,6 +187,9 @@ const NimenSprintListView = () => {
   useEffect(() => { fetchData() }, [fetchData])
   // Refetch saat tab visible dengan cooldown 30 detik
   useVisibilityRefetch(fetchData)
+
+  const pathname = usePathname()
+  useEffect(() => { fetchData() }, [pathname, fetchData])
 
 
 

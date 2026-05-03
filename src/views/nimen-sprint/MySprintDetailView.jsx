@@ -66,6 +66,9 @@ const MySprintDetailView = ({ sprintId }) => {
 
   useVisibilityRefetch(fetchData)
 
+  const pathname = usePathname()
+  useEffect(() => { fetchData() }, [pathname, fetchData])
+
 
   const handleUpload = useCallback(async (file) => {
     await nimenParticipantDocApi.upload(sprintId, file)

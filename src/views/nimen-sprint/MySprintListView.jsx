@@ -127,6 +127,9 @@ const MySprintListView = () => {
 
   useVisibilityRefetch(fetchData)
 
+  const pathname = usePathname()
+  useEffect(() => { fetchData() }, [pathname, fetchData])
+
 
   const handleDetail = useCallback((id) => {
     router.push(`/nimen/my-sprints/${id}`)

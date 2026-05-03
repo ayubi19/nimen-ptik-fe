@@ -218,10 +218,6 @@ const RankingView = () => {
 
   useEffect(() => { fetchRankings() }, [fetchRankings])
   // Refetch saat tab visible dengan cooldown 30 detik
-  useVisibilityRefetch(fetchRankings)
-
-
-
   // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
   const pathname = usePathname()
   const refetchAll = useCallback(() => {
@@ -241,19 +237,8 @@ const RankingView = () => {
     }
   }, [fetchRankings, isAdmin, studentId, batchID])
 
-  useEffect(() => {
-    const onFocus = () => refetchAll()
-    const onVisible = () => { if (document.visibilityState === 'visible') refetchAll() }
-    window.addEventListener('focus', onFocus)
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      window.removeEventListener('focus', onFocus)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [refetchAll])
-
   useEffect(() => { refetchAll() }, [pathname, refetchAll])
-
+  useVisibilityRefetch(refetchAll)
   const handleViewHistory = useCallback(async (row) => {
     setHistoryStudent(row)
     setHistoryLoading(true)

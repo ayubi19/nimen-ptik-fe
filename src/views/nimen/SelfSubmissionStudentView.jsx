@@ -170,6 +170,7 @@ const SelfSubmissionStudentView = () => {
   useVisibilityRefetch(fetchData)
 
   const pathname = usePathname()
+  useEffect(() => { fetchData() }, [pathname, fetchData])
   useEffect(() => {
     const onFocus = () => fetchData()
     const onVisible = () => { if (document.visibilityState === 'visible') fetchData() }

@@ -160,6 +160,9 @@ const SelfSubmissionAdminView = () => {
 
   useVisibilityRefetch(fetchData)
 
+  const pathname = usePathname()
+  useEffect(() => { fetchData() }, [pathname, fetchData])
+
 
   const handleOpenReview = useCallback((submission) => {
     setReviewTarget(submission)
