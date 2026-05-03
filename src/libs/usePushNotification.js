@@ -96,11 +96,16 @@ export function usePushNotification() {
         log('[PWA] existing subscription:', existing ? 'found' : 'none')
 
         if (existing) {
-          log('[PWA] sending existing subscription to BE...')
-          await saveSubscription(existing)
-          subscribedRef.current = true
-          log('[PWA] existing subscription saved!')
-          return
+          try {
+            log('[PWA] sending existing subscription to BE...')
+            await saveSubscription(existing)
+            subscribedRef.current = true
+            log('[PWA] existing subscription saved!')
+            return
+          } catch {
+            log('[PWA] existing subscription invalid, unsubscribing...')
+            await existing.unsubscribe()
+          }
         }
 
         log('[PWA] subscribing to push...')
