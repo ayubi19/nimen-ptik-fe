@@ -1,4 +1,5 @@
 'use client'
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
@@ -184,16 +185,11 @@ const NimenSprintListView = () => {
   }, [page, pageSize, globalFilter, batchFilter, statusFilter, showToast])
 
   useEffect(() => { fetchData() }, [fetchData])
+  // Refetch saat tab visible dengan cooldown 30 detik
+  useVisibilityRefetch(fetchData)
 
 
-  // Refetch saat tab kembali aktif
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') fetchData()
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [fetchData])
+
   const handleDelete = useCallback(async () => {
     setDeleteLoading(true)
     try {

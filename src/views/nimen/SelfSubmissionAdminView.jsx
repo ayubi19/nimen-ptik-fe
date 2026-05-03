@@ -1,4 +1,5 @@
 'use client'
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -157,20 +158,8 @@ const SelfSubmissionAdminView = () => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
-  const pathname = usePathname()
-  useEffect(() => {
-    const onFocus = () => fetchData()
-    const onVisible = () => { if (document.visibilityState === 'visible') fetchData() }
-    window.addEventListener('focus', onFocus)
-    document.addEventListener('visibilitychange', onVisible)
-    return () => {
-      window.removeEventListener('focus', onFocus)
-      document.removeEventListener('visibilitychange', onVisible)
-    }
-  }, [fetchData])
+  useVisibilityRefetch(fetchData)
 
-  useEffect(() => { fetchData() }, [pathname, fetchData])
 
   const handleOpenReview = useCallback((submission) => {
     setReviewTarget(submission)

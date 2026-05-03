@@ -19,6 +19,7 @@ import classnames from 'classnames'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 import { useSettings } from '@core/hooks/useSettings'
 import { notificationApi } from '@/libs/api/notificationApi'
 
@@ -182,16 +183,9 @@ const NotificationDropdown = () => {
     }
   }, [status, accessToken, fetchAll])
 
-  // Refetch saat tab kembali aktif — catch-up notif yang terlewat saat SSE putus
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible' && status === 'authenticated' && accessToken) {
-        fetchAll()
-      }
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [status, accessToken, fetchAll])
+  // Refetch notif saat tab visible, tapi hanya kalau sudah authenticated
+  useVisibilityRefetch(fetchAll, 30_000, status === 'authenticated' && !!accessToken)
+
 
   // Handler notif baru dari SSE
   const handleNewNotification = useCallback((notif) => {

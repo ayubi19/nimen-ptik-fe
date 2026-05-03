@@ -1,4 +1,5 @@
 'use client'
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useEffect, useState, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
@@ -174,7 +175,8 @@ const CoordinatorSprintListView = () => {
 
   useEffect(() => { fetchSprints() }, [fetchSprints])
 
-  // Refetch saat halaman mendapat fokus kembali atau navigasi dari notifikasi
+  useVisibilityRefetch(fetchSprints)
+
   const pathname = usePathname()
   useEffect(() => {
     const onFocus = () => fetchSprints()
@@ -187,7 +189,6 @@ const CoordinatorSprintListView = () => {
     }
   }, [fetchSprints])
 
-  useEffect(() => { fetchSprints() }, [pathname, fetchSprints])
 
   const handleReview = useCallback((id) => {
     router.push(`/nimen/sprints/${id}/coordinator-review`)

@@ -1,4 +1,5 @@
 'use client'
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -159,15 +160,9 @@ const NimenSprintDetailView = ({ sprintId }) => {
   }, [sprintId, showToast])
 
   useEffect(() => { fetchSprint() }, [fetchSprint])
+  // Refetch saat tab visible dengan cooldown 30 detik
+  useVisibilityRefetch(fetchSprint)
 
-  // Refetch saat tab kembali aktif (dari notifikasi atau pindah tab)
-  useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') fetchSprint()
-    }
-    document.addEventListener('visibilitychange', onVisibility)
-    return () => document.removeEventListener('visibilitychange', onVisibility)
-  }, [fetchSprint])
 
 
   useEffect(() => {

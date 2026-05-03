@@ -1,4 +1,5 @@
 'use client'
+import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -166,7 +167,8 @@ const SelfSubmissionStudentView = () => {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // Refetch saat halaman mendapat fokus kembali (misal: klik notif → redirect ke halaman ini)
+  useVisibilityRefetch(fetchData)
+
   const pathname = usePathname()
   useEffect(() => {
     const onFocus = () => fetchData()
@@ -179,8 +181,6 @@ const SelfSubmissionStudentView = () => {
     }
   }, [fetchData])
 
-  // Refetch saat pathname berubah (navigasi dari notif ke halaman ini)
-  useEffect(() => { fetchData() }, [pathname, fetchData])
 
   const resetCreate = useCallback(() => {
     setEventDate(null); setNotes(''); setPendingFiles([])
