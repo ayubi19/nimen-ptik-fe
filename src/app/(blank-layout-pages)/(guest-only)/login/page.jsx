@@ -1,18 +1,20 @@
-// Component Imports
+'use client'
+
+import { Suspense } from 'react'
 import LoginView from '@views/Login'
+import LoginNative from '@views/LoginNative'
+import useIsPWA from '@/hooks/useIsPWA'
 
-// Server Action Imports
-import { getServerMode } from '@core/utils/serverHelpers'
-
-export const metadata = {
-  title: 'Login | Nimen PTIK',
-  description: 'Login ke aplikasi Nimen PTIK'
+// Wrapper client component untuk deteksi PWA
+const LoginRouter = () => {
+  const isPWA = useIsPWA()
+  return isPWA ? <LoginNative /> : <LoginView mode='light' />
 }
 
-const LoginPage = async () => {
-  const mode = await getServerMode()
-
-  return <LoginView mode={mode} />
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginRouter />
+    </Suspense>
+  )
 }
-
-export default LoginPage
