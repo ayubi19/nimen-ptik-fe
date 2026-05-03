@@ -486,7 +486,7 @@ const RankingView = () => {
                     <Table size='small'>
                       <TableHead>
                         <TableRow sx={{ bgcolor: 'action.hover' }}>
-                          {['Tanggal', 'Indikator', 'Kategori', 'Sumber', 'Nilai'].map(h => (
+                          {['Tanggal', 'Indikator', 'Kategori', 'Kegiatan', 'Nilai'].map(h => (
                             <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                               {h}
                             </TableCell>
@@ -514,7 +514,13 @@ const RankingView = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Chip label={srcCfg.label} color={srcCfg.color} size='small' variant='tonal' />
+                                <Typography variant='caption' color='text.secondary'>
+                                  {e.source_type === 'AUTOMATIC'
+                                    ? 'Otomatis'
+                                    : e.source_type === 'SELF_SUBMISSION'
+                                      ? 'Pengajuan Mandiri'
+                                      : e.sprint_participant?.sprint?.title || '—'}
+                                </Typography>
                               </TableCell>
                               <TableCell align='right'>
                                 <Typography variant='body2' fontWeight={700}
@@ -890,7 +896,7 @@ const RankingView = () => {
                 <Table size='small'>
                   <TableHead>
                     <TableRow sx={{ bgcolor: 'action.hover' }}>
-                      {['Tanggal', 'Indikator', 'Sumber', 'Nilai', 'Status'].map(h => (
+                      {['Tanggal', 'Indikator', 'Kegiatan', 'Nilai', 'Status'].map(h => (
                         <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>{h}</TableCell>
                       ))}
                     </TableRow>
@@ -915,7 +921,13 @@ const RankingView = () => {
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Chip label={src.label} color={src.color} size='small' variant='tonal' />
+                            <Typography variant='caption' color='text.secondary'>
+                              {entry.source_type === 'AUTOMATIC'
+                                ? 'Otomatis'
+                                : entry.source_type === 'SELF_SUBMISSION'
+                                  ? 'Pengajuan Mandiri'
+                                  : entry.sprint_participant?.sprint?.title || '—'}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Chip
