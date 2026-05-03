@@ -18,6 +18,7 @@ import '@assets/iconify-icons/generated-icons.css'
 
 // Components
 import PushNotificationInit from '@/components/PushNotificationInit'
+import PWASplashInit from '@/components/PWASplashInit'
 
 export const metadata = {
   title:       'Nimen PTIK - Sistem Manajemen Nilai Mental Mahasiswa',
@@ -53,6 +54,7 @@ const RootLayout = async ({ children }) => {
     <body className='flex is-full min-bs-full flex-auto flex-col'>
     <InitColorSchemeScript attribute='data' defaultMode={systemMode} />
     <PushNotificationInit />
+    <PWASplashInit />
     {children}
     </body>
     </html>
