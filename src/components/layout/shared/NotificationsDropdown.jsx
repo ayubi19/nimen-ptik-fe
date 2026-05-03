@@ -225,8 +225,10 @@ const NotificationDropdown = () => {
     const url = getNotifUrl(n.type, n.ref_id)
     if (url) {
       setOpen(false)
+      // Dispatch custom event agar view yang aktif tahu harus refetch
+      // (pathname tidak berubah kalau user sudah di halaman yang sama)
+      window.dispatchEvent(new CustomEvent('nimen:refetch'))
       router.push(url)
-      setTimeout(() => router.refresh(), 100)
     }
   }, [router])
 
