@@ -453,7 +453,11 @@ const RankingView = () => {
                     <div className='flex flex-col gap-2'>
                       {myHistory.map(e => {
                         const isPlus = e.value >= 0
-                        const srcCfg = SOURCE_CONFIG[e.source_type] || { label: e.source_type, color: 'default' }
+                        const kegiatanLabel = e.source_type === 'AUTOMATIC'
+                          ? 'Otomatis'
+                          : e.source_type === 'SELF_SUBMISSION'
+                            ? 'Pengajuan Mandiri'
+                            : e.sprint_participant?.sprint?.title || '—'
                         return (
                           <Box key={e.id} sx={{ p: 1.5, borderRadius: 2, border: 1, borderColor: 'divider' }}>
                             <div className='flex items-start justify-between gap-2'>
@@ -474,8 +478,9 @@ const RankingView = () => {
                               <Typography variant='caption' color='text.secondary'>
                                 {new Date(e.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                               </Typography>
-                              <Chip label={srcCfg.label} color={srcCfg.color} size='small' variant='tonal'
-                                    sx={{ height: 18, fontSize: 10 }} />
+                              <Typography variant='caption' color='text.secondary'>
+                                · {kegiatanLabel}
+                              </Typography>
                             </div>
                           </Box>
                         )
