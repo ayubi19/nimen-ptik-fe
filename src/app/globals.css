@@ -121,6 +121,24 @@ input[autocomplete='one-time-code'][data-input-otp='true'] {
   inline-size: 100% !important;
 }
 
+/* ── PWA Native Feel ─────────────────────────────────────────────────────── */
+@media (display-mode: standalone) {
+  /* Hilangkan overscroll bounce effect yang terasa seperti browser */
+  body {
+    overscroll-behavior: none;
+  }
+
+  /* Hilangkan tap highlight bawaan browser */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Pastikan konten tidak nabrak safe area iOS (notch/home indicator) */
+  body {
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
 code {
   font-family: inherit;
   padding-block: 2px;

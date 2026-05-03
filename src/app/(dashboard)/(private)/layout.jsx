@@ -15,6 +15,7 @@ import VerticalFooter from '@components/layout/vertical/Footer'
 import HorizontalFooter from '@components/layout/horizontal/Footer'
 import ScrollToTop from '@core/components/scroll-to-top'
 import AuthGuard from '@/hocs/AuthGuard'
+import PWAVerticalLayout from '@components/layout/vertical/PWAVerticalLayout'
 
 // Config Imports
 import { getMode, getSystemMode } from '@core/utils/serverHelpers'
@@ -29,13 +30,13 @@ const Layout = async ({ children }) => {
         <LayoutWrapper
           systemMode={systemMode}
           verticalLayout={
-            <VerticalLayout
+            <PWAVerticalLayout
               navigation={<Navigation mode={mode} />}
               navbar={<Navbar />}
               footer={<VerticalFooter />}
             >
               {children}
-            </VerticalLayout>
+            </PWAVerticalLayout>
           }
           horizontalLayout={
             <HorizontalLayout header={<Header />} footer={<HorizontalFooter />}>
