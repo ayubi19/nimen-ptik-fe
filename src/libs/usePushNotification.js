@@ -46,22 +46,7 @@ export function usePushNotification() {
     if (typeof window === 'undefined') return
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return
 
-    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent)
-    const log = (msg) => {
-      console.log(msg)
-      // Tampilkan di layar sementara untuk debug mobile
-      if (isMobile) {
-        const el = document.getElementById('pwa-debug') || (() => {
-          const d = document.createElement('div')
-          d.id = 'pwa-debug'
-          d.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,0.8);color:#0f0;font-size:11px;padding:8px;z-index:99999;max-height:150px;overflow-y:auto;font-family:monospace'
-          document.body.appendChild(d)
-          return d
-        })()
-        el.innerHTML += msg + '<br>'
-        el.scrollTop = el.scrollHeight
-      }
-    }
+    const log = (_msg) => {}
 
     const setup = async () => {
       log('[PWA] setup started, permission: ' + Notification.permission)
