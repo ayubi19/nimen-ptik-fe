@@ -161,8 +161,32 @@ const NimenSprintFormView = ({ sprintId = null }) => {
                                   render={({ field }) => (
                                     <FormControl fullWidth error={!!errors.batch_id}>
                                       <InputLabel>Angkatan</InputLabel>
-                                      <Select {...field} label='Angkatan' disabled={isEdit}>
-                                        {batches.map(b => <MenuItem key={b.id} value={b.id}>{b.name} ({b.year})</MenuItem>)}
+                                      <Select {...field} label='Angkatan' disabled={isEdit}
+                                              renderValue={val => {
+                                                const b = batches.find(x => x.id === val || String(x.id) === String(val))
+                                                if (!b) return ''
+                                                return (
+                                                  <div className='flex items-center justify-between gap-2'>
+                                                    <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
+                                                    <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
+                                                          color={b.program_type === 'S2' ? 'info' : 'success'} sx={{ flexShrink: 0 }} />
+                                                  </div>
+                                                )
+                                              }}>
+                                        {batches.map(b => (
+                                          <MenuItem key={b.id} value={b.id}>
+                                            <div className='flex items-center justify-between w-full gap-2'>
+                                              <div>
+                                                <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                                                <Typography variant='caption' color='text.secondary'>
+                                                  Angkatan ke-{b.batch_number} · {b.year}
+                                                </Typography>
+                                              </div>
+                                              <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
+                                                    color={b.program_type === 'S2' ? 'info' : 'success'} />
+                                            </div>
+                                          </MenuItem>
+                                        ))}
                                       </Select>
                                       {errors.batch_id && <Typography variant='caption' color='error'>{errors.batch_id.message}</Typography>}
                                     </FormControl>
