@@ -44,7 +44,7 @@ const SplashScreen = ({ onDone }) => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#EB3D47',
+        background: '#ffffff',
         opacity: phase === 'hiding' ? 0 : 1,
         transition: 'opacity 500ms ease-in-out',
         // Tutup area notch / home indicator iOS & Android
@@ -69,14 +69,6 @@ const SplashScreen = ({ onDone }) => {
           height={96}
           priority
           style={{ borderRadius: '24px' }}
-        />
-        <Image
-          src='/images/logo.svg'
-          alt='Nimen PTIK'
-          width={140}
-          height={60}
-          priority
-          style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
         />
       </div>
 
