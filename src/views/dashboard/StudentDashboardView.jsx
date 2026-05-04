@@ -120,10 +120,10 @@ function RankingCard({ ranking, isMobile, onView }) {
   )
 }
 
-function ActiveSprintsCard({ items, isMobile, onView }) {
+function SprintHistoryCard({ items, isMobile, onView }) {
   return (
     <Card sx={{ borderRadius: 1, height: '100%' }}>
-      <CardHeader title='Sprint Aktif'
+      <CardHeader title='Riwayat Sprint'
                   titleTypographyProps={{ variant: 'body1', fontWeight: 500 }}
                   action={<Typography variant='caption' color='primary.main'
                                       sx={{ cursor: 'pointer', mt: 0.5, display: 'block' }}
@@ -132,7 +132,7 @@ function ActiveSprintsCard({ items, isMobile, onView }) {
       <Divider />
       <CardContent sx={{ pt: 1, pb: '12px !important' }}>
         {!items || items.length === 0
-          ? <EmptyState message='Tidak ada sprint aktif' />
+          ? <EmptyState message='Belum ada riwayat sprint' />
           : items.map((s, i) => {
             const approval = APPROVAL_STATUS_LABEL[s.approval_status] || { label: s.approval_status, color: 'default' }
             return (
@@ -144,17 +144,13 @@ function ActiveSprintsCard({ items, isMobile, onView }) {
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     <Typography variant='body2' fontWeight={500} noWrap>{s.title}</Typography>
                     <Typography variant='caption' color='text.secondary'>
-                      Deadline: {fmtDate(s.submission_deadline)}
+                      Kegiatan: {fmtDate(s.submission_deadline)}
                     </Typography>
                   </Box>
                   <Chip label={approval.label} color={approval.color} size='small' variant='tonal'
                         sx={{ flexShrink: 0 }} />
                 </Box>
-                {!s.document_submitted && (
-                  <Typography variant='caption' color='warning.main' sx={{ display: 'block', mt: 0.25 }}>
-                    Belum upload dokumen ({s.document_count} file)
-                  </Typography>
-                )}
+
               </Box>
             )
           })}
@@ -333,7 +329,7 @@ export default function StudentDashboardView({ hasPosition }) {
         <SectionLabel>Aktivitas Saya</SectionLabel>
         <Grid container spacing={spacing}>
           <Grid item xs={12} sm={6}>
-            <ActiveSprintsCard
+            <SprintHistoryCard
               items={data?.active_sprints}
               isMobile={isMobile}
               onView={() => router.push('/nimen/my-sprints')}
@@ -349,17 +345,15 @@ export default function StudentDashboardView({ hasPosition }) {
         </Grid>
       </Box>
 
-      {/* ── Pelanggaran — hanya tampil jika ada data ── */}
-      {data?.punishments && data.punishments.length > 0 && (
-        <Box>
-          <SectionLabel>Pelanggaran Saya</SectionLabel>
-          <PunishmentsCard
-            items={data.punishments}
-            isMobile={isMobile}
-            onView={() => router.push('/violation')}
-          />
-        </Box>
-      )}
+      {/* ── Pelanggaran — selalu tampil ── */}
+      <Box>
+        <SectionLabel>Pelanggaran Saya</SectionLabel>
+        <PunishmentsCard
+          items={data?.punishments}
+          isMobile={isMobile}
+          onView={() => router.push('/violation')}
+        />
+      </Box>
 
       {/* ── Koordinator — hanya jika has_position = true ── */}
       {hasPosition && (

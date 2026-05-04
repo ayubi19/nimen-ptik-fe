@@ -5,22 +5,26 @@ import StudentDashboardView from '@/views/dashboard/StudentDashboardView'
 
 export const metadata = { title: 'Dashboard | Nimen PTIK' }
 
+// Decode JWT di server side menggunakan Buffer (sama seperti VerticalMenu tapi server-safe)
+function decodeJwt(token) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(Buffer.from(base64, 'base64').toString('utf8'))
+  } catch { return {} }
+}
+
 const DashboardPage = async () => {
-  const session    = await getServerSession(authOptions)
-  const roles      = session?.user?.roles || []
-  const isDeveloper = session?.user?.isDeveloper || false
+  const session = await getServerSession(authOptions)
+  const accessToken = session?.user?.accessToken
 
-  const isAdmin = isDeveloper || roles.some(r =>
-    (typeof r === 'string' ? r : r.name) === 'admin_nimen'
-  )
+  // Decode JWT untuk ambil claims langsung — konsisten dengan VerticalMenu.jsx
+  const jwtPayload  = accessToken ? decodeJwt(accessToken) : {}
+  const isDeveloper = jwtPayload?.is_developer === true
+  const roleNames   = (jwtPayload?.roles || []).map(r => typeof r === 'string' ? r : r.name)
+  const hasPosition = jwtPayload?.has_position === true
 
-  // Cek apakah mahasiswa biasa (bukan admin)
-  const isStudent = !isAdmin && roles.some(r =>
-    (typeof r === 'string' ? r : r.name) === 'mahasiswa'
-  ) || (!isAdmin && !isDeveloper)
-
-  // has_position dari JWT payload — mahasiswa dengan jabatan koordinator
-  const hasPosition = session?.user?.has_position === true
+  const isAdmin   = isDeveloper || roleNames.includes('admin_nimen')
+  const isStudent = !isAdmin
 
   if (isAdmin) {
     return (
