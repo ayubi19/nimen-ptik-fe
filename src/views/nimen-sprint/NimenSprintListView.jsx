@@ -2,7 +2,7 @@
 import { useVisibilityRefetch } from '@/hooks/useVisibilityRefetch'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
@@ -151,7 +151,7 @@ const NimenSprintListView = () => {
   const [batches, setBatches]       = useState([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [batchFilter, setBatchFilter]   = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '')
   const [page, setPage]             = useState(0)
   const [pageSize, setPageSize]     = useState(10)
   const [deleteTarget, setDeleteTarget] = useState(null)

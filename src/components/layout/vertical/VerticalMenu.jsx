@@ -100,11 +100,6 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuSection>
         )}
 
-        {/* ── Jadwal — semua role ── */}
-        <MenuSection label='Jadwal'>
-          <MenuItem href='/schedule' icon={<i className='ri-calendar-line' />}>Jadwal Kegiatan</MenuItem>
-        </MenuSection>
-
         {/* ── Master Data — hanya admin & developer ── */}
         {canManageMasterData && (
           <MenuSection label='Master Data'>
