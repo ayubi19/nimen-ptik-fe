@@ -142,6 +142,7 @@ const SprintMobileCard = ({ sprint, onDelete, router }) => {
 // ── Main View ─────────────────────────────────────────────────────────────────
 const NimenSprintListView = () => {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 

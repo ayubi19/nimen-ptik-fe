@@ -35,8 +35,7 @@ const fmtDate = (str) => {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function StudentCard({ label, badge, data }) {
-  const isMobile = useMediaQuery(theme => theme.breakpoints.down('md'))
+function StudentCard({ label, badge, data, isMobile }) {
   return (
     <Card sx={{ borderRadius: 1 }}>
       <CardContent sx={{ pb: '14px !important', pt: 2 }}>
@@ -224,6 +223,7 @@ export default function AdminDashboardView() {
   const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const router                = useRouter()
+  const isMobile = useMediaQuery(theme => theme.breakpoints.down('md'))
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
   const showToast = useCallback((msg, severity = 'success') =>
     setToast({ open: true, message: msg, severity }), [])
@@ -260,10 +260,10 @@ export default function AdminDashboardView() {
         </Typography>
         <Grid container spacing={isMobile ? 1.5 : 2}>
           <Grid item xs={12} sm={6}>
-            <StudentCard label='Mahasiswa S1' badge='S1' data={data?.students?.s1} />
+            <StudentCard label='Mahasiswa S1' badge='S1' data={data?.students?.s1} isMobile={isMobile} />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <StudentCard label='Mahasiswa S2' badge='S2' data={data?.students?.s2} />
+            <StudentCard label='Mahasiswa S2' badge='S2' data={data?.students?.s2} isMobile={isMobile} />
           </Grid>
         </Grid>
       </Box>
