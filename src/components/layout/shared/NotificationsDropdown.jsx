@@ -280,10 +280,12 @@ const NotificationDropdown = () => {
                     {items.length > 0 && (
                       <Tooltip title='Tandai semua sudah dibaca'
                                placement={placement === 'bottom-end' ? 'left' : 'right'}>
-                        <IconButton size='small' onClick={handleMarkAllRead}
-                                    disabled={allRead} className='text-textPrimary'>
-                          <i className={classnames(allRead ? 'ri-mail-line' : 'ri-mail-open-line', 'text-xl')} />
-                        </IconButton>
+                        <span>
+                          <IconButton size='small' onClick={handleMarkAllRead}
+                                      disabled={allRead} className='text-textPrimary'>
+                            <i className={classnames(allRead ? 'ri-mail-line' : 'ri-mail-open-line', 'text-xl')} />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     )}
                   </div>

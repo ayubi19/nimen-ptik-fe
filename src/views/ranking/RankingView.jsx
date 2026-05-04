@@ -305,6 +305,7 @@ const RankingView = () => {
       SPRINT:          { label: 'Sprint',            color: 'primary' },
       SELF_SUBMISSION: { label: 'Pengajuan Mandiri', color: 'info'    },
       AUTOMATIC:       { label: 'Otomatis',          color: 'success' },
+      VIOLATION:       { label: 'Pelanggaran',        color: 'error'   },
     }
     const maxValue = myRanking?.max_value || 95
     const totalValue = myRanking?.total_value || 0
@@ -313,7 +314,8 @@ const RankingView = () => {
     const totalStudents = myRanking?.total || 0
 
     const bySource = myHistory.reduce((acc, e) => {
-      const key = e.source_type
+      // Nilai negatif dari AUTOMATIC = pelanggaran, tampilkan terpisah
+      const key = e.source_type === 'AUTOMATIC' && e.value < 0 ? 'VIOLATION' : e.source_type
       acc[key] = (acc[key] || 0) + e.value
       return acc
     }, {})

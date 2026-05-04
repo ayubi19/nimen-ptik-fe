@@ -13,6 +13,9 @@ export const notificationApi = {
   // Tandai semua sebagai dibaca
   markAllRead: () => apiClient.patch('/notifications/read-all'),
 
+  // List dengan pagination untuk halaman notifikasi
+  getList: (params) => apiClient.get('/notifications/list', { params }),
+
   // Web Push subscription
   subscribe:   (data) => apiClient.post('/push-subscriptions', data),
   unsubscribe: (endpoint) => apiClient.delete('/push-subscriptions', { data: { endpoint } }),

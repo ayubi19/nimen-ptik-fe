@@ -59,6 +59,7 @@ const VerticalMenu = ({ scrollMenu }) => {
       >
         {/* ── Dashboard — semua role ── */}
         <MenuItem href='/dashboard' icon={<i className='ri-home-smile-line' />}>Dashboard</MenuItem>
+        <MenuItem href='/notifications' icon={<i className='ri-notification-line' />}>Notifikasi</MenuItem>
 
         {/* ── Akademik ── */}
         <MenuSection label='Akademik'>
@@ -88,6 +89,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           )}
 
           <MenuItem href='/ranking' icon={<i className='ri-bar-chart-line' />}>Peringkat</MenuItem>
+          <MenuItem href='/violation' icon={<i className='ri-error-warning-line' />}>Pelanggaran</MenuItem>
         </MenuSection>
 
         {/* ── Section Mahasiswa — hanya admin & developer ── */}
@@ -96,7 +98,6 @@ const VerticalMenu = ({ scrollMenu }) => {
             <MenuItem href='/students/list' icon={<i className='ri-group-line' />}>Daftar Mahasiswa</MenuItem>
             <MenuItem href='/onboarding' icon={<i className='ri-user-add-line' />}>Onboarding</MenuItem>
             <MenuItem href='/students/organization' icon={<i className='ri-organization-chart' />}>Struktur Organisasi</MenuItem>
-            <MenuItem href='/violation' icon={<i className='ri-error-warning-line' />}>Pelanggaran</MenuItem>
           </MenuSection>
         )}
 

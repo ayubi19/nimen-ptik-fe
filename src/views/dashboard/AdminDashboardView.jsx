@@ -175,7 +175,7 @@ function RankingCard({ title, batchName, items, onViewAll }) {
   )
 }
 
-function PunishmentCard({ title, badge, items, onViewAll }) {
+function ViolationCard({ title, badge, punishments, notes, onViewAll }) {
   return (
     <Card sx={{ borderRadius: 1 }}>
       <CardHeader
@@ -193,13 +193,22 @@ function PunishmentCard({ title, badge, items, onViewAll }) {
         sx={{ pb: 1 }}
       />
       <Divider />
-      <CardContent sx={{ pt: 1, pb: '12px !important' }}>
-        {!items || items.length === 0 ? (
-          <Typography variant='caption' color='text.secondary'>Belum ada data pelanggaran</Typography>
-        ) : items.map((p, i) => (
-          <Box key={`${p.student_id}-${i}`} sx={{
+
+      {/* Sub-section: Pelanggaran Nilai */}
+      <Box sx={{ px: 2, py: 0.75, bgcolor: 'background.default' }}>
+        <Typography variant='caption' color='text.secondary'
+                    sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10, fontWeight: 500 }}>
+          Pelanggaran Nilai
+        </Typography>
+      </Box>
+      <Divider />
+      <CardContent sx={{ pt: 1, pb: 1, px: 2 }}>
+        {!punishments || punishments.length === 0 ? (
+          <Typography variant='caption' color='text.secondary'>Belum ada pelanggaran nilai</Typography>
+        ) : punishments.map((p, i) => (
+          <Box key={`p-${p.student_id}-${i}`} sx={{
             display: 'flex', alignItems: 'flex-start', gap: 1,
-            py: 0.75, borderBottom: i < items.length - 1 ? '0.5px solid' : 'none',
+            py: 0.75, borderBottom: i < punishments.length - 1 ? '0.5px solid' : 'none',
             borderColor: 'divider',
           }}>
             <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -210,6 +219,36 @@ function PunishmentCard({ title, badge, items, onViewAll }) {
             </Box>
             <Typography variant='caption' color='text.secondary' sx={{ flexShrink: 0 }}>
               {fmtDate(p.event_date)}
+            </Typography>
+          </Box>
+        ))}
+      </CardContent>
+
+      <Divider />
+
+      {/* Sub-section: Catatan Pelanggaran */}
+      <Box sx={{ px: 2, py: 0.75, bgcolor: 'background.default' }}>
+        <Typography variant='caption' color='text.secondary'
+                    sx={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: 10, fontWeight: 500 }}>
+          Catatan Pelanggaran
+        </Typography>
+      </Box>
+      <Divider />
+      <CardContent sx={{ pt: 1, pb: '12px !important', px: 2 }}>
+        {!notes || notes.length === 0 ? (
+          <Typography variant='caption' color='text.secondary'>Belum ada catatan pelanggaran</Typography>
+        ) : notes.map((n, i) => (
+          <Box key={`n-${n.student_id}-${i}`} sx={{
+            display: 'flex', alignItems: 'flex-start', gap: 1,
+            py: 0.75, borderBottom: i < notes.length - 1 ? '0.5px solid' : 'none',
+            borderColor: 'divider',
+          }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant='body2' fontWeight={500} noWrap>{n.full_name}</Typography>
+              <Typography variant='caption' color='text.secondary' noWrap>{n.description}</Typography>
+            </Box>
+            <Typography variant='caption' color='text.secondary' sx={{ flexShrink: 0 }}>
+              {fmtDate(n.event_date)}
             </Typography>
           </Box>
         ))}
@@ -251,6 +290,13 @@ export default function AdminDashboardView() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2'>
+        <Typography variant='caption' color='text.secondary'>NIMEN PTIK</Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary'>Dashboard</Typography>
+      </div>
 
       {/* ── Section: Mahasiswa ── */}
       <Box>
@@ -324,16 +370,18 @@ export default function AdminDashboardView() {
         </Typography>
         <Grid container spacing={isMobile ? 1.5 : 2}>
           <Grid item xs={12} sm={6}>
-            <PunishmentCard
+            <ViolationCard
               title='Pelanggaran S1' badge='S1'
-              items={data?.recent_punishments_s1}
+              punishments={data?.recent_punishments_s1}
+              notes={data?.recent_violation_notes_s1}
               onViewAll={() => router.push('/violation')}
             />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <PunishmentCard
+            <ViolationCard
               title='Pelanggaran S2' badge='S2'
-              items={data?.recent_punishments_s2}
+              punishments={data?.recent_punishments_s2}
+              notes={data?.recent_violation_notes_s2}
               onViewAll={() => router.push('/violation')}
             />
           </Grid>

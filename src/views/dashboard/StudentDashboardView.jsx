@@ -194,6 +194,36 @@ function SelfSubmissionCard({ items, isMobile, onView }) {
   )
 }
 
+function ViolationNotesCard({ items, isMobile, onView }) {
+  return (
+    <Card sx={{ borderRadius: 1, height: '100%' }}>
+      <CardHeader title='Catatan Pelanggaran'
+                  titleTypographyProps={{ variant: 'body1', fontWeight: 500 }}
+                  action={<Typography variant='caption' color='primary.main'
+                                      sx={{ cursor: 'pointer', mt: 0.5, display: 'block' }}
+                                      onClick={onView}>Lihat semua →</Typography>}
+                  sx={{ pb: 1 }} />
+      <Divider />
+      <CardContent sx={{ pt: 1, pb: '12px !important' }}>
+        {!items || items.length === 0
+          ? <EmptyState message='Tidak ada catatan pelanggaran' />
+          : items.map((n, i) => (
+            <Box key={n.id} sx={{
+              py: 0.75, borderBottom: i < items.length - 1 ? '0.5px solid' : 'none',
+              borderColor: 'divider',
+            }}>
+              <Typography variant='body2' color='text.secondary'
+                          sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {n.description}
+              </Typography>
+              <Typography variant='caption' color='text.secondary'>{fmtDate(n.event_date)}</Typography>
+            </Box>
+          ))}
+      </CardContent>
+    </Card>
+  )
+}
+
 function PunishmentsCard({ items, isMobile, onView }) {
   return (
     <Card sx={{ borderRadius: 1 }}>
@@ -314,6 +344,13 @@ export default function StudentDashboardView({ hasPosition }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
+      {/* Breadcrumb */}
+      <div className='flex items-center gap-2'>
+        <Typography variant='caption' color='text.secondary'>NIMEN PTIK</Typography>
+        <i className='ri-arrow-right-s-line text-sm opacity-50' />
+        <Typography variant='caption' fontWeight={500} color='text.primary'>Dashboard</Typography>
+      </div>
+
       {/* ── Peringkat ── */}
       <Box>
         <SectionLabel>Peringkat Saya</SectionLabel>
@@ -348,11 +385,22 @@ export default function StudentDashboardView({ hasPosition }) {
       {/* ── Pelanggaran — selalu tampil ── */}
       <Box>
         <SectionLabel>Pelanggaran Saya</SectionLabel>
-        <PunishmentsCard
-          items={data?.punishments}
-          isMobile={isMobile}
-          onView={() => router.push('/violation')}
-        />
+        <Grid container spacing={spacing}>
+          <Grid item xs={12} sm={6}>
+            <PunishmentsCard
+              items={data?.punishments}
+              isMobile={isMobile}
+              onView={() => router.push('/violation')}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <ViolationNotesCard
+              items={data?.violation_notes}
+              isMobile={isMobile}
+              onView={() => router.push('/violation')}
+            />
+          </Grid>
+        </Grid>
       </Box>
 
       {/* ── Koordinator — hanya jika has_position = true ── */}
