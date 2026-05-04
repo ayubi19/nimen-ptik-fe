@@ -2,6 +2,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/libs/auth'
 import AdminDashboardView from '@/views/dashboard/AdminDashboardView'
 import StudentDashboardView from '@/views/dashboard/StudentDashboardView'
+import PWADashboardWrapper from '@/views/dashboard/PWADashboardWrapper'
 
 export const metadata = { title: 'Dashboard | Nimen PTIK' }
 
@@ -21,9 +22,13 @@ const DashboardPage = async () => {
   const hasPosition = jwtPayload?.has_position === true
   const isAdmin     = isDeveloper || roleNames.includes('admin_nimen')
 
-  if (isAdmin) return <AdminDashboardView />
-
-  return <StudentDashboardView hasPosition={hasPosition} />
+  return (
+    <PWADashboardWrapper
+      isAdmin={isAdmin}
+      hasPosition={hasPosition}
+      webView={isAdmin ? <AdminDashboardView /> : <StudentDashboardView hasPosition={hasPosition} />}
+    />
+  )
 }
 
 export default DashboardPage

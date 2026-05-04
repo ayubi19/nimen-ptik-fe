@@ -1,39 +1,45 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 
 /**
- * Mendeteksi apakah app sedang berjalan dalam mode PWA (add to home screen).
- * Mengembalikan `true` jika display-mode adalah standalone, fullscreen, atau minimal-ui.
+ * Mendeteksi PWA mode (display-mode: standalone).
  *
- * DEV MODE: tambahkan ?pwa=1 di URL untuk force PWA mode tanpa install.
- * Contoh: http://localhost:3000/dashboard?pwa=1
- * Setelah itu semua halaman akan ikut PWA mode (disimpan di sessionStorage).
+ * Pattern yang benar untuk Next.js:
+ * - Server: selalu return false (tidak bisa deteksi)
+ * - Client: deteksi di useEffect setelah hydration selesai
+ * - Untuk mencegah flash: gunakan CSS media query sebagai guard utama,
+ *   JS hanya untuk komponen yang HARUS tahu (bottom nav, login router)
+ *
+ * DEV: tambahkan ?pwa=1 di URL untuk force PWA mode.
  */
 const useIsPWA = () => {
   const [isPWA, setIsPWA] = useState(false)
 
   useEffect(() => {
-    // ── Cek display-mode standalone (production) ──────────────────────────
-    const mq = window.matchMedia(
-      '(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)'
-    )
+    const check = () => {
+      // iOS Safari
+      if (window.navigator.standalone === true) return true
 
-    // ── Dev helper: ?pwa=1 di URL → force PWA mode ────────────────────────
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('pwa') === '1') {
-      sessionStorage.setItem('force_pwa', '1')
-    } else if (params.get('pwa') === '0') {
-      sessionStorage.removeItem('force_pwa')
+      // Standard display-mode
+      if (window.matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches) return true
+
+      // Dev helper
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('pwa') === '1') {
+        sessionStorage.setItem('force_pwa', '1')
+        return true
+      }
+      if (params.get('pwa') === '0') {
+        sessionStorage.removeItem('force_pwa')
+        return false
+      }
+      if (sessionStorage.getItem('force_pwa') === '1') return true
+
+      return false
     }
-    const isForcedDev = sessionStorage.getItem('force_pwa') === '1'
 
-    setIsPWA(mq.matches || isForcedDev)
-
-    const handler = (e) => setIsPWA(e.matches || isForcedDev)
-    mq.addEventListener('change', handler)
-
-    return () => mq.removeEventListener('change', handler)
+    setIsPWA(check())
   }, [])
 
   return isPWA
