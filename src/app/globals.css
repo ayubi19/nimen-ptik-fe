@@ -139,6 +139,27 @@ input[autocomplete='one-time-code'][data-input-otp='true'] {
   }
 }
 
+/* Sembunyikan sidebar SEBELUM JS hydration — cegah flash */
+/* Berlaku saat inline script set class is-pwa DI html tag */
+html.is-pwa .layout-nav-vertical,
+html.is-pwa nav[class*="navigation"],
+html.is-pwa aside[class*="navigation"],
+html.is-pwa .nav-header,
+html.is-pwa [class*="verticalNav"] {
+  display: none !important;
+}
+
+/* Juga hide via CSS display-mode sebagai fallback */
+@media (display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui) {
+  .layout-nav-vertical,
+  nav[class*="navigation"],
+  aside[class*="navigation"],
+  .nav-header,
+  [class*="verticalNav"] {
+    display: none !important;
+  }
+}
+
 code {
   font-family: inherit;
   padding-block: 2px;

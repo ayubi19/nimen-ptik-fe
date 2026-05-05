@@ -50,6 +50,20 @@ const RootLayout = async ({ children }) => {
       <meta name='apple-mobile-web-app-status-bar-style' content='default' />
       <meta name='apple-mobile-web-app-title' content='Nimen PTIK' />
       <link rel='apple-touch-icon' href='/images/icon-192x192.png' />
+      {/* Deteksi PWA mode sebelum hydration — cegah flash sidebar */}
+      <script dangerouslySetInnerHTML={{ __html: `
+        (function() {
+          try {
+            var isPWA =
+              window.navigator.standalone === true ||
+              window.matchMedia('(display-mode: standalone)').matches ||
+              window.matchMedia('(display-mode: fullscreen)').matches ||
+              window.matchMedia('(display-mode: minimal-ui)').matches ||
+              sessionStorage.getItem('force_pwa') === '1';
+            if (isPWA) document.documentElement.classList.add('is-pwa');
+          } catch(e) {}
+        })();
+      ` }} />
     </head>
     <body className='flex is-full min-bs-full flex-auto flex-col'>
     <InitColorSchemeScript attribute='data' defaultMode={systemMode} />

@@ -6,25 +6,24 @@ import { useState, useEffect } from 'react'
  * Mendeteksi PWA mode (display-mode: standalone).
  *
  * Pattern yang benar untuk Next.js:
- * - Server: selalu return false (tidak bisa deteksi)
- * - Client: deteksi di useEffect setelah hydration selesai
- * - Untuk mencegah flash: gunakan CSS media query sebagai guard utama,
- *   JS hanya untuk komponen yang HARUS tahu (bottom nav, login router)
+ * - Initial state: baca dari class 'is-pwa' yang sudah di-set oleh inline script
+ *   di <head> sebelum hydration — ini mencegah flash sidebar
+ * - useEffect: sync ulang setelah hydration untuk memastikan konsisten
  *
  * DEV: tambahkan ?pwa=1 di URL untuk force PWA mode.
  */
 const useIsPWA = () => {
-  const [isPWA, setIsPWA] = useState(false)
+  // Baca langsung dari class HTML — sudah di-set oleh inline script sebelum render
+  const [isPWA, setIsPWA] = useState(() => {
+    if (typeof document === 'undefined') return false
+    return document.documentElement.classList.contains('is-pwa')
+  })
 
   useEffect(() => {
     const check = () => {
-      // iOS Safari
       if (window.navigator.standalone === true) return true
-
-      // Standard display-mode
       if (window.matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches) return true
 
-      // Dev helper
       const params = new URLSearchParams(window.location.search)
       if (params.get('pwa') === '1') {
         sessionStorage.setItem('force_pwa', '1')
@@ -32,6 +31,7 @@ const useIsPWA = () => {
       }
       if (params.get('pwa') === '0') {
         sessionStorage.removeItem('force_pwa')
+        document.documentElement.classList.remove('is-pwa')
         return false
       }
       if (sessionStorage.getItem('force_pwa') === '1') return true
@@ -39,7 +39,15 @@ const useIsPWA = () => {
       return false
     }
 
-    setIsPWA(check())
+    const result = check()
+    setIsPWA(result)
+
+    // Sync class dengan result
+    if (result) {
+      document.documentElement.classList.add('is-pwa')
+    } else {
+      document.documentElement.classList.remove('is-pwa')
+    }
   }, [])
 
   return isPWA
