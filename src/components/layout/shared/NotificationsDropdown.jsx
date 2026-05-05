@@ -38,6 +38,7 @@ const getNotifUrl = (type, refId) => {
     case 'SPRINT_COORD_SUBMITTED':   return refId ? `/nimen/sprints/${refId}` : '/nimen/sprints'
     case 'ONBOARDING_APPROVED':      return '/dashboard'
     case 'ONBOARDING_REJECTED':      return '/dashboard'
+    case 'VIOLATION_CREATED':        return '/ranking'
     default:                         return null
   }
 }
@@ -55,6 +56,7 @@ const TYPE_CONFIG = {
   ONBOARDING_NEW:           { icon: 'ri-user-add-line',        color: 'info'    },
   ONBOARDING_APPROVED:      { icon: 'ri-user-follow-line',     color: 'success' },
   ONBOARDING_REJECTED:      { icon: 'ri-user-unfollow-line',   color: 'error'   },
+  VIOLATION_CREATED:        { icon: 'ri-alert-line',           color: 'error'   },
 }
 
 const getTypeConfig = (type) =>
