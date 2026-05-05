@@ -151,21 +151,33 @@ function QuickAction({ icon, label, color, bg, onClick, badge }) {
 }
 
 
-// Sprint pipeline item (admin)
-function SprintPipelineItem({ status, count, onClick }) {
-  const cfg = SPRINT_STATUS_CONFIG[status] || { label: status, color: '#888', bg: '#f0f0f0' }
+// Sprint recent item (admin)
+function SprintRecentItem({ sprint, onClick }) {
+  const cfg = SPRINT_STATUS_CONFIG[sprint.status] || { label: sprint.status, color: '#888780', bg: '#F1EFE8' }
+  const fmtDate = (s) => s ? new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'
   return (
     <Box onClick={onClick} sx={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      p: 1.25, mb: 1, borderRadius: 1, cursor: 'pointer',
-      bgcolor: cfg.bg, '&:active': { opacity: 0.7 },
-      '&:last-child': { mb: 0 },
+      display: 'flex', alignItems: 'center', gap: 1.5,
+      py: 1.25, borderBottom: '0.5px solid', borderColor: 'divider',
+      cursor: 'pointer', '&:last-child': { borderBottom: 'none', pb: 0 },
+      '&:active': { opacity: 0.7 },
     }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: cfg.color, flexShrink: 0 }} />
-        <Typography variant='caption' fontWeight={600} sx={{ color: cfg.color }}>{cfg.label}</Typography>
+      <Box sx={{
+        width: 32, height: 32, borderRadius: 1, flexShrink: 0,
+        bgcolor: cfg.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: cfg.color }} />
       </Box>
-      <Typography variant='body2' fontWeight={700}>{count ?? 0}</Typography>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant='body2' fontWeight={500} noWrap>{sprint.title}</Typography>
+        <Typography variant='caption' color='text.secondary'>
+          {sprint.sprint_number} · {fmtDate(sprint.event_date)}
+        </Typography>
+      </Box>
+      <Chip label={cfg.label} size='small' sx={{
+        height: 20, fontSize: '10px', fontWeight: 600, flexShrink: 0,
+        bgcolor: cfg.bg, color: cfg.color, border: 'none',
+      }} />
     </Box>
   )
 }
@@ -440,15 +452,23 @@ function AdminPWADashboard({ session }) {
     { icon: 'ri-file-check-line',     label: 'Pengajuan',       color: '#D4537E', bg: '#FBEAF0', href: '/nimen/self-submissions' },
     { icon: 'ri-bar-chart-line',      label: 'Peringkat',       color: '#534AB7', bg: '#EEEDFE', href: '/ranking' },
     { icon: 'ri-error-warning-line',  label: 'Pelanggaran',     color: '#A32D2D', bg: '#FCEBEB', href: '/violation' },
-    { icon: 'ri-database-2-line',     label: 'Master Data',     color: '#888780', bg: '#F1EFE8', href: '/master-data/syndicates' },
-    { icon: 'ri-node-tree',           label: 'Struk. Nilai',    color: '#0F6E56', bg: '#E1F5EE', href: '/nimen/master-data/categories' },
     { icon: 'ri-settings-3-line',     label: 'Konfigurasi',     color: '#185FA5', bg: '#E6F1FB', href: '/nimen/batch-config' },
     { icon: 'ri-medal-2-line',        label: 'Nilai Jabatan',   color: '#BA7517', bg: '#FAEEDA', href: '/nimen/position-values' },
     { icon: 'ri-shield-user-line',    label: 'Manaj. User',     color: '#993556', bg: '#FBEAF0', href: '/users' },
+    { icon: 'ri-file-list-3-line',    label: 'NIMEN',           color: '#0F6E56', bg: '#E1F5EE', href: '/nimen' },
     { icon: 'ri-notification-2-line', label: 'Notifikasi',      color: '#EB3D47', bg: '#FCEBEB', href: '/notifications', badge: unread },
   ]
 
-  const sprintStatuses = ['DRAFT_ADMIN', 'DRAFT_PEJABAT', 'REVIEW_SUBMITTED', 'APPROVAL_PENDING', 'ACTIVE']
+  const masterDataActions = [
+    { icon: 'ri-team-line',           label: 'Sindikat',        color: '#D4537E', bg: '#FBEAF0', href: '/master-data/syndicates' },
+    { icon: 'ri-graduation-cap-line', label: 'Angkatan',        color: '#D4537E', bg: '#FBEAF0', href: '/master-data/batches' },
+    { icon: 'ri-checkbox-circle-line',label: 'Status Akademik', color: '#D4537E', bg: '#FBEAF0', href: '/master-data/academic-statuses' },
+    { icon: 'ri-list-check-2',        label: 'Kategori Nilai',  color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/categories' },
+    { icon: 'ri-calendar-2-line',     label: 'Variabel',        color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/variables' },
+    { icon: 'ri-user-settings-line',  label: 'Indikator',       color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/indicators' },
+  ]
+
+
 
   if (loading) return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -471,7 +491,7 @@ function AdminPWADashboard({ session }) {
 
       {/* Hero */}
       <HeroCard name={name} role={isDev ? 'Developer' : 'Admin NIMEN'} unread={unread} />
-      {/* Quick actions — semua menu yang tidak ada di bottom nav */}
+      {/* Quick actions — menu operasional */}
       <Box>
         <Typography variant='caption' color='text.secondary'
                     sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', mb: 2, display: 'block' }}>
@@ -485,23 +505,41 @@ function AdminPWADashboard({ session }) {
           ))}
         </Grid>
       </Box>
-      {/* Sprint pipeline */}
+
+      {/* Master Data section */}
+      <Box sx={{ border: '0.5px solid', borderColor: '#D02752', borderRadius: 1, p: 2 }}>
+        <Typography variant='caption' sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', mb: 2, display: 'block', color: '#8A244B', fontWeight: 600 }}>
+          Master Data
+        </Typography>
+        <Grid container spacing={2}>
+          {masterDataActions.map(a => (
+            <Grid item xs={4} key={a.label}>
+              <QuickAction {...a} onClick={() => router.push(a.href)} />
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* Sprint Terbaru — 5 sprint terakhir */}
       <Card sx={{ borderRadius: 1 }}>
         <CardContent sx={{ p: 2.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-            <Typography variant='body2' fontWeight={600}>Pipeline Sprint</Typography>
+            <Typography variant='body2' fontWeight={600}>Sprint Terbaru</Typography>
             <Typography variant='caption' color='primary.main'
                         sx={{ cursor: 'pointer' }} onClick={() => router.push('/nimen/sprints')}>
-              Kelola →
+              Lihat semua →
             </Typography>
           </Box>
-          {sprintStatuses.map(s => (
-            <SprintPipelineItem
-              key={s} status={s}
-              count={sprintCounts[s] ?? 0}
-              onClick={() => router.push(`/nimen/sprints?status=${s}`)}
-            />
-          ))}
+          {data?.recent_sprints?.length > 0 ? (
+            data.recent_sprints.map(s => (
+              <SprintRecentItem
+                key={s.id} sprint={s}
+                onClick={() => router.push(`/nimen/sprints/${s.id}`)}
+              />
+            ))
+          ) : (
+            <Typography variant='caption' color='text.secondary'>Belum ada sprint yang dibuat.</Typography>
+          )}
         </CardContent>
       </Card>
 

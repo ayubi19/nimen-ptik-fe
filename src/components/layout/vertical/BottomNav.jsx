@@ -22,9 +22,13 @@ const buildMenuItems = ({ isStudent, hasPosition }) => {
       : { key: 'sprint', href: '/nimen/my-sprints', icon: 'ri-calendar-check-line', label: 'Sprint' }
     : null
 
+  const nimenItem = isStudent
+    ? { key: 'nimen', href: '/nimen', icon: 'ri-medal-line', label: 'NIMEN' }
+    : { key: 'sprint', href: '/nimen/sprints', icon: 'ri-shield-line', label: 'Sprint' }
+
   return [
     { key: 'dashboard',  href: '/dashboard',  icon: 'ri-home-smile-line', label: 'Dashboard' },
-    { key: 'nimen',      href: '/nimen',       icon: 'ri-medal-line',       label: 'NIMEN'     },
+    nimenItem,
     ...(middle ? [middle] : []),
     { key: 'notif',      href: '/notif',       icon: 'ri-notification-2-line', label: 'Notifikasi', isNotif: true },
     { key: 'profile',    href: '/profile',     icon: 'ri-user-3-line',      label: 'Profil'    },
@@ -35,6 +39,7 @@ const buildMenuItems = ({ isStudent, hasPosition }) => {
 const isActive = (pathname, href) => {
   if (href === '/dashboard') return pathname === '/dashboard'
   if (href === '/nimen') return pathname === '/nimen'
+  if (href === '/nimen/sprints') return pathname.startsWith('/nimen/sprints')
   return pathname.startsWith(href)
 }
 
