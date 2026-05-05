@@ -1,22 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import VerticalLayout from '@layouts/VerticalLayout'
 import BottomNav from '@components/layout/vertical/BottomNav'
+import SplashScreen from '@/components/SplashScreen'
 import useIsPWA from '@/hooks/useIsPWA'
 
 /**
  * PWAVerticalLayout — wrapper VerticalLayout yang aware terhadap PWA mode.
  *
  * Saat browser biasa  : render normal (sidebar + navbar seperti biasa)
- * Saat PWA standalone : sembunyikan sidebar, tampilkan BottomNav,
- *                       tambahkan padding bawah agar konten tidak tertutup BottomNav
+ * Saat PWA standalone : SplashScreen menutupi layout sampai selesai,
+ *                       baru konten tanpa sidebar + BottomNav ditampilkan.
+ *
+ * Splash dikelola di sini (bukan di PWASplashInit) agar layout tidak
+ * sempat terlihat sebelum splash selesai — menghilangkan flash sidebar.
  */
 const PWAVerticalLayout = ({ navigation, navbar, footer, children }) => {
   const isPWA = useIsPWA()
+  const [splashDone, setSplashDone] = useState(false)
+
+  useEffect(() => {
+    if (!isPWA) setSplashDone(true)
+  }, [isPWA])
 
   if (!isPWA) {
-    // Browser biasa — layout Pixinvent normal, tidak ada perubahan
     return (
       <VerticalLayout navigation={navigation} navbar={navbar} footer={footer}>
         {children}
@@ -24,19 +32,20 @@ const PWAVerticalLayout = ({ navigation, navbar, footer, children }) => {
     )
   }
 
-  // PWA mode — sidebar disembunyikan, bottom nav muncul
   return (
-    <VerticalLayout
-      navigation={null}
-      navbar={navbar}
-      footer={null}
-    >
-      {/* Padding bawah agar konten tidak tertutup BottomNav (64px + safe-area) */}
-      <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
-        {children}
+    <>
+      {!splashDone && (
+        <SplashScreen onDone={() => setSplashDone(true)} />
+      )}
+      <div style={{ visibility: splashDone ? 'visible' : 'hidden' }}>
+        <VerticalLayout navigation={null} navbar={navbar} footer={null}>
+          <div style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom))' }}>
+            {children}
+          </div>
+          <BottomNav />
+        </VerticalLayout>
       </div>
-      <BottomNav />
-    </VerticalLayout>
+    </>
   )
 }
 
