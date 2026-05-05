@@ -507,12 +507,13 @@ const SelfSubmissionStudentView = () => {
 
             {/* Dashed zone — selalu tampil selama belum penuh */}
             {pendingFiles.length < 10 && (
-              <Box onClick={() => !createLoading && fileInputRef.current?.click()} sx={{
+              <Box component='label' htmlFor='self-submission-file-input' sx={{
                 border: '2px dashed',
                 borderColor: createLoading ? 'divider' : 'divider',
                 borderRadius: 2, p: 3,
                 textAlign: 'center',
                 cursor: createLoading ? 'not-allowed' : 'pointer',
+                display: 'block',
                 transition: 'all .2s', mb: pendingFiles.length > 0 ? 2 : 0,
                 '&:hover': !createLoading ? { borderColor: 'primary.main', bgcolor: 'action.hover' } : {},
               }}>
@@ -572,8 +573,10 @@ const SelfSubmissionStudentView = () => {
               </Box>
             )}
 
-            <input ref={fileInputRef} type='file' hidden multiple
-                   accept='.pdf,.docx,.xlsx,.jpg,.jpeg,.png,.webp' onChange={handlePickFile} />
+            <input id='self-submission-file-input' ref={fileInputRef} type='file' multiple
+                   accept='.pdf,.docx,.xlsx,.jpg,.jpeg,.png,.webp' onChange={handlePickFile}
+                   disabled={createLoading}
+                   style={{ display: 'none' }} />
           </div>
 
           {createLoading && uploadProgress > 0 && (
