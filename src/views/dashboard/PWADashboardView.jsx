@@ -54,74 +54,62 @@ function HeroCard({ name, role, unread, nim, syndicateName, batchName }) {
     <Box sx={{
       borderRadius: 1,
       background:   'linear-gradient(135deg, #EB3D47 0%, #8B0000 100%)',
-      p:            3,
+      p:            2.5,
       color:        '#fff',
       position:     'relative',
       overflow:     'hidden',
     }}>
-      {/* Wave SVG decoration di kanan — mirip login page */}
-      <Box sx={{ position: 'absolute', bottom: 0, right: -10, width: 150, height: '100%', opacity: 0.12 }}>
-        <svg width="160" height="100%" viewBox="0 0 160 120" preserveAspectRatio="none" fill="none">
-          <path d="M160 0 C100 20, 60 40, 80 70 C100 95, 140 85, 160 120 L160 0 Z" fill="white"/>
-          <path d="M160 20 C110 35, 75 55, 90 80 C108 105, 148 100, 160 120 L160 20 Z" fill="white" opacity="0.5"/>
-        </svg>
-      </Box>
-      {/* Decorative circle */}
-      <Box sx={{
-        position: 'absolute', top: -20, right: 15,
-        width: 90, height: 90, borderRadius: '50%',
-        bgcolor: 'rgba(255,255,255,0.12)',
-      }} />
+      {/* Decorative circles */}
+      <Box sx={{ position: 'absolute', top: -20, right: 15, width: 90, height: 90, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.10)' }} />
+      <Box sx={{ position: 'absolute', bottom: -15, right: 50, width: 60, height: 60, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.07)' }} />
 
-      {/* Content */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <Box>
-          <Typography sx={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.3px' }}>
-            {greeting} 🫡
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-            <Typography sx={{ fontSize: '22px', fontWeight: 700, lineHeight: 1.2, color: '#FFFFFF' }}>
-              {name || 'Mahasiswa'}
+      {/* Baris 1: Greeting */}
+      <Typography sx={{ fontSize: '12px', fontWeight: 400, color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>
+        {greeting} 🫡
+      </Typography>
+
+      {/* Baris 2: Nama */}
+      <Typography sx={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2, color: '#fff', mb: 1 }}>
+        {name || 'Mahasiswa'}
+      </Typography>
+
+      {/* Baris 3: Badge angkatan + sindikat */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', mb: 1 }}>
+        {batchName && (
+          <Chip label={batchName} size='small' sx={{
+            height: 20, fontSize: '10px', fontWeight: 600,
+            bgcolor: 'rgba(255,255,255,0.18)', color: '#fff',
+            border: '1px solid rgba(255,255,255,0.3)',
+          }} />
+        )}
+        {syndicateName && (
+          <Chip label={syndicateName} size='small' sx={{
+            height: 20, fontSize: '10px', fontWeight: 500,
+            bgcolor: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.9)',
+            border: '1px solid rgba(255,255,255,0.2)',
+          }} />
+        )}
+      </Box>
+
+      {/* Divider */}
+      <Box sx={{ width: '100%', height: '0.5px', bgcolor: 'rgba(255,255,255,0.2)', mb: 1 }} />
+
+      {/* Baris 4: Badge role + NIM + notif badge */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Chip label={role} size='small' sx={{
+            height: 20, fontSize: '10px', fontWeight: 700,
+            bgcolor: 'rgba(255,255,255,0.25)', color: '#fff',
+            border: '1px solid rgba(255,255,255,0.4)',
+          }} />
+          {nim && (
+            <Typography sx={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)', fontWeight: 400 }}>
+              {nim}
             </Typography>
-            {batchName && (
-              <Chip
-                label={batchName}
-                size='small'
-                sx={{
-                  height: 20, fontSize: '10px', fontWeight: 600,
-                  bgcolor: 'rgba(255,255,255,0.2)', color: '#fff',
-                  border: '1px solid rgba(255,255,255,0.35)',
-                }}
-              />
-            )}
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap' }}>
-            <Chip
-              label={role}
-              size='small'
-              sx={{
-                height: 22, fontSize: '11px', fontWeight: 700,
-                bgcolor: 'rgba(255,255,255,0.25)', color: '#fff',
-                border: '1px solid rgba(255,255,255,0.4)', letterSpacing: '0.3px',
-              }}
-            />
-            {nim && (
-              <Typography sx={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
-                {nim}
-              </Typography>
-            )}
-            {syndicateName && (
-              <Typography sx={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>
-                · {syndicateName}
-              </Typography>
-            )}
-          </Box>
+          )}
         </Box>
         {unread > 0 && (
-          <Box sx={{
-            bgcolor: '#fff', borderRadius: 1, px: 1.5, py: 0.5,
-            display: 'flex', alignItems: 'center', gap: 0.5,
-          }}>
+          <Box sx={{ bgcolor: '#fff', borderRadius: 1, px: 1.5, py: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <i className='ri-notification-2-fill' style={{ fontSize: '14px', color: 'var(--mui-palette-primary-main)' }} />
             <Typography sx={{ fontSize: '12px', fontWeight: 700, color: 'var(--mui-palette-primary-main)' }}>
               {unread}
@@ -498,6 +486,7 @@ function AdminPWADashboard({ session }) {
     { icon: 'ri-calendar-2-line',     label: 'Variabel',        color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/variables' },
     { icon: 'ri-user-settings-line',  label: 'Indikator',       color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/indicators' },
   ]
+
 
   if (loading) return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
