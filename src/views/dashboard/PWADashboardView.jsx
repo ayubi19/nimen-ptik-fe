@@ -122,48 +122,74 @@ function HeroCard({ name, role, unread, nim, syndicateName, batchName }) {
 }
 
 // Quick action grid item
-function QuickAction({ icon, label, color, bg, onClick, badge }) {
+function QuickAction({ icon, label, emoji, gradient, shadow, onClick, badge, variant = 'glass' }) {
+  const isGlass = variant === 'glass'
+  const isCrystal = variant === 'crystal'
+
+  const iconBoxSx = isGlass ? {
+    width: 52, height: 52, borderRadius: '14px', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '24px',
+    background: 'rgba(255,255,255,0.18)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255,255,255,0.35)',
+    boxShadow: '0 4px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
+    position: 'relative',
+    overflow: 'hidden',
+    '&::before': {
+      content: '""', position: 'absolute',
+      top: 0, left: 0, right: 0, height: '50%',
+      borderRadius: '14px 14px 0 0',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 100%)',
+      pointerEvents: 'none',
+    },
+  } : {
+    width: 52, height: 52, borderRadius: '14px', flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: '24px',
+    background: gradient || 'linear-gradient(145deg, #E63946, #6D0E13)',
+    boxShadow: shadow || '0 6px 14px rgba(180,0,30,0.3), 0 2px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,180,180,0.5)',
+    position: 'relative',
+    overflow: 'hidden',
+    '&::before': {
+      content: '""', position: 'absolute',
+      top: 0, left: 0, right: 0, height: '50%',
+      borderRadius: '14px 14px 0 0',
+      background: 'linear-gradient(180deg, rgba(255,200,200,0.35) 0%, rgba(255,255,255,0) 100%)',
+      pointerEvents: 'none',
+    },
+  }
+
   return (
-    <Box
-      onClick={onClick}
-      sx={{
-        display:        'flex',
-        flexDirection:  'column',
-        alignItems:     'center',
-        gap:            1,
-        p:              1.5,
-        borderRadius:   1,
-        bgcolor:        bg || 'var(--mui-palette-background-paper)',
-        cursor:         'pointer',
-        position:       'relative',
-        transition:     'transform 0.15s, opacity 0.15s',
-        '&:active':     { transform: 'scale(0.94)', opacity: 0.8 },
-      }}
-    >
+    <Box onClick={onClick} sx={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75,
+      cursor: 'pointer', position: 'relative',
+      transition: 'transform 0.15s, opacity 0.15s',
+      '&:active': { transform: 'scale(0.92)', opacity: 0.8 },
+    }}>
       {badge > 0 && (
         <Box sx={{
-          position: 'absolute', top: 6, right: 6,
+          position: 'absolute', top: 0, right: 4, zIndex: 1,
           width: 16, height: 16, borderRadius: '50%',
-          bgcolor: 'error.main', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          bgcolor: '#fff', border: '1.5px solid #EB3D47',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Typography sx={{ fontSize: '9px', fontWeight: 700, color: '#fff' }}>{badge > 9 ? '9+' : badge}</Typography>
+          <Typography sx={{ fontSize: '9px', fontWeight: 700, color: '#EB3D47' }}>{badge > 9 ? '9+' : badge}</Typography>
         </Box>
       )}
-      <Box sx={{
-        width: 44, height: 44, borderRadius: 1, bgcolor: bg,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: `1px solid ${color}22`,
-      }}>
-        <i className={icon} style={{ fontSize: '22px', color }} />
+      <Box sx={iconBoxSx}>
+        <span style={{ fontSize: '24px', lineHeight: 1 }}>{emoji}</span>
       </Box>
-      <Typography sx={{ fontSize: '11px', fontWeight: 500, textAlign: 'center', lineHeight: 1.3 }}>
+      <Typography sx={{
+        fontSize: '10px', fontWeight: 500, textAlign: 'center', lineHeight: 1.3,
+        color: isGlass ? 'rgba(255,255,255,0.92)' : 'var(--mui-palette-text-primary)',
+      }}>
         {label}
       </Typography>
     </Box>
   )
 }
-
-
 // Sprint recent item (admin)
 function SprintRecentItem({ sprint, onClick }) {
   const cfg = SPRINT_STATUS_CONFIG[sprint.status] || { label: sprint.status, color: '#888780', bg: '#F1EFE8' }
@@ -356,16 +382,16 @@ function StudentPWADashboard({ session, hasPosition }) {
 
   // Quick actions student
   const quickActions = [
-    { icon: 'ri-medal-line',        label: 'NIMEN',         color: '#EB3D47', bg: '#FCEBEB', href: '/nimen' },
-    { icon: 'ri-calendar-check-line', label: 'Sprint Saya', color: '#378ADD', bg: '#E6F1FB', href: '/nimen/my-sprints' },
-    { icon: 'ri-file-add-line',     label: 'Pengajuan',     color: '#1D9E75', bg: '#E1F5EE', href: '/nimen/self-submissions/my' },
-    { icon: 'ri-bar-chart-line',    label: 'Peringkat',     color: '#EF9F27', bg: '#FAEEDA', href: '/ranking' },
-    { icon: 'ri-error-warning-line', label: 'Pelanggaran',  color: '#A32D2D', bg: '#FCEBEB', href: '/violation' },
+    { emoji: '🎖️', label: 'NIMEN',       href: '/nimen',                              variant: 'glass' },
+    { emoji: '📅', label: 'Sprint Saya', href: '/nimen/my-sprints',                  variant: 'glass' },
+    { emoji: '📋', label: 'Pengajuan',   href: '/nimen/self-submissions/my',         variant: 'glass' },
+    { emoji: '🏆', label: 'Peringkat',   href: '/ranking',                           variant: 'glass' },
+    { emoji: '⚠️', label: 'Pelanggaran', href: '/violation',                         variant: 'glass' },
     ...(hasPosition ? [
-      { icon: 'ri-edit-box-line',   label: 'Review',        color: '#534AB7', bg: '#EEEDFE', href: '/nimen/sprints/coordinator-review' },
+      { emoji: '✍️', label: 'Review',    href: '/nimen/sprints/coordinator-review',  variant: 'glass' },
     ] : []),
-    { icon: 'ri-user-3-line',       label: 'Profil',        color: '#888780', bg: '#F1EFE8', href: '/profile' },
-    { icon: 'ri-notification-2-line', label: 'Notifikasi',  color: '#D4537E', bg: '#FBEAF0', href: '/notifications', badge: unread },
+    { emoji: '👤', label: 'Profil',      href: '/profile',                           variant: 'glass' },
+    { emoji: '🔔', label: 'Notifikasi',  href: '/notifications', badge: unread,      variant: 'glass' },
   ]
 
   if (loading) return (
@@ -389,13 +415,18 @@ function StudentPWADashboard({ session, hasPosition }) {
         <RankingHeroCard ranking={data.ranking} onView={() => router.push('/ranking')} />
       )}
 
-      {/* Quick Actions */}
-      <Box>
-        <Typography variant='caption' color='text.secondary'
-                    sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', mb: 2, display: 'block' }}>
+      {/* Quick Actions — card merah, icon glass */}
+      <Box sx={{
+        background: 'linear-gradient(135deg, #EB3D47 0%, #8B0000 100%)',
+        borderRadius: 1, p: 2,
+      }}>
+        <Typography variant='caption' sx={{
+          textTransform: 'uppercase', letterSpacing: '0.06em',
+          mb: 1.5, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 700, fontSize: '10px',
+        }}>
           Menu Lainnya
         </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={1.5}>
           {quickActions.map(a => (
             <Grid item xs={3} key={a.label}>
               <QuickAction {...a} onClick={() => router.push(a.href)} />
@@ -510,27 +541,33 @@ function AdminPWADashboard({ session }) {
 
   // Quick actions admin — semua menu yang tidak ada di bottom nav
   const quickActions = [
-    { icon: 'ri-group-line',          label: 'Mahasiswa',       color: '#378ADD', bg: '#E6F1FB', href: '/students/list' },
-    { icon: 'ri-user-add-line',       label: 'Onboarding',      color: '#1D9E75', bg: '#E1F5EE', href: '/onboarding' },
-    { icon: 'ri-organization-chart',  label: 'Organisasi',      color: '#EF9F27', bg: '#FAEEDA', href: '/students/organization' },
-    { icon: 'ri-file-check-line',     label: 'Pengajuan',       color: '#D4537E', bg: '#FBEAF0', href: '/nimen/self-submissions' },
-    { icon: 'ri-bar-chart-line',      label: 'Peringkat',       color: '#534AB7', bg: '#EEEDFE', href: '/ranking' },
-    { icon: 'ri-error-warning-line',  label: 'Pelanggaran',     color: '#A32D2D', bg: '#FCEBEB', href: '/violation' },
-    { icon: 'ri-settings-3-line',     label: 'Konfigurasi',     color: '#185FA5', bg: '#E6F1FB', href: '/nimen/batch-config' },
-    { icon: 'ri-medal-2-line',        label: 'Nilai Jabatan',   color: '#BA7517', bg: '#FAEEDA', href: '/nimen/position-values' },
-    { icon: 'ri-shield-user-line',    label: 'Manaj. User',     color: '#993556', bg: '#FBEAF0', href: '/users' },
-    { icon: 'ri-file-list-3-line',    label: 'Rekap NIMEN',     color: '#0F6E56', bg: '#E1F5EE', href: '/nimen' },
-    { icon: 'ri-notification-2-line', label: 'Notifikasi',      color: '#EB3D47', bg: '#FCEBEB', href: '/notifications', badge: unread },
+    { emoji: '👥', label: 'Mahasiswa',     href: '/students/list',            variant: 'glass' },
+    { emoji: '🎓', label: 'Onboarding',    href: '/onboarding',               variant: 'glass' },
+    { emoji: '🏛️', label: 'Organisasi',    href: '/students/organization',    variant: 'glass' },
+    { emoji: '📋', label: 'Pengajuan',     href: '/nimen/self-submissions',   variant: 'glass' },
+    { emoji: '🏆', label: 'Peringkat',     href: '/ranking',                  variant: 'glass' },
+    { emoji: '⚠️', label: 'Pelanggaran',   href: '/violation',                variant: 'glass' },
+    { emoji: '🛡️', label: 'Nilai Jabatan', href: '/nimen/position-values',    variant: 'glass' },
+    { emoji: '👤', label: 'Manaj. User',   href: '/users',                    variant: 'glass' },
+    { emoji: '⚙️', label: 'Konfigurasi',   href: '/nimen/batch-config',       variant: 'glass' },
+    { emoji: '📊', label: 'Rekap NIMEN',   href: '/nimen',                    variant: 'glass' },
+    { emoji: '🔔', label: 'Notifikasi',    href: '/notifications', badge: unread, variant: 'glass' },
   ]
 
+  const CRYSTAL_RED = {
+    gradient: 'linear-gradient(145deg, #E63946, #6D0E13)',
+    shadow: '0 6px 14px rgba(180,0,30,0.3), 0 2px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,180,180,0.5)',
+  }
+
   const masterDataActions = [
-    { icon: 'ri-team-line',           label: 'Sindikat',        color: '#D4537E', bg: '#FBEAF0', href: '/master-data/syndicates' },
-    { icon: 'ri-graduation-cap-line', label: 'Angkatan',        color: '#D4537E', bg: '#FBEAF0', href: '/master-data/batches' },
-    { icon: 'ri-checkbox-circle-line',label: 'Status Akademik', color: '#D4537E', bg: '#FBEAF0', href: '/master-data/academic-statuses' },
-    { icon: 'ri-list-check-2',        label: 'Kategori Nilai',  color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/categories' },
-    { icon: 'ri-calendar-2-line',     label: 'Variabel',        color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/variables' },
-    { icon: 'ri-user-settings-line',  label: 'Indikator',       color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/indicators' },
+    { emoji: '🏘️', label: 'Sindikat',        href: '/master-data/syndicates',          variant: 'crystal', ...CRYSTAL_RED },
+    { emoji: '🎓', label: 'Angkatan',         href: '/master-data/batches',             variant: 'crystal', ...CRYSTAL_RED },
+    { emoji: '✅', label: 'Status Akademik',  href: '/master-data/academic-statuses',   variant: 'crystal', ...CRYSTAL_RED },
+    { emoji: '📝', label: 'Kategori Nilai',   href: '/nimen/master-data/categories',    variant: 'crystal', ...CRYSTAL_RED },
+    { emoji: '📅', label: 'Variabel',         href: '/nimen/master-data/variables',     variant: 'crystal', ...CRYSTAL_RED },
+    { emoji: '🎯', label: 'Indikator',        href: '/nimen/master-data/indicators',    variant: 'crystal', ...CRYSTAL_RED },
   ]
+
 
 
   if (loading) return (
@@ -554,13 +591,18 @@ function AdminPWADashboard({ session }) {
 
       {/* Hero */}
       <HeroCard name={name} role={isDev ? 'Developer' : 'Admin NIMEN'} unread={unread} />
-      {/* Quick actions — menu operasional */}
-      <Box>
-        <Typography variant='caption' color='text.secondary'
-                    sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', mb: 2, display: 'block' }}>
+      {/* Quick actions — card merah, icon glass */}
+      <Box sx={{
+        background: 'linear-gradient(135deg, #EB3D47 0%, #8B0000 100%)',
+        borderRadius: 1, p: 2,
+      }}>
+        <Typography variant='caption' sx={{
+          textTransform: 'uppercase', letterSpacing: '0.06em',
+          mb: 1.5, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 700, fontSize: '10px',
+        }}>
           Menu Lainnya
         </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={1.5}>
           {quickActions.map(a => (
             <Grid item xs={3} key={a.label}>
               <QuickAction {...a} onClick={() => router.push(a.href)} />
@@ -569,19 +611,24 @@ function AdminPWADashboard({ session }) {
         </Grid>
       </Box>
 
-      {/* Master Data section */}
-      <Box sx={{ border: '0.5px solid', borderColor: '#EF9F27', borderRadius: 1, p: 2 }}>
-        <Typography variant='caption' sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', mb: 2, display: 'block', color: '#854F0B', fontWeight: 600 }}>
-          Master Data
-        </Typography>
-        <Grid container spacing={2}>
-          {masterDataActions.map(a => (
-            <Grid item xs={4} key={a.label}>
-              <QuickAction {...a} onClick={() => router.push(a.href)} />
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
+      {/* Master Data section — card putih, icon crystal red */}
+      <Card sx={{ borderRadius: 1 }}>
+        <CardContent sx={{ p: 2 }}>
+          <Typography variant='caption' sx={{
+            textTransform: 'uppercase', letterSpacing: '0.06em',
+            mb: 1.5, display: 'block', color: '#A32D2D', fontWeight: 700, fontSize: '10px',
+          }}>
+            Master Data
+          </Typography>
+          <Grid container spacing={1.5}>
+            {masterDataActions.map(a => (
+              <Grid item xs={4} key={a.label}>
+                <QuickAction {...a} onClick={() => router.push(a.href)} />
+              </Grid>
+            ))}
+          </Grid>
+        </CardContent>
+      </Card>
 
       {/* Sprint Terbaru — 5 sprint terakhir */}
       <Card sx={{ borderRadius: 1 }}>
