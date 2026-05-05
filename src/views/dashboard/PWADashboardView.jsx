@@ -48,7 +48,7 @@ const SPRINT_STATUS_CONFIG = {
 // ── Components ─────────────────────────────────────────────────────────────────
 
 // Hero greeting card
-function HeroCard({ name, role, unread }) {
+function HeroCard({ name, role, unread, nim, syndicateName, batchName }) {
   const greeting = getGreeting()
   return (
     <Box sx={{
@@ -79,18 +79,43 @@ function HeroCard({ name, role, unread }) {
           <Typography sx={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)', letterSpacing: '0.3px' }}>
             {greeting} 🫡
           </Typography>
-          <Typography sx={{ fontSize: '22px', fontWeight: 700, mt: 0.5, lineHeight: 1.2, color: '#FFFFFF' }}>
-            {name || 'Mahasiswa'}
-          </Typography>
-          <Chip
-            label={role}
-            size='small'
-            sx={{
-              mt: 1, height: 22, fontSize: '11px', fontWeight: 700,
-              bgcolor: 'rgba(255,255,255,0.25)', color: '#fff',
-              border: '1px solid rgba(255,255,255,0.4)', letterSpacing: '0.3px',
-            }}
-          />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+            <Typography sx={{ fontSize: '22px', fontWeight: 700, lineHeight: 1.2, color: '#FFFFFF' }}>
+              {name || 'Mahasiswa'}
+            </Typography>
+            {batchName && (
+              <Chip
+                label={batchName}
+                size='small'
+                sx={{
+                  height: 20, fontSize: '10px', fontWeight: 600,
+                  bgcolor: 'rgba(255,255,255,0.2)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.35)',
+                }}
+              />
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+            <Chip
+              label={role}
+              size='small'
+              sx={{
+                height: 22, fontSize: '11px', fontWeight: 700,
+                bgcolor: 'rgba(255,255,255,0.25)', color: '#fff',
+                border: '1px solid rgba(255,255,255,0.4)', letterSpacing: '0.3px',
+              }}
+            />
+            {nim && (
+              <Typography sx={{ fontSize: '11px', color: 'rgba(255,255,255,0.85)', fontWeight: 500 }}>
+                {nim}
+              </Typography>
+            )}
+            {syndicateName && (
+              <Typography sx={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>
+                · {syndicateName}
+              </Typography>
+            )}
+          </Box>
         </Box>
         {unread > 0 && (
           <Box sx={{
@@ -324,7 +349,7 @@ function StudentPWADashboard({ session, hasPosition }) {
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
       {/* Hero */}
-      <HeroCard name={name} role={roleLabel} unread={unread} />
+      <HeroCard name={name} role={roleLabel} unread={unread} nim={data?.nim} syndicateName={data?.syndicate_name} batchName={data?.ranking?.batch_name} />
 
       {/* Peringkat */}
       {data?.ranking && (
@@ -358,36 +383,42 @@ function StudentPWADashboard({ session, hasPosition }) {
               </Typography>
             </Box>
             {data.active_sprints.slice(0, 3).map((s, i) => (
-              <SprintItem key={i} sprint={s} onClick={() => router.push('/nimen/my-sprints')} />
+              <SprintItem key={i} sprint={s} onClick={() => router.push(`/nimen/my-sprints/${s.sprint_id || s.id}`)} />
             ))}
           </CardContent>
         </Card>
       )}
 
       {/* Pelanggaran aktif */}
-      {data?.punishments?.filter(p => p.is_active)?.length > 0 && (
-        <Card sx={{ borderRadius: 1, border: '1px solid', borderColor: 'error.light' }}>
-          <CardContent sx={{ p: 2.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-              <i className='ri-error-warning-fill' style={{ fontSize: '18px', color: '#A32D2D' }} />
-              <Typography variant='body2' fontWeight={600} color='error.main'>
-                Pelanggaran Aktif ({data.punishments.filter(p => p.is_active).length})
+      {data?.punishments?.filter(p => p.is_active)?.length > 0 && (() => {
+        const activePunishment = data.punishments.find(p => p.is_active)
+        const endDate = activePunishment?.end_date
+          ? new Date(activePunishment.end_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+          : '-'
+        return (
+          <Card sx={{ borderRadius: 1, border: '1px solid', borderColor: 'error.light' }}>
+            <CardContent sx={{ p: 2.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                <i className='ri-error-warning-fill' style={{ fontSize: '18px', color: '#A32D2D' }} />
+                <Typography variant='body2' fontWeight={600} color='error.main'>
+                  Pelanggaran Aktif ({data.punishments.filter(p => p.is_active).length})
+                </Typography>
+              </Box>
+              <Typography variant='caption' color='text.secondary'>
+                Hukuman aktif hingga <strong>{endDate}</strong>. Selama periode ini, semua pengajuan nilai akan ditangguhkan dan tidak dihitung ke total nilaimu.
               </Typography>
-            </Box>
-            <Typography variant='caption' color='text.secondary'>
-              Kamu memiliki pelanggaran yang masih aktif. Segera selesaikan.
-            </Typography>
-            <Box onClick={() => router.push('/violation')} sx={{
-              mt: 1.5, p: 1, borderRadius: 1, bgcolor: '#FCEBEB',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              cursor: 'pointer',
-            }}>
-              <Typography variant='caption' fontWeight={600} color='error.main'>Lihat Detail Pelanggaran</Typography>
-              <i className='ri-arrow-right-s-line' style={{ color: '#A32D2D' }} />
-            </Box>
-          </CardContent>
-        </Card>
-      )}
+              <Box onClick={() => router.push('/violation')} sx={{
+                mt: 1.5, p: 1, borderRadius: 1, bgcolor: '#FCEBEB',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: 'pointer',
+              }}>
+                <Typography variant='caption' fontWeight={600} color='error.main'>Lihat Detail Pelanggaran</Typography>
+                <i className='ri-arrow-right-s-line' style={{ color: '#A32D2D' }} />
+              </Box>
+            </CardContent>
+          </Card>
+        )
+      })()}
 
       {/* Koordinator section jika has_position */}
       {hasPosition && data?.pending_reviews?.length > 0 && (
@@ -455,7 +486,7 @@ function AdminPWADashboard({ session }) {
     { icon: 'ri-settings-3-line',     label: 'Konfigurasi',     color: '#185FA5', bg: '#E6F1FB', href: '/nimen/batch-config' },
     { icon: 'ri-medal-2-line',        label: 'Nilai Jabatan',   color: '#BA7517', bg: '#FAEEDA', href: '/nimen/position-values' },
     { icon: 'ri-shield-user-line',    label: 'Manaj. User',     color: '#993556', bg: '#FBEAF0', href: '/users' },
-    { icon: 'ri-file-list-3-line',    label: 'NIMEN',           color: '#0F6E56', bg: '#E1F5EE', href: '/nimen' },
+    { icon: 'ri-file-list-3-line',    label: 'Rekap NIMEN',     color: '#0F6E56', bg: '#E1F5EE', href: '/nimen' },
     { icon: 'ri-notification-2-line', label: 'Notifikasi',      color: '#EB3D47', bg: '#FCEBEB', href: '/notifications', badge: unread },
   ]
 
@@ -467,8 +498,6 @@ function AdminPWADashboard({ session }) {
     { icon: 'ri-calendar-2-line',     label: 'Variabel',        color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/variables' },
     { icon: 'ri-user-settings-line',  label: 'Indikator',       color: '#D4537E', bg: '#FBEAF0', href: '/nimen/master-data/indicators' },
   ]
-
-
 
   if (loading) return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -507,8 +536,8 @@ function AdminPWADashboard({ session }) {
       </Box>
 
       {/* Master Data section */}
-      <Box sx={{ border: '0.5px solid', borderColor: '#D02752', borderRadius: 1, p: 2 }}>
-        <Typography variant='caption' sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', mb: 2, display: 'block', color: '#8A244B', fontWeight: 600 }}>
+      <Box sx={{ border: '0.5px solid', borderColor: '#EF9F27', borderRadius: 1, p: 2 }}>
+        <Typography variant='caption' sx={{ textTransform: 'uppercase', letterSpacing: '0.06em', mb: 2, display: 'block', color: '#854F0B', fontWeight: 600 }}>
           Master Data
         </Typography>
         <Grid container spacing={2}>

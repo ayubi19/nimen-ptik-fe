@@ -27,7 +27,7 @@ const buildMenuItems = ({ isStudent, hasPosition }) => {
     : { key: 'sprint', href: '/nimen/sprints', icon: 'ri-shield-line', label: 'Sprint' }
 
   return [
-    { key: 'dashboard',  href: '/dashboard',  icon: 'ri-home-smile-line', label: 'Dashboard' },
+    { key: 'dashboard',  href: '/dashboard',  icon: 'ri-home-smile-line', label: 'Home'      },
     nimenItem,
     ...(middle ? [middle] : []),
     { key: 'notif',      href: '/notif',       icon: 'ri-notification-2-line', label: 'Notifikasi', isNotif: true },
