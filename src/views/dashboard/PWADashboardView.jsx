@@ -198,56 +198,101 @@ function SprintRecentItem({ sprint, onClick }) {
 // Ranking card (student)
 function RankingHeroCard({ ranking, onView }) {
   if (!ranking) return null
-  const pct = ranking.max_value > 0 ? Math.min((ranking.total_value / ranking.max_value) * 100, 100) : 0
-  const isTop3 = ranking.rank_position <= 3
-  const isTop10 = ranking.rank_position <= 10
+  const totalValue = ranking.total_value || 0
+  const maxValue   = ranking.max_value   || 95
+  const rank       = ranking.rank_position
+  const total      = ranking.total_students || 0
+  const pct        = Math.min((totalValue / maxValue) * 100, 100)
+
+  const badgeBg = rank === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+    : rank === 2 ? 'linear-gradient(135deg, #C0C0C0, #A8A8A8)'
+      : rank === 3 ? 'linear-gradient(135deg, #CD7F32, #A0522D)'
+        : 'linear-gradient(135deg, #EB3D47, #8B0000)'
+
+  const barColor = pct >= 70 ? '#EB3D47' : pct >= 50 ? '#EF9F27' : '#E24B4A'
 
   return (
-    <Card onClick={onView} sx={{ borderRadius: 1, cursor: 'pointer', '&:active': { opacity: 0.8 } }}>
+    <Card onClick={onView} sx={{
+      borderRadius: 1, cursor: 'pointer',
+      background: 'linear-gradient(135deg, rgba(235,61,71,0.08) 0%, rgba(235,61,71,0.03) 100%)',
+      border: '1px solid rgba(235,61,71,0.15)',
+      '&:active': { opacity: 0.85 },
+    }}>
       <CardContent sx={{ p: 2.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-          {/* Rank badge */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          {/* Medal / Rank badge */}
           <Box sx={{
-            width: 52, height: 52, borderRadius: 1, flexShrink: 0,
-            bgcolor: isTop3 ? '#EAF3DE' : isTop10 ? '#FAEEDA' : '#FCEBEB',
+            width: 72, height: 72, borderRadius: 2, flexShrink: 0,
+            background: badgeBg,
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 2,
           }}>
-            <Typography sx={{
-              fontSize: '20px', fontWeight: 800, lineHeight: 1,
-              color: isTop3 ? '#27500A' : isTop10 ? '#633806' : '#791F1F',
-            }}>
-              #{ranking.rank_position}
-            </Typography>
+            {rank && rank <= 3 ? (
+              <Typography sx={{ fontSize: 36, lineHeight: 1 }}>
+                {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
+              </Typography>
+            ) : (
+              <>
+                <Typography sx={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>
+                  PERINGKAT
+                </Typography>
+                <Typography sx={{ fontSize: '26px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+                  {rank || '—'}
+                </Typography>
+                {total > 0 && (
+                  <Typography sx={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)' }}>
+                    dari {total}
+                  </Typography>
+                )}
+              </>
+            )}
           </Box>
-          {/* Info */}
+
+          {/* Info nilai */}
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-              <Typography variant='body2' fontWeight={600}>Peringkat Saya</Typography>
+            <Typography variant='body2' fontWeight={600} color='text.secondary' sx={{ mb: 0.5 }}>
+              Peringkat Saya
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.5 }}>
+              <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#EB3D47', lineHeight: 1 }}>
+                {totalValue.toFixed(2)}
+              </Typography>
               <Typography variant='caption' color='text.secondary'>
-                {Math.round(pct)}%
+                / {maxValue.toFixed(0)} poin
               </Typography>
             </Box>
-            <LinearProgress
-              variant='determinate' value={pct}
-              sx={{
-                height: 6, borderRadius: 3, mb: 0.5,
-                bgcolor: 'action.hover',
-                '& .MuiLinearProgress-bar': {
-                  bgcolor: isTop3 ? 'success.main' : isTop10 ? 'warning.main' : 'error.main',
-                  borderRadius: 3,
-                }
-              }}
-            />
-            <Typography variant='caption' color='text.secondary'>
-              {ranking.total_value?.toFixed(1)} / {ranking.max_value?.toFixed(1)} poin
-            </Typography>
+            {rank && rank <= 3 && (
+              <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 0.5 }}>
+                Peringkat {rank} dari {total} mahasiswa
+              </Typography>
+            )}
+            {/* Progress bar */}
+            <Box sx={{ mt: 1 }}>
+              <Box sx={{
+                height: 8, borderRadius: 4,
+                bgcolor: 'rgba(0,0,0,0.08)',
+                overflow: 'hidden',
+              }}>
+                <Box sx={{
+                  height: '100%', borderRadius: 4,
+                  width: `${pct}%`,
+                  bgcolor: barColor,
+                  transition: 'width 0.6s ease',
+                }} />
+              </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                <Typography variant='caption' color='text.secondary'>0</Typography>
+                <Typography variant='caption' color='text.secondary' fontWeight={500}>
+                  {pct.toFixed(1)}% dari maksimum
+                </Typography>
+              </Box>
+            </Box>
           </Box>
         </Box>
       </CardContent>
     </Card>
   )
 }
-
 // Sprint item (student)
 function SprintItem({ sprint, onClick }) {
   const isActive = sprint.sprint_status === 'ACTIVE'
