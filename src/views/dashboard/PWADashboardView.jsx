@@ -122,41 +122,58 @@ function HeroCard({ name, role, unread, nim, syndicateName, batchName }) {
 }
 
 // Quick action grid item
-function QuickAction({ icon, label, emoji, gradient, shadow, onClick, badge, variant = 'glass' }) {
-  const isGlass = variant === 'glass'
+function QuickAction({ svgKey, label, onClick, badge, variant = 'glass' }) {
+  const isGlass   = variant === 'glass'
   const isCrystal = variant === 'crystal'
 
+  const svgs = {
+    mahasiswa:     '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>',
+    onboarding:    '<path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>',
+    organisasi:    '<path d="M12 3L2 12h3v8h6v-5h2v5h6v-8h3L12 3zm0 12.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>',
+    pengajuan:     '<path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/>',
+    peringkat:     '<path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>',
+    pelanggaran:   '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>',
+    nilaijabatan:  '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>',
+    manajuser:     '<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>',
+    konfigurasi:   '<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>',
+    rekapnimen:    '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/>',
+    notifikasi:    '<path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>',
+    sindikat:      '<path d="M12 3L2 12h3v8h6v-5h2v5h6v-8h3L12 3z"/>',
+    angkatan:      '<path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/>',
+    statusakademik:'<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>',
+    kategorinilai: '<path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/>',
+    variabel:      '<path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>',
+    indikator:     '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/>',
+    nimen:         '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>',
+    sprintsaya:    '<path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/>',
+    review:        '<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>',
+    profil:        '<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>',
+  }
+
+  const iconFill = isCrystal ? 'rgba(255,255,255,0.92)' : '#8B2020'
   const iconBoxSx = isGlass ? {
     width: 52, height: 52, borderRadius: '14px', flexShrink: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '24px',
-    background: 'rgba(255,255,255,0.18)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255,255,255,0.35)',
-    boxShadow: '0 4px 10px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
-    position: 'relative',
-    overflow: 'hidden',
+    background: 'rgba(255,255,255,0.72)',
+    border: '0.5px solid rgba(180,100,100,0.18)',
+    boxShadow: '0 3px 10px rgba(139,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.9)',
+    position: 'relative', overflow: 'hidden',
     '&::before': {
-      content: '""', position: 'absolute',
-      top: 0, left: 0, right: 0, height: '50%',
+      content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
       borderRadius: '14px 14px 0 0',
-      background: 'linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0) 100%)',
+      background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)',
       pointerEvents: 'none',
     },
   } : {
     width: 52, height: 52, borderRadius: '14px', flexShrink: 0,
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: '24px',
-    background: gradient || 'linear-gradient(145deg, #E63946, #6D0E13)',
-    boxShadow: shadow || '0 6px 14px rgba(180,0,30,0.3), 0 2px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,180,180,0.5)',
-    position: 'relative',
-    overflow: 'hidden',
+    background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+    boxShadow: '0 5px 12px rgba(180,0,30,0.28), 0 2px 4px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,180,180,0.45)',
+    position: 'relative', overflow: 'hidden',
     '&::before': {
-      content: '""', position: 'absolute',
-      top: 0, left: 0, right: 0, height: '50%',
+      content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
       borderRadius: '14px 14px 0 0',
-      background: 'linear-gradient(180deg, rgba(255,200,200,0.35) 0%, rgba(255,255,255,0) 100%)',
+      background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)',
       pointerEvents: 'none',
     },
   }
@@ -172,18 +189,19 @@ function QuickAction({ icon, label, emoji, gradient, shadow, onClick, badge, var
         <Box sx={{
           position: 'absolute', top: 0, right: 4, zIndex: 1,
           width: 16, height: 16, borderRadius: '50%',
-          bgcolor: '#fff', border: '1.5px solid #EB3D47',
+          bgcolor: '#EB3D47', border: '1.5px solid #fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Typography sx={{ fontSize: '9px', fontWeight: 700, color: '#EB3D47' }}>{badge > 9 ? '9+' : badge}</Typography>
+          <Typography sx={{ fontSize: '9px', fontWeight: 700, color: '#fff' }}>{badge > 9 ? '9+' : badge}</Typography>
         </Box>
       )}
       <Box sx={iconBoxSx}>
-        <span style={{ fontSize: '24px', lineHeight: 1 }}>{emoji}</span>
+        <svg width="24" height="24" viewBox="0 0 24 24" style={{ position: 'relative', zIndex: 1 }}
+             dangerouslySetInnerHTML={{ __html: `<path fill="${iconFill}" d="${(svgs[svgKey] || '').replace(/<path[^>]*d="([^"]*)"[^>]*>/,'$1')}"/>` }} />
       </Box>
       <Typography sx={{
         fontSize: '10px', fontWeight: 500, textAlign: 'center', lineHeight: 1.3,
-        color: isGlass ? 'rgba(255,255,255,0.92)' : 'var(--mui-palette-text-primary)',
+        color: isCrystal ? '#7A1A1A' : '#3B1010',
       }}>
         {label}
       </Typography>
@@ -382,16 +400,16 @@ function StudentPWADashboard({ session, hasPosition }) {
 
   // Quick actions student
   const quickActions = [
-    { emoji: '🎖️', label: 'NIMEN',       href: '/nimen',                              variant: 'glass' },
-    { emoji: '📅', label: 'Sprint Saya', href: '/nimen/my-sprints',                  variant: 'glass' },
-    { emoji: '📋', label: 'Pengajuan',   href: '/nimen/self-submissions/my',         variant: 'glass' },
-    { emoji: '🏆', label: 'Peringkat',   href: '/ranking',                           variant: 'glass' },
-    { emoji: '⚠️', label: 'Pelanggaran', href: '/violation',                         variant: 'glass' },
+    { svgKey: 'nimen',       label: 'NIMEN',       href: '/nimen',                             variant: 'glass' },
+    { svgKey: 'sprintsaya',  label: 'Sprint Saya', href: '/nimen/my-sprints',                 variant: 'glass' },
+    { svgKey: 'pengajuan',   label: 'Pengajuan',   href: '/nimen/self-submissions/my',        variant: 'glass' },
+    { svgKey: 'peringkat',   label: 'Peringkat',   href: '/ranking',                          variant: 'glass' },
+    { svgKey: 'pelanggaran', label: 'Pelanggaran', href: '/violation',                        variant: 'glass' },
     ...(hasPosition ? [
-      { emoji: '✍️', label: 'Review',    href: '/nimen/sprints/coordinator-review',  variant: 'glass' },
+      { svgKey: 'review',    label: 'Review',      href: '/nimen/sprints/coordinator-review', variant: 'glass' },
     ] : []),
-    { emoji: '👤', label: 'Profil',      href: '/profile',                           variant: 'glass' },
-    { emoji: '🔔', label: 'Notifikasi',  href: '/notifications', badge: unread,      variant: 'glass' },
+    { svgKey: 'profil',      label: 'Profil',      href: '/profile',                          variant: 'glass' },
+    { svgKey: 'notifikasi',  label: 'Notifikasi',  href: '/notifications', badge: unread,     variant: 'glass' },
   ]
 
   if (loading) return (
@@ -415,14 +433,11 @@ function StudentPWADashboard({ session, hasPosition }) {
         <RankingHeroCard ranking={data.ranking} onView={() => router.push('/ranking')} />
       )}
 
-      {/* Quick Actions — card merah, icon glass */}
-      <Box sx={{
-        background: 'linear-gradient(135deg, #EB3D47 0%, #8B0000 100%)',
-        borderRadius: 1, p: 2,
-      }}>
+      {/* Quick Actions — tanpa background, icon glass di atas warm bg */}
+      <Box sx={{ p: 0.5 }}>
         <Typography variant='caption' sx={{
           textTransform: 'uppercase', letterSpacing: '0.06em',
-          mb: 1.5, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 700, fontSize: '10px',
+          mb: 1.5, display: 'block', color: '#9A5A5A', fontWeight: 700, fontSize: '10px',
         }}>
           Menu Lainnya
         </Typography>
@@ -541,31 +556,26 @@ function AdminPWADashboard({ session }) {
 
   // Quick actions admin — semua menu yang tidak ada di bottom nav
   const quickActions = [
-    { emoji: '👥', label: 'Mahasiswa',     href: '/students/list',            variant: 'glass' },
-    { emoji: '🎓', label: 'Onboarding',    href: '/onboarding',               variant: 'glass' },
-    { emoji: '🏛️', label: 'Organisasi',    href: '/students/organization',    variant: 'glass' },
-    { emoji: '📋', label: 'Pengajuan',     href: '/nimen/self-submissions',   variant: 'glass' },
-    { emoji: '🏆', label: 'Peringkat',     href: '/ranking',                  variant: 'glass' },
-    { emoji: '⚠️', label: 'Pelanggaran',   href: '/violation',                variant: 'glass' },
-    { emoji: '🛡️', label: 'Nilai Jabatan', href: '/nimen/position-values',    variant: 'glass' },
-    { emoji: '👤', label: 'Manaj. User',   href: '/users',                    variant: 'glass' },
-    { emoji: '⚙️', label: 'Konfigurasi',   href: '/nimen/batch-config',       variant: 'glass' },
-    { emoji: '📊', label: 'Rekap NIMEN',   href: '/nimen',                    variant: 'glass' },
-    { emoji: '🔔', label: 'Notifikasi',    href: '/notifications', badge: unread, variant: 'glass' },
+    { svgKey: 'mahasiswa',    label: 'Mahasiswa',     href: '/students/list',          variant: 'glass' },
+    { svgKey: 'onboarding',   label: 'Onboarding',    href: '/onboarding',             variant: 'glass' },
+    { svgKey: 'organisasi',   label: 'Organisasi',    href: '/students/organization',  variant: 'glass' },
+    { svgKey: 'pengajuan',    label: 'Pengajuan',     href: '/nimen/self-submissions', variant: 'glass' },
+    { svgKey: 'peringkat',    label: 'Peringkat',     href: '/ranking',                variant: 'glass' },
+    { svgKey: 'pelanggaran',  label: 'Pelanggaran',   href: '/violation',              variant: 'glass' },
+    { svgKey: 'nilaijabatan', label: 'Nilai Jabatan', href: '/nimen/position-values',  variant: 'glass' },
+    { svgKey: 'manajuser',    label: 'Manaj. User',   href: '/users',                  variant: 'glass' },
+    { svgKey: 'konfigurasi',  label: 'Konfigurasi',   href: '/nimen/batch-config',     variant: 'glass' },
+    { svgKey: 'rekapnimen',   label: 'Rekap NIMEN',   href: '/nimen',                  variant: 'glass' },
+    { svgKey: 'notifikasi',   label: 'Notifikasi',    href: '/notifications', badge: unread, variant: 'glass' },
   ]
 
-  const CRYSTAL_RED = {
-    gradient: 'linear-gradient(145deg, #E63946, #6D0E13)',
-    shadow: '0 6px 14px rgba(180,0,30,0.3), 0 2px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,180,180,0.5)',
-  }
-
   const masterDataActions = [
-    { emoji: '🏘️', label: 'Sindikat',        href: '/master-data/syndicates',          variant: 'crystal', ...CRYSTAL_RED },
-    { emoji: '🎓', label: 'Angkatan',         href: '/master-data/batches',             variant: 'crystal', ...CRYSTAL_RED },
-    { emoji: '✅', label: 'Status Akademik',  href: '/master-data/academic-statuses',   variant: 'crystal', ...CRYSTAL_RED },
-    { emoji: '📝', label: 'Kategori Nilai',   href: '/nimen/master-data/categories',    variant: 'crystal', ...CRYSTAL_RED },
-    { emoji: '📅', label: 'Variabel',         href: '/nimen/master-data/variables',     variant: 'crystal', ...CRYSTAL_RED },
-    { emoji: '🎯', label: 'Indikator',        href: '/nimen/master-data/indicators',    variant: 'crystal', ...CRYSTAL_RED },
+    { svgKey: 'sindikat',       label: 'Sindikat',        href: '/master-data/syndicates',        variant: 'crystal' },
+    { svgKey: 'angkatan',       label: 'Angkatan',        href: '/master-data/batches',           variant: 'crystal' },
+    { svgKey: 'statusakademik', label: 'Status Akademik', href: '/master-data/academic-statuses', variant: 'crystal' },
+    { svgKey: 'kategorinilai',  label: 'Kategori Nilai',  href: '/nimen/master-data/categories',  variant: 'crystal' },
+    { svgKey: 'variabel',       label: 'Variabel',        href: '/nimen/master-data/variables',   variant: 'crystal' },
+    { svgKey: 'indikator',      label: 'Indikator',       href: '/nimen/master-data/indicators',  variant: 'crystal' },
   ]
 
 
@@ -591,14 +601,11 @@ function AdminPWADashboard({ session }) {
 
       {/* Hero */}
       <HeroCard name={name} role={isDev ? 'Developer' : 'Admin NIMEN'} unread={unread} />
-      {/* Quick actions — card merah, icon glass */}
-      <Box sx={{
-        background: 'linear-gradient(135deg, #EB3D47 0%, #8B0000 100%)',
-        borderRadius: 1, p: 2,
-      }}>
+      {/* Quick actions — tanpa background, icon glass di atas warm bg */}
+      <Box sx={{ p: 0.5 }}>
         <Typography variant='caption' sx={{
           textTransform: 'uppercase', letterSpacing: '0.06em',
-          mb: 1.5, display: 'block', color: 'rgba(255,255,255,0.65)', fontWeight: 700, fontSize: '10px',
+          mb: 1.5, display: 'block', color: '#9A5A5A', fontWeight: 700, fontSize: '10px',
         }}>
           Menu Lainnya
         </Typography>
@@ -611,8 +618,8 @@ function AdminPWADashboard({ session }) {
         </Grid>
       </Box>
 
-      {/* Master Data section — card putih, icon crystal red */}
-      <Card sx={{ borderRadius: 1 }}>
+      {/* Master Data section — card rose tint, icon crystal red */}
+      <Card sx={{ borderRadius: 1, bgcolor: '#FDF1F1', border: '0.5px solid #F5C6C6' }}>
         <CardContent sx={{ p: 2 }}>
           <Typography variant='caption' sx={{
             textTransform: 'uppercase', letterSpacing: '0.06em',
@@ -631,7 +638,7 @@ function AdminPWADashboard({ session }) {
       </Card>
 
       {/* Sprint Terbaru — 5 sprint terakhir */}
-      <Card sx={{ borderRadius: 1 }}>
+      <Card sx={{ borderRadius: 1, bgcolor: '#FDF1F1', border: '0.5px solid #F5C6C6' }}>
         <CardContent sx={{ p: 2.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
             <Typography variant='body2' fontWeight={600}>Sprint Terbaru</Typography>
