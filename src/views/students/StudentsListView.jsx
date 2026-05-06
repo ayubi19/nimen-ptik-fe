@@ -344,36 +344,46 @@ const StudentsListView = () => {
         </Box>
       </Box>
 
-      {/* Stats — crystal icons, seirama dengan home PWA */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', mb: '10px' }}>
+      {/* Stats — 2x2 grid, crystal icons, label lengkap */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
         {[
-          { label: 'Total',    value: stats.total,     icon: 'ri-group-line' },
-          { label: 'Aktif',    value: stats.active,    icon: 'ri-user-follow-line' },
-          { label: 'Lulus',    value: stats.graduated, icon: 'ri-graduation-cap-line' },
-          { label: 'Drop Out', value: stats.dropout,   icon: 'ri-user-unfollow-line' },
+          { label: 'Total Mahasiswa',     value: stats.total,     icon: 'ri-group-line' },
+          { label: 'Mahasiswa Aktif',     value: stats.active,    icon: 'ri-user-follow-line' },
+          { label: 'Mahasiswa Lulus',     value: stats.graduated, icon: 'ri-graduation-cap-line' },
+          { label: 'Mahasiswa Drop Out',  value: stats.dropout,   icon: 'ri-user-unfollow-line' },
         ].map(s => (
-          <Box key={s.label} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
-            {/* Crystal icon — sama persis dengan home */}
+          <Box key={s.label} sx={{
+            background: '#fff',
+            border: '0.5px solid rgba(180,100,100,0.15)',
+            borderRadius: '12px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+          }}>
+            {/* Crystal icon */}
             <Box sx={{
-              width: 52, height: 52, borderRadius: '14px',
+              width: 44, height: 44, borderRadius: '12px', flexShrink: 0,
               background: 'linear-gradient(145deg, #E63946, #6D0E13)',
-              boxShadow: '0 5px 12px rgba(180,0,30,0.28), inset 0 1px 0 rgba(255,180,180,0.45)',
+              boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              position: 'relative', overflow: 'hidden', flexShrink: 0,
+              position: 'relative', overflow: 'hidden',
               '&::before': {
                 content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
-                borderRadius: '14px 14px 0 0',
+                borderRadius: '12px 12px 0 0',
                 background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)',
               }
             }}>
-              <i className={s.icon} style={{ fontSize: '22px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+              <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
             </Box>
-            <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#7A1A1A', textAlign: 'center' }}>
-              {s.value}
-            </Typography>
-            <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#3B1010', textAlign: 'center', lineHeight: 1.3 }}>
-              {s.label}
-            </Typography>
+            <Box>
+              <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>
+                {s.value}
+              </Typography>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px', lineHeight: 1.3 }}>
+                {s.label}
+              </Typography>
+            </Box>
           </Box>
         ))}
       </Box>
