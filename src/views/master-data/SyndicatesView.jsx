@@ -260,8 +260,9 @@ const SyndicatesView = () => {
             <CardContent sx={{ py: 12 }}>
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                 <i className='ri-shield-star-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                <Typography variant='body2' color='text.secondary'>Tidak ada sindikat ditemukan</Typography>
               </Box>
-              <Typography variant='body2' color='text.secondary'>Tidak ada sindikat ditemukan</Typography>
+
             </CardContent>
           </Card>
         ) : filtered.map(s => (
@@ -287,8 +288,9 @@ const SyndicatesView = () => {
                   <TableCell colSpan={4} align='center' sx={{ py: 8 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                       <i className='ri-shield-star-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada sindikat ditemukan</Typography>
                     </Box>
-                    <Typography variant='body2' color='text.secondary'>Tidak ada sindikat ditemukan</Typography>
+
                   </TableCell>
                 </TableRow>
               ) : filtered.map(s => (

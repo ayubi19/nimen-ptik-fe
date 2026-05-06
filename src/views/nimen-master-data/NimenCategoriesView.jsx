@@ -298,8 +298,9 @@ const NimenCategoriesView = () => {
           <CardContent sx={{ py: 12 }}>
             <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
               <i className='ri-node-tree' style={{ fontSize: 48, opacity: 0.3 }} />
+              <Typography variant='body2' color='text.secondary'>Tidak ada kategori ditemukan</Typography>
             </Box>
-            <Typography variant='body2' color='text.secondary'>Tidak ada kategori ditemukan</Typography>
+
           </CardContent>
         </Card>
       ) : (

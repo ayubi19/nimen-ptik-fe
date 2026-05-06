@@ -346,8 +346,9 @@ const NimenIndicatorsView = () => {
               <CardContent sx={{ py: 10 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                   <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                  <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
                 </Box>
-                <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
+
               </CardContent>
             </Card>
           ) : data.map(row => (
@@ -394,8 +395,9 @@ const NimenIndicatorsView = () => {
                   <TableCell colSpan={6} align='center' sx={{ py: 8 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                       <i className='ri-inbox-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
                     </Box>
-                    <Typography variant='body2' color='text.secondary'>Tidak ada indikator ditemukan</Typography>
+
                   </TableCell>
                 </TableRow>
               ) : data.map(row => {

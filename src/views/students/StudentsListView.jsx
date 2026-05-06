@@ -388,8 +388,8 @@ const StudentsListView = () => {
               <CardContent sx={{ py: 12 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                   <i className='ri-group-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                  <Typography variant='body2' color='text.secondary'>Tidak ada mahasiswa ditemukan.</Typography>
                 </Box>
-                <Typography variant='body2' color='text.secondary'>Tidak ada mahasiswa ditemukan.</Typography>
               </CardContent>
             </Card>
           ) : data.map(s => (
@@ -427,8 +427,8 @@ const StudentsListView = () => {
                   <TableCell colSpan={7} align='center' sx={{ py: 8 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                       <i className='ri-group-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada mahasiswa ditemukan.</Typography>
                     </Box>
-                    <Typography variant='body2' color='text.secondary'>Tidak ada mahasiswa ditemukan.</Typography>
                   </TableCell>
                 </TableRow>
               ) : data.map(s => {
