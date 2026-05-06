@@ -1156,15 +1156,17 @@ const NimenSprintDetailView = ({ sprintId }) => {
                                 </div>
                               }
             />
-            <FormControlLabel value='COORDINATOR_DRAFT'
-                              control={<Radio />}
-                              label={
-                                <div>
-                                  <Typography variant='body2' fontWeight={600}>Draft Koordinator</Typography>
-                                  <Typography variant='caption' color='text.secondary'>Daftar peserta yang sudah direvisi koordinator</Typography>
-                                </div>
-                              }
-            />
+            {sprint.coordinator_id && (
+              <FormControlLabel value='COORDINATOR_DRAFT'
+                                control={<Radio />}
+                                label={
+                                  <div>
+                                    <Typography variant='body2' fontWeight={600}>Draft Koordinator</Typography>
+                                    <Typography variant='caption' color='text.secondary'>Daftar peserta yang sudah direvisi koordinator</Typography>
+                                  </div>
+                                }
+              />
+            )}
             <FormControlLabel value='CUSTOM'
                               control={<Radio />}
                               label={
