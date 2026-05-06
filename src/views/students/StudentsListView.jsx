@@ -59,72 +59,131 @@ const fmtDate = (d) => d
   ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
   : '—'
 
-// ── Mobile Card ───────────────────────────────────────────────────────────────
+// ── PWA Student Card styles ───────────────────────────────────────────────────
+const pwaCardStyles = {
+  card: {
+    background: '#fff',
+    border: '0.5px solid rgba(180,100,100,0.15)',
+    borderRadius: '12px',
+    padding: '12px',
+    marginBottom: '10px',
+    overflow: 'hidden',
+  },
+  avatar: {
+    width: 40, height: 40, borderRadius: '12px',
+    background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+    boxShadow: '0 3px 8px rgba(180,0,30,0.22), inset 0 1px 0 rgba(255,180,180,0.35)',
+    fontSize: 11, fontWeight: 500,
+    color: 'rgba(255,255,255,0.92)',
+    flexShrink: 0,
+    position: 'relative', overflow: 'hidden',
+  },
+  actionBtn: {
+    flex: 1, padding: '5px 0', borderRadius: '8px',
+    fontSize: '10px', fontWeight: 500, textAlign: 'center',
+    border: '0.5px solid rgba(180,100,100,0.18)',
+    background: 'rgba(255,255,255,0.72)',
+    boxShadow: '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+    cursor: 'pointer', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', gap: '4px', minWidth: 0,
+  },
+  nonaktifBtn: {
+    width: '100%', padding: '5px 0', fontSize: '10px',
+    color: '#A32D2D', border: '0.5px solid rgba(163,45,45,0.2)',
+    background: '#FCEBEB', borderRadius: '8px',
+    textAlign: 'center', fontWeight: 500, cursor: 'pointer',
+    marginTop: '8px',
+  },
+}
+
+// ── Mobile Card — PWA Native style ────────────────────────────────────────────
 const StudentMobileCard = ({ student, onDetail, onEdit, onToggle, router }) => {
   const profile = student.student_profile
+  const initials = getInitials(student.full_name)
+
+  const statusCfg = student.is_active
+    ? { label: 'Aktif',    bg: '#E1F5EE', color: '#0F6E56' }
+    : { label: 'Nonaktif', bg: '#F1EFE8', color: '#5F5E5A' }
+
   return (
-    <Card className='mb-3' sx={{ overflow: 'hidden' }}>
+    <Box sx={pwaCardStyles.card}>
       {/* Header */}
-      <Box sx={{ px: 2, py: 1.5, bgcolor: 'action.hover' }}>
-        <div className='flex items-center gap-2 justify-between'>
-          <div className='flex items-center gap-2 flex-1 min-w-0'>
-            <Avatar sx={{ width: 38, height: 38, fontSize: 13, flexShrink: 0, bgcolor: 'primary.main' }}>
-              {getInitials(student.full_name)}
-            </Avatar>
-            <div className='min-w-0'>
-              <Typography variant='body2' fontWeight={700} noWrap>{student.full_name}</Typography>
-              <Typography variant='caption' color='text.secondary'>{profile?.nim || '—'}</Typography>
-            </div>
-          </div>
-          <Chip label={student.is_active ? 'Aktif' : 'Nonaktif'}
-                color={student.is_active ? 'success' : 'default'} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
-        </div>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '10px' }}>
+        <Avatar sx={pwaCardStyles.avatar}>{initials}</Avatar>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>
+            {student.full_name}
+          </Typography>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+            {profile?.nim || '—'}
+          </Typography>
+        </Box>
+        <Box sx={{ bgcolor: statusCfg.bg, borderRadius: '6px', px: 1, py: '3px', flexShrink: 0 }}>
+          <Typography sx={{ fontSize: '10px', fontWeight: 500, color: statusCfg.color }}>
+            {statusCfg.label}
+          </Typography>
+        </Box>
       </Box>
-      {/* Body */}
-      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-        <Grid container spacing={1.5} className='mb-2'>
-          {[
-            { icon: 'ri-shield-star-line', label: 'Sindikat', value: profile?.syndicate?.name },
-            { icon: 'ri-calendar-line',    label: 'Angkatan', value: profile?.batch?.year ? `${profile.batch.name} (${profile.batch.year})` : null },
-            { icon: 'ri-graduation-cap-line', label: 'Status Akademik', value: profile?.academic_status?.name },
-            { icon: 'ri-user-2-line',      label: 'Program', value: profile?.batch?.program_type },
-          ].map(r => r.value ? (
-            <Grid item xs={6} key={r.label}>
-              <div className='flex items-center gap-1.5'>
-                <i className={`${r.icon} text-xs`} style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
-                <div style={{ minWidth: 0 }}>
-                  <Typography variant='caption' color='text.secondary' sx={{ display: 'block', fontSize: 10 }}>{r.label}</Typography>
-                  <Typography variant='caption' fontWeight={500} noWrap sx={{ display: 'block' }}>{r.value}</Typography>
-                </div>
-              </div>
-            </Grid>
-          ) : null)}
-        </Grid>
-        <Divider className='mb-1.5' />
-        <div className='flex gap-1.5 flex-wrap'>
-          <Button size='small' variant='tonal' color='primary'
-                  startIcon={<i className='ri-user-line' />}
-                  onClick={() => router.push(`/students/${student.id}`)}>
-            Profil & Nilai
-          </Button>
-          <Button size='small' variant='tonal' color='secondary'
-                  startIcon={<i className='ri-eye-line' />}
-                  onClick={() => onDetail(student)}>
-            Detail
-          </Button>
-          <Button size='small' variant='tonal' color='secondary'
-                  startIcon={<i className='ri-edit-line' />}
-                  onClick={() => onEdit(student)}>
-            Edit
-          </Button>
-          <Button size='small' variant='tonal'
-                  color={student.is_active ? 'error' : 'success'}
-                  onClick={() => onToggle(student)}>
-            {student.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+
+      {/* Meta info */}
+      <Box sx={{
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px',
+        py: '8px',
+        borderTop: '0.5px solid rgba(180,100,100,0.1)',
+        borderBottom: '0.5px solid rgba(180,100,100,0.1)',
+        mb: '10px',
+      }}>
+        {[
+          { label: 'Sindikat',        value: profile?.syndicate?.name },
+          { label: 'Angkatan',        value: profile?.batch?.name ? `${profile.batch.name.split(' ').slice(0,2).join(' ')}...` : '—' },
+          { label: 'Status Akademik', value: profile?.academic_status?.name },
+          { label: 'Program',         value: profile?.batch?.program_type || '—' },
+        ].map(m => (
+          <Box key={m.label}>
+            <Typography sx={{ fontSize: '9px', color: '#9A5A5A' }}>{m.label}</Typography>
+            <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#3B1010' }} noWrap>
+              {m.value || '—'}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Actions */}
+      <Box sx={{ display: 'flex', gap: '6px', mb: '0px' }}>
+        <Box
+          component='button'
+          sx={{ ...pwaCardStyles.actionBtn, color: '#8B2020' }}
+          onClick={() => router.push(`/students/${student.id}`)}
+        >
+          <i className='ri-user-line' style={{ fontSize: '11px' }} />
+          Profil & Nilai
+        </Box>
+        <Box
+          component='button'
+          sx={{ ...pwaCardStyles.actionBtn, color: '#185FA5' }}
+          onClick={() => onDetail(student)}
+        >
+          <i className='ri-eye-line' style={{ fontSize: '11px' }} />
+          Detail
+        </Box>
+        <Box
+          component='button'
+          sx={{ ...pwaCardStyles.actionBtn, color: '#444441' }}
+          onClick={() => onEdit(student)}
+        >
+          <i className='ri-edit-line' style={{ fontSize: '11px' }} />
+          Edit
+        </Box>
+      </Box>
+
+      <Box
+        component='button'
+        sx={{ ...pwaCardStyles.nonaktifBtn }}
+        onClick={() => onToggle(student)}
+      >
+        {student.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+      </Box>
+    </Box>
   )
 }
 
@@ -263,119 +322,157 @@ const StudentsListView = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>Mahasiswa</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Daftar Mahasiswa</Typography>
-      </div>
+      {/* Topbar PWA style */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{
+          width: 34, height: 34, borderRadius: '10px',
+          background: 'rgba(255,255,255,0.72)',
+          border: '0.5px solid rgba(180,100,100,0.18)',
+          boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+          '&::before': {
+            content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)',
+          }
+        }} onClick={() => router.back()}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Mahasiswa</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Daftar Mahasiswa</Typography>
+        </Box>
+      </Box>
 
-      {/* Stats — 6 card, 2 per row */}
-      <Grid container spacing={4} className='mb-6'>
+      {/* Stats — crystal icons, seirama dengan home PWA */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', mb: '10px' }}>
         {[
-          { label: 'Total Mahasiswa', value: stats.total,     icon: 'ri-group-line',            color: '#7367F0', bg: '#F3EDFF' },
-          { label: 'Mahasiswa S1',    value: stats.s1,        icon: 'ri-user-2-line',           color: '#00CFE8', bg: '#E0F9FC' },
-          { label: 'Mahasiswa S2',    value: stats.s2,        icon: 'ri-user-star-line',        color: '#FF9F43', bg: '#FFF3E8' },
-          { label: 'Aktif',           value: stats.active,    icon: 'ri-user-follow-line',      color: '#28C76F', bg: '#E6F9EE' },
-          { label: 'Lulus',           value: stats.graduated, icon: 'ri-graduation-cap-line',   color: '#1E9BE9', bg: '#E8F4FE' },
-          { label: 'Drop Out',        value: stats.dropout,   icon: 'ri-user-unfollow-line',    color: '#EA5455', bg: '#FFEDED' },
+          { label: 'Total',    value: stats.total,     icon: 'ri-group-line' },
+          { label: 'Aktif',    value: stats.active,    icon: 'ri-user-follow-line' },
+          { label: 'Lulus',    value: stats.graduated, icon: 'ri-graduation-cap-line' },
+          { label: 'Drop Out', value: stats.dropout,   icon: 'ri-user-unfollow-line' },
         ].map(s => (
-          <Grid item xs={6} sm={4} key={s.label}>
-            <Card>
-              <CardContent sx={{ p: "0 !important" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "12px", p: "12px" }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                    <Typography variant='caption' color='text.secondary'
-                                sx={{ display: 'block', fontSize: { xs: 10, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.label}
-                    </Typography>
-                  </div>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Box key={s.label} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+            {/* Crystal icon — sama persis dengan home */}
+            <Box sx={{
+              width: 52, height: 52, borderRadius: '14px',
+              background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+              boxShadow: '0 5px 12px rgba(180,0,30,0.28), inset 0 1px 0 rgba(255,180,180,0.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', overflow: 'hidden', flexShrink: 0,
+              '&::before': {
+                content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+                borderRadius: '14px 14px 0 0',
+                background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)',
+              }
+            }}>
+              <i className={s.icon} style={{ fontSize: '22px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+            </Box>
+            <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#7A1A1A', textAlign: 'center' }}>
+              {s.value}
+            </Typography>
+            <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#3B1010', textAlign: 'center', lineHeight: 1.3 }}>
+              {s.label}
+            </Typography>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
-      {/* Filter */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Grid container spacing={3}>
-            {/* Row 1: Angkatan + Sindikat */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Angkatan</InputLabel>
-                <Select label='Angkatan' value={batchFilter}
-                        onChange={e => { setBatchFilter(e.target.value); setPage(0) }}
-                        renderValue={val => {
-                          const b = batches.find(x => x.id === val)
-                          if (!b) return ''
-                          return (
-                            <div className='flex items-center justify-between gap-2'>
-                              <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
-                              <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                                    color={b.program_type === 'S2' ? 'info' : 'success'} sx={{ flexShrink: 0 }} />
-                            </div>
-                          )
-                        }}>
-                  <MenuItem value=''>Semua Angkatan</MenuItem>
-                  {batches.map(b => (
-                    <MenuItem key={b.id} value={b.id}>
-                      <div className='flex items-center justify-between w-full gap-2'>
-                        <div>
-                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
-                          <Typography variant='caption' color='text.secondary'>
-                            Angkatan ke-{b.batch_number} · {b.year}
-                          </Typography>
-                        </div>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'} />
-                      </div>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Sindikat</InputLabel>
-                <Select label='Sindikat' value={syndicateFilter}
-                        onChange={e => { setSyndicateFilter(e.target.value); setPage(0) }}>
-                  <MenuItem value=''>Semua Sindikat</MenuItem>
-                  {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-            </Grid>
-            {/* Row 2: Status Akademik + Search */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Status Akademik</InputLabel>
-                <Select label='Status Akademik' value={academicStatusFilter}
-                        onChange={e => { setAcademicStatusFilter(e.target.value); setPage(0) }}>
-                  <MenuItem value=''>Semua Status</MenuItem>
-                  {academicStatuses.map(a => (
-                    <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <DebouncedInput fullWidth value={globalFilter}
-                              onChange={v => { setGlobalFilter(v); setPage(0) }}
-                              placeholder='Cari nama atau NIM...'
-                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* Filter — PWA native style */}
+      <Box sx={{
+        background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+        borderRadius: '12px', p: '10px 12px', mb: '10px',
+        display: 'flex', flexDirection: 'column', gap: '8px',
+      }}>
+        {/* Angkatan — full width karena nilainya panjang */}
+        <FormControl fullWidth size='small'>
+          <Select
+            displayEmpty
+            value={batchFilter}
+            onChange={e => { setBatchFilter(e.target.value); setPage(0) }}
+            renderValue={val => {
+              const b = batches.find(x => x.id === val)
+              return b ? `${b.name} (${b.year})` : 'Semua Angkatan'
+            }}
+            sx={{
+              borderRadius: '8px', fontSize: '12px',
+              bgcolor: '#F5F2F0', border: 'none',
+              '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' },
+              '& .MuiSelect-select': { py: '7px', px: '10px' },
+            }}
+          >
+            <MenuItem value=''>Semua Angkatan</MenuItem>
+            {batches.map(b => (
+              <MenuItem key={b.id} value={b.id}>
+                <Box>
+                  <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                  <Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year}</Typography>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Sindikat + Status Akademik — dibagi 2 */}
+        <Box sx={{ display: 'flex', gap: '8px' }}>
+          <FormControl size='small' sx={{ flex: 1 }}>
+            <Select
+              displayEmpty
+              value={syndicateFilter}
+              onChange={e => { setSyndicateFilter(e.target.value); setPage(0) }}
+              renderValue={val => syndicates.find(x => x.id === val)?.name || 'Sindikat'}
+              sx={{
+                borderRadius: '8px', fontSize: '12px',
+                bgcolor: '#F5F2F0',
+                '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' },
+                '& .MuiSelect-select': { py: '7px', px: '10px' },
+              }}
+            >
+              <MenuItem value=''>Semua Sindikat</MenuItem>
+              {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+          <FormControl size='small' sx={{ flex: 1 }}>
+            <Select
+              displayEmpty
+              value={academicStatusFilter}
+              onChange={e => { setAcademicStatusFilter(e.target.value); setPage(0) }}
+              renderValue={val => academicStatuses.find(x => x.id === val)?.name || 'Status'}
+              sx={{
+                borderRadius: '8px', fontSize: '12px',
+                bgcolor: '#F5F2F0',
+                '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' },
+                '& .MuiSelect-select': { py: '7px', px: '10px' },
+              }}
+            >
+              <MenuItem value=''>Semua Status</MenuItem>
+              {academicStatuses.map(a => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+        </Box>
+
+        {/* Search */}
+        <DebouncedInput
+          fullWidth
+          value={globalFilter}
+          onChange={v => { setGlobalFilter(v); setPage(0) }}
+          placeholder='Cari nama atau NIM...'
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0',
+              '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' },
+            },
+            '& .MuiOutlinedInput-input': { py: '7px', px: '10px' },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position='start'>
+                <i className='ri-search-line' style={{ color: '#9A5A5A', fontSize: '14px' }} />
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
 
       {/* Content */}
       {loading ? (
