@@ -34,6 +34,9 @@ export const nimenSprintApi = {
   getCoordinators: (id) =>
     apiClient.get(`/nimen/sprints/${id}/coordinators`),
 
+  selfReview: (id) =>
+    apiClient.post(`/nimen/sprints/${id}/self-review`),
+
   sendToCoordinator: (id, data) =>
     apiClient.post(`/nimen/sprints/${id}/send-to-coordinator`, data),
 

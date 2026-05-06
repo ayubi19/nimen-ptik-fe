@@ -307,6 +307,23 @@ const NimenSprintDetailView = ({ sprintId }) => {
     }
   }, [sprintId, showToast])
 
+  const [selfReviewOpen, setSelfReviewOpen] = useState(false)
+  const [selfReviewLoading, setSelfReviewLoading] = useState(false)
+
+  const handleSelfReview = useCallback(async () => {
+    setSelfReviewLoading(true)
+    try {
+      await nimenSprintApi.selfReview(sprintId)
+      showToast('Sprint siap direview oleh admin')
+      setSelfReviewOpen(false)
+      fetchSprint()
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Gagal memproses', 'error')
+    } finally {
+      setSelfReviewLoading(false)
+    }
+  }, [sprintId, fetchSprint, showToast])
+
   const handleSendToCoordinator = useCallback(async () => {
     if (selectedCoordinatorIDs.length === 0) {
       showToast('Pilih minimal 1 koordinator', 'error')
@@ -529,6 +546,13 @@ const NimenSprintDetailView = ({ sprintId }) => {
                             onClick={handleOpenSend}
                             disabled={quotaUsed === 0}>
                       Kirim ke Koordinator
+                    </Button>
+                    <Button variant='tonal' color='info'
+                            startIcon={<i className='ri-user-settings-line' />}
+                            fullWidth={isMobile}
+                            onClick={() => setSelfReviewOpen(true)}
+                            disabled={quotaUsed === 0}>
+                      Review Sendiri
                     </Button>
                   </>
                 )}
@@ -973,6 +997,31 @@ const NimenSprintDetailView = ({ sprintId }) => {
                   disabled={addingLoading || selectedStudents.length === 0}
                   startIcon={addingLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-user-add-line' />}>
             {addingLoading ? 'Menambahkan...' : `Tambah ${selectedStudents.length} Peserta`}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Dialog Konfirmasi Review Sendiri ── */}
+      <Dialog open={selfReviewOpen} onClose={() => setSelfReviewOpen(false)} maxWidth='xs' fullWidth>
+        <DialogTitle>Review Peserta Sendiri?</DialogTitle>
+        <DialogContent>
+          <Typography variant='body2' sx={{ mb: 1.5 }}>
+            Sprint akan langsung masuk ke tahap <strong>Review Masuk</strong> tanpa melalui koordinator.
+            Kamu yang akan mereview dan menyetujui peserta sprint ini.
+          </Typography>
+          <Box sx={{ bgcolor: '#FAEEDA', borderRadius: 1, p: 1.5 }}>
+            <Typography variant='caption' sx={{ color: '#633806' }}>
+              Pastikan daftar peserta sudah sesuai sebelum melanjutkan.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button variant='tonal' color='secondary' onClick={() => setSelfReviewOpen(false)}>
+            Batal
+          </Button>
+          <Button variant='contained' color='info' onClick={handleSelfReview}
+                  disabled={selfReviewLoading}>
+            {selfReviewLoading ? 'Memproses...' : 'Ya, Review Sendiri'}
           </Button>
         </DialogActions>
       </Dialog>
