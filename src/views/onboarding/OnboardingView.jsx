@@ -43,9 +43,9 @@ import { onboardingApi, telegramAdminApi } from '@/libs/api/onboardingApi'
 import { syndicateApi, batchApi, academicStatusApi } from '@/libs/api/masterDataApi'
 
 const STATUS_CONFIG = {
-  PENDING:  { label: 'Menunggu',  color: 'warning', icon: 'ri-time-line' },
-  APPROVED: { label: 'Disetujui', color: 'success', icon: 'ri-checkbox-circle-line' },
-  REJECTED: { label: 'Ditolak',   color: 'error',   icon: 'ri-close-circle-line' },
+  PENDING:  { label: 'Menunggu',  icon: 'ri-time-line' },
+  APPROVED: { label: 'Disetujui', icon: 'ri-checkbox-circle-line' },
+  REJECTED: { label: 'Ditolak',   icon: 'ri-close-circle-line' },
 }
 
 const fmtDate = (d) => d
@@ -409,7 +409,13 @@ const OnboardingView = () => {
             onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
             renderValue={val => {
               const cfg = STATUS_CONFIG[val]
-              return cfg ? cfg.label : 'Semua Status'
+              if (!cfg) return 'Semua Status'
+              return (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <i className={cfg.icon} style={{ fontSize: '16px', color: '#B45454' }}></i>
+                  <span>{cfg.label}</span>
+                </Box>
+              )
             }}
             sx={{
               borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0',
@@ -420,6 +426,7 @@ const OnboardingView = () => {
             <MenuItem value=''>Semua Status</MenuItem>
             {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
               <MenuItem key={key} value={key}>
+                <i className={cfg.icon} style={{ fontSize: '16px' }}></i>
                 <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
               </MenuItem>
             ))}
