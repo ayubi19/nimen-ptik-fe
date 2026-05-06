@@ -272,7 +272,10 @@ function ViolationValueCard({ isMobile, batches, showToast, isAdmin, studentID }
           // Mobile: card list
           <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
             {rows.length === 0
-              ? <Typography variant='caption' color='text.secondary' sx={{ textAlign: 'center', py: 2, display: 'block' }}>Tidak ada data</Typography>
+              ? <Box sx={{ py: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <i className='ri-file-list-3-line' style={{ fontSize: 32, opacity: 0.3 }} />
+                <Typography variant='caption' color='text.secondary'>Tidak ada data</Typography>
+              </Box>
               : rows.map(r => (
                 <Box key={r.id} sx={{ p: 1.5, borderRadius: 1, border: '0.5px solid', borderColor: 'divider' }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -310,7 +313,10 @@ function ViolationValueCard({ isMobile, batches, showToast, isAdmin, studentID }
               <TableBody>
                 {rows.length === 0 ? (
                   <TableRow><TableCell colSpan={5} align='center'>
-                    <Typography variant='caption' color='text.secondary'>Tidak ada data</Typography>
+                    <Box sx={{ py: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <i className='ri-file-list-3-line' style={{ fontSize: 32, opacity: 0.3 }} />
+                      <Typography variant='caption' color='text.secondary'>Tidak ada data</Typography>
+                    </Box>
                   </TableCell></TableRow>
                 ) : rows.map(r => (
                   <TableRow key={r.id} hover>

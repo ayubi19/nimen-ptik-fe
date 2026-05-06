@@ -562,9 +562,9 @@ const NimenRekapView = () => {
       {/* Empty state awal */}
       {!hasLoaded && !loading && (
         <Card>
-          <CardContent className='text-center py-16'>
-            <i className='ri-bar-chart-grouped-line text-6xl opacity-20 block mb-3' />
-            <Typography variant='body1' color='text.secondary'>
+          <CardContent sx={{ py: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <i className='ri-bar-chart-grouped-line' style={{ fontSize: 48, opacity: 0.3 }} />
+            <Typography variant='body2' color='text.secondary' textAlign='center'>
               Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
             </Typography>
           </CardContent>

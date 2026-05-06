@@ -148,8 +148,8 @@ export default function NotificationsView() {
             <CircularProgress size={28} />
           </Box>
         ) : items.length === 0 ? (
-          <Box sx={{ py: 6, textAlign: 'center' }}>
-            <i className='ri-notification-off-line' style={{ fontSize: 40, color: 'var(--mui-palette-text-secondary)', display: 'block', marginBottom: 8 }} />
+          <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+            <i className='ri-notification-off-line' style={{ fontSize: 48, opacity: 0.3 }} />
             <Typography variant='body2' color='text.secondary'>Tidak ada notifikasi</Typography>
           </Box>
         ) : (

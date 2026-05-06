@@ -337,8 +337,8 @@ const NimenSprintListView = () => {
               <CardContent sx={{ py: 12 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                   <i className='ri-flag-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                  <Typography variant='body2' color='text.secondary'>Tidak ada sprint ditemukan</Typography>
                 </Box>
-                <Typography variant='body2' color='text.secondary'>Tidak ada sprint ditemukan</Typography>
               </CardContent>
             </Card>
           ) : data.map(sprint => (
@@ -372,8 +372,8 @@ const NimenSprintListView = () => {
                   <TableCell colSpan={7} align='center' sx={{ py: 8 }}>
                     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
                       <i className='ri-flag-line' style={{ fontSize: 48, opacity: 0.3 }} />
+                      <Typography variant='body2' color='text.secondary'>Tidak ada sprint ditemukan</Typography>
                     </Box>
-                    <Typography variant='body2' color='text.secondary'>Tidak ada sprint ditemukan</Typography>
                   </TableCell>
                 </TableRow>
               ) : data.map(sprint => {
