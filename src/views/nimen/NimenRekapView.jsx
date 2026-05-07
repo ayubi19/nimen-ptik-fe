@@ -582,14 +582,14 @@ const NimenRekapView = () => {
 
         {/* Empty result */}
         {hasLoaded && entries.length === 0 && (
-          <Card>
-            <CardContent className='text-center py-12'>
-              <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
-              <Typography variant='body2' color='text.secondary'>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', py: '40px', px: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <i className='ri-inbox-line' style={{ fontSize: 40, opacity: 0.25 }} />
+              <Typography sx={{ fontSize: '12px', color: '#9A5A5A', textAlign: 'center' }}>
                 Tidak ada entri nilai yang ditemukan untuk filter yang dipilih.
               </Typography>
-            </CardContent>
-          </Card>
+            </Box>
+          </Box>
         )}
 
         {/* Grouped per indikator dengan pagination */}
