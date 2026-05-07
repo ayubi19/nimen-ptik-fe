@@ -60,60 +60,105 @@ const DebouncedInput = ({ value: initial, onChange, debounce = 400, ...props }) 
   return <TextField {...props} value={value} onChange={e => setValue(e.target.value)} size='small' />
 }
 
-// ── Mobile Card ───────────────────────────────────────────────────────────────
+// ── Mobile Card — PWA Native style ────────────────────────────────────────────
+const STATUS_BADGE = {
+  PENDING:  { label: 'Menunggu',  bg: '#FAEEDA', color: '#BA7517' },
+  APPROVED: { label: 'Disetujui', bg: '#E1F5EE', color: '#0F6E56' },
+  REJECTED: { label: 'Ditolak',   bg: '#FCEBEB', color: '#A32D2D' },
+}
+
 const SubmissionMobileCard = ({ submission, onReview }) => {
-  const cfg = STATUS_CONFIG[submission.status] || { label: submission.status, color: 'default' }
+  const badge = STATUS_BADGE[submission.status] || { label: submission.status, bg: '#F1EFE8', color: '#5F5E5A' }
   const isPending = submission.status === 'PENDING'
+  const docCount = submission.documents?.length || 0
 
   return (
-    <Card className='mb-3'>
-      <CardContent>
-        <div className='flex items-start justify-between gap-2 mb-2'>
-          <div className='flex items-center gap-2 flex-1 min-w-0'>
-            <Avatar sx={{ width: 34, height: 34, fontSize: 12, flexShrink: 0 }}>
-              {getInitials(submission.student?.full_name || '')}
-            </Avatar>
-            <div className='min-w-0'>
-              <Typography variant='body2' fontWeight={600} noWrap>
-                {submission.student?.full_name}
-              </Typography>
-              <Typography variant='caption' color='text.secondary'>
-                {submission.student?.student_profile?.nim}
-              </Typography>
-            </div>
-          </div>
-          <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
-        </div>
+    <Box sx={{
+      background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+      borderRadius: '12px', padding: '12px', mb: '10px',
+    }}>
+      {/* Header — nama mahasiswa */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '10px' }}>
+        <Avatar sx={{
+          width: 40, height: 40, borderRadius: '12px !important',
+          background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+          boxShadow: '0 3px 8px rgba(180,0,30,0.22), inset 0 1px 0 rgba(255,180,180,0.35)',
+          fontSize: 11, fontWeight: 500, flexShrink: 0,
+        }}>
+          {getInitials(submission.student?.full_name || '')}
+        </Avatar>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>
+            {submission.student?.full_name}
+          </Typography>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+            {submission.student?.student_profile?.nim || '—'}
+          </Typography>
+        </Box>
+        <Box sx={{ bgcolor: badge.bg, borderRadius: '6px', px: 1, py: '3px', flexShrink: 0 }}>
+          <Typography sx={{ fontSize: '10px', fontWeight: 500, color: badge.color }}>{badge.label}</Typography>
+        </Box>
+      </Box>
 
-        <div className='flex flex-col gap-1 mb-3'>
-          <Typography variant='body2' fontWeight={500}>{submission.indicator?.name}</Typography>
-          <div className='flex items-center gap-2 flex-wrap'>
-            <Chip label={`+${submission.indicator?.value}`} color='success' size='small'
-                  variant='tonal' sx={{ fontWeight: 700 }} />
-            <div className='flex items-center gap-1'>
-              <i className='ri-calendar-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
-              <Typography variant='caption' color='text.secondary'>{fmtDate(submission.event_date)}</Typography>
-            </div>
-            <Chip label={`${submission.documents?.length || 0} dokumen`} size='small'
-                  color={submission.documents?.length > 0 ? 'info' : 'default'} variant='tonal' />
-          </div>
-          {submission.status === 'REJECTED' && submission.rejection_reason && (
-            <Typography variant='caption' color='error.main' sx={{ fontStyle: 'italic' }}>
-              Alasan: {submission.rejection_reason}
+      {/* Meta info */}
+      <Box sx={{
+        py: '8px',
+        borderTop: '0.5px solid rgba(180,100,100,0.1)',
+        borderBottom: '0.5px solid rgba(180,100,100,0.1)',
+        mb: '10px', display: 'flex', flexDirection: 'column', gap: '5px',
+      }}>
+        {/* Indikator + nilai */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#3B1010', flex: 1, minWidth: 0 }} noWrap>
+            {submission.indicator?.name}
+          </Typography>
+          <Box sx={{ bgcolor: '#E1F5EE', borderRadius: '6px', px: '7px', py: '2px', flexShrink: 0 }}>
+            <Typography sx={{ fontSize: '10px', fontWeight: 700, color: '#0F6E56' }}>
+              +{submission.indicator?.value}
             </Typography>
-          )}
-        </div>
+          </Box>
+        </Box>
+        {/* Tanggal + dokumen */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <i className='ri-calendar-line' style={{ fontSize: '11px', color: '#9A5A5A' }} />
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{fmtDate(submission.event_date)}</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <i className='ri-file-line' style={{ fontSize: '11px', color: docCount > 0 ? '#185FA5' : '#9A5A5A' }} />
+            <Typography sx={{ fontSize: '11px', color: docCount > 0 ? '#185FA5' : '#9A5A5A' }}>
+              {docCount} dokumen
+            </Typography>
+          </Box>
+        </Box>
+        {/* Alasan tolak */}
+        {submission.status === 'REJECTED' && submission.rejection_reason && (
+          <Box sx={{ bgcolor: '#FCEBEB', borderRadius: '6px', px: '8px', py: '4px' }}>
+            <Typography sx={{ fontSize: '10px', color: '#A32D2D', fontStyle: 'italic' }}>
+              {submission.rejection_reason}
+            </Typography>
+          </Box>
+        )}
+      </Box>
 
-        <Divider className='mb-2' />
-        <Button fullWidth size='small'
-                variant={isPending ? 'contained' : 'tonal'}
-                color={isPending ? 'primary' : 'secondary'}
-                startIcon={<i className={isPending ? 'ri-edit-box-line' : 'ri-eye-line'} />}
-                onClick={() => onReview(submission)}>
-          {isPending ? 'Review Pengajuan' : 'Lihat Detail'}
-        </Button>
-      </CardContent>
-    </Card>
+      {/* Action button */}
+      <Box component='button' onClick={() => onReview(submission)} sx={{
+        width: '100%', py: '6px', borderRadius: '8px',
+        fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+        border: isPending ? 'none' : '0.5px solid rgba(180,100,100,0.18)',
+        background: isPending
+          ? 'linear-gradient(145deg, #E63946, #6D0E13)'
+          : 'rgba(255,255,255,0.72)',
+        boxShadow: isPending
+          ? '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)'
+          : '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+        color: isPending ? '#fff' : '#185FA5',
+      }}>
+        <i className={isPending ? 'ri-edit-box-line' : 'ri-eye-line'} style={{ fontSize: '13px' }} />
+        {isPending ? 'Review Pengajuan' : 'Lihat Detail'}
+      </Box>
+    </Box>
   )
 }
 
@@ -202,73 +247,118 @@ const SelfSubmissionAdminView = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Pengajuan Nilai Mandiri</Typography>
-      </div>
+      {/* Topbar PWA style */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{
+          width: 34, height: 34, borderRadius: '10px',
+          background: 'rgba(255,255,255,0.72)',
+          border: '0.5px solid rgba(180,100,100,0.18)',
+          boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+          '&::before': {
+            content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)',
+          }
+        }} onClick={() => window.history.back()}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Pengajuan Nilai Mandiri</Typography>
+        </Box>
+      </Box>
 
-      {/* Stats */}
-      <Grid container spacing={4} className='mb-6'>
+      {/* Stats — 2x2 crystal icons */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
         {[
-          { label: 'Total Pengajuan', value: total,                                               icon: 'ri-file-list-3-line',      color: '#7367F0', bg: '#F3EDFF' },
-          { label: 'Menunggu Review', value: statusFilter === 'PENDING'  ? total : statPending,  icon: 'ri-time-line',             color: '#FF9F43', bg: '#FFF3E8' },
-          { label: 'Disetujui',       value: statusFilter === 'APPROVED' ? total : statApproved, icon: 'ri-checkbox-circle-line',  color: '#28C76F', bg: '#E6F9EE' },
-          { label: 'Ditolak',         value: statusFilter === 'REJECTED' ? total : statRejected, icon: 'ri-close-circle-line',     color: '#EA5455', bg: '#FFEDED' },
+          { label: 'Total Pengajuan', value: total,                                               icon: 'ri-file-list-3-line' },
+          { label: 'Menunggu Review', value: statusFilter === 'PENDING'  ? total : statPending,  icon: 'ri-time-line' },
+          { label: 'Disetujui',       value: statusFilter === 'APPROVED' ? total : statApproved, icon: 'ri-checkbox-circle-line' },
+          { label: 'Ditolak',         value: statusFilter === 'REJECTED' ? total : statRejected, icon: 'ri-close-circle-line' },
         ].map(s => (
-          <Grid item xs={6} sm={3} key={s.label}>
-            <Card sx={{ height: '100%' }}>
-              <CardContent sx={{ p: "0 !important" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "12px", p: "12px" }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                    <Typography variant='caption' color='text.secondary'
-                                sx={{ display: 'block', fontSize: { xs: 11, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.label}
-                    </Typography>
-                  </div>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Box key={s.label} sx={{
+            background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+            borderRadius: '12px', padding: '10px 12px',
+            display: 'flex', alignItems: 'center', gap: '10px',
+          }}>
+            <Box sx={{
+              width: 44, height: 44, borderRadius: '12px', flexShrink: 0,
+              background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+              boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', overflow: 'hidden',
+              '&::before': {
+                content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+                borderRadius: '12px 12px 0 0',
+                background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)',
+              }
+            }}>
+              <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>{s.value}</Typography>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px', lineHeight: 1.3 }}>{s.label}</Typography>
+            </Box>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
-      {/* Filter */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Status</InputLabel>
-                <Select label='Status' value={statusFilter}
-                        onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
-                  <MenuItem value=''>Semua Status</MenuItem>
-                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                    <MenuItem key={key} value={key}>
-                      <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={8}>
-              <DebouncedInput fullWidth value={search}
-                              onChange={v => { setSearch(v); setPage(0) }}
-                              placeholder='Cari nama atau NIM...'
-                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* Filter — PWA native style */}
+      <Box sx={{
+        background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+        borderRadius: '12px', p: '10px 12px', mb: '10px',
+        display: 'flex', flexDirection: 'column', gap: '8px',
+      }}>
+        <FormControl fullWidth size='small'>
+          <Select
+            displayEmpty
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
+            renderValue={val => {
+              const cfg = STATUS_CONFIG[val]
+              if (!cfg) return 'Semua Status'
+              return (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <i className={cfg.icon} style={{ fontSize: '14px', color: '#B45454' }} />
+                  <span>{cfg.label}</span>
+                </Box>
+              )
+            }}
+            sx={{
+              borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0',
+              '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' },
+              '& .MuiSelect-select': { py: '7px', px: '10px' },
+            }}
+          >
+            <MenuItem value=''>Semua Status</MenuItem>
+            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+              <MenuItem key={key} value={key}>
+                <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <DebouncedInput
+          fullWidth value={search}
+          onChange={v => { setSearch(v); setPage(0) }}
+          placeholder='Cari nama atau NIM...'
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0',
+              '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' },
+            },
+            '& .MuiOutlinedInput-input': { py: '7px', px: '10px' },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position='start'>
+                <i className='ri-search-line' style={{ color: '#9A5A5A', fontSize: '14px' }} />
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
 
       {/* Content */}
       {loading ? (

@@ -53,31 +53,41 @@ const InfoRow = ({ label, value }) => (
   </div>
 )
 
-// ── Mobile: Riwayat Card ──────────────────────────────────────────────────────
+// ── Mobile: Riwayat Card — PWA native ────────────────────────────────────────
+const SOURCE_BADGE = {
+  SPRINT:          { bg: '#E6F1FB', color: '#185FA5' },
+  SELF_SUBMISSION: { bg: '#EEEDFE', color: '#534AB7' },
+  AUTOMATIC:       { bg: '#E1F5EE', color: '#0F6E56' },
+}
+
 const HistoryMobileCard = ({ entry }) => {
-  const srcCfg = SOURCE_CONFIG[entry.source_type] || { label: entry.source_type, color: 'default' }
-  const stsCfg = STATUS_CONFIG[entry.status]      || { label: entry.status,      color: 'default' }
+  const srcCfg = SOURCE_CONFIG[entry.source_type] || { label: entry.source_type }
+  const srcBadge = SOURCE_BADGE[entry.source_type] || { bg: '#F1EFE8', color: '#5F5E5A' }
   const isPlus = entry.value >= 0
 
   return (
-    <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
-      <div className='flex items-start justify-between gap-2 mb-1'>
-        <div className='flex-1 min-w-0'>
-          <Typography variant='body2' fontWeight={600} noWrap>{entry.indicator?.name}</Typography>
-          <Typography variant='caption' color='text.secondary'>
-            {entry.indicator?.variable?.category?.name} · {entry.indicator?.variable?.name}
-          </Typography>
-        </div>
-        <Typography variant='body2' fontWeight={700}
-                    color={isPlus ? 'success.main' : 'error.main'} sx={{ flexShrink: 0 }}>
+    <Box sx={{
+      py: '10px', px: 2,
+      borderBottom: '0.5px solid rgba(180,100,100,0.08)',
+      '&:last-child': { borderBottom: 'none' },
+    }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', mb: '5px' }}>
+        <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#3B1010', flex: 1, minWidth: 0, lineHeight: 1.3 }} noWrap>
+          {entry.indicator?.name}
+        </Typography>
+        <Typography sx={{ fontSize: '13px', fontWeight: 700, flexShrink: 0, color: isPlus ? '#0F6E56' : '#A32D2D' }}>
           {isPlus ? `+${entry.value}` : entry.value}
         </Typography>
-      </div>
-      <div className='flex items-center gap-2 flex-wrap mt-1'>
-        <Typography variant='caption' color='text.secondary'>{fmtDate(entry.event_date)}</Typography>
-        <Chip label={srcCfg.label} color={srcCfg.color} size='small' variant='tonal' sx={{ height: 18, fontSize: 10 }} />
-        <Chip label={stsCfg.label} color={stsCfg.color} size='small' variant='tonal' sx={{ height: 18, fontSize: 10 }} />
-      </div>
+      </Box>
+      <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mb: '6px' }}>
+        {entry.indicator?.variable?.category?.name} · {entry.indicator?.variable?.name}
+      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+        <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{fmtDate(entry.event_date)}</Typography>
+        <Box sx={{ bgcolor: srcBadge.bg, borderRadius: '5px', px: '6px', py: '2px' }}>
+          <Typography sx={{ fontSize: '9px', fontWeight: 500, color: srcBadge.color }}>{srcCfg.label}</Typography>
+        </Box>
+      </Box>
     </Box>
   )
 }
@@ -161,83 +171,117 @@ const StudentProfileView = ({ studentId }) => {
   return (
     <Grid container spacing={6}>
 
-      {/* Tombol kembali + export */}
+      {/* Topbar PWA style */}
       <Grid item xs={12}>
-        <div className='flex items-center justify-between gap-4 flex-wrap'>
-          <Button variant='tonal' color='secondary' size='small'
-                  startIcon={<i className='ri-arrow-left-line' />}
-                  onClick={() => router.back()}>
-            Kembali
-          </Button>
-          <ButtonGroup variant='tonal' size='small' disabled={!!exportLoading}>
-            <Tooltip title='Export PDF'>
-              <Button color='error'
-                      startIcon={exportLoading === 'pdf'
-                        ? <CircularProgress size={14} color='inherit' />
-                        : <i className='ri-file-pdf-line' />}
-                      onClick={handleExportPDF}>PDF</Button>
-            </Tooltip>
-            <Tooltip title='Export Excel'>
-              <Button color='success'
-                      startIcon={exportLoading === 'xlsx'
-                        ? <CircularProgress size={14} color='inherit' />
-                        : <i className='ri-file-excel-line' />}
-                      onClick={handleExportXLSX}>Excel</Button>
-            </Tooltip>
-          </ButtonGroup>
-        </div>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Box sx={{
+              width: 34, height: 34, borderRadius: '10px',
+              background: 'rgba(255,255,255,0.72)',
+              border: '0.5px solid rgba(180,100,100,0.18)',
+              boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+              '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+            }} onClick={() => router.back()}>
+              <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Mahasiswa</Typography>
+              <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Profil & Nilai</Typography>
+            </Box>
+          </Box>
+          {/* Export buttons — glass style */}
+          <Box sx={{ display: 'flex', gap: '6px' }}>
+            <Box component='button' onClick={handleExportPDF} disabled={!!exportLoading} sx={{
+              display: 'flex', alignItems: 'center', gap: '4px', px: '10px', py: '6px',
+              borderRadius: '8px', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+              boxShadow: '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+            }}>
+              {exportLoading === 'pdf' ? <CircularProgress size={12} sx={{ color: '#A32D2D' }} /> : <i className='ri-file-pdf-line' style={{ fontSize: '14px', color: '#A32D2D' }} />}
+              <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#A32D2D' }}>PDF</Typography>
+            </Box>
+            <Box component='button' onClick={handleExportXLSX} disabled={!!exportLoading} sx={{
+              display: 'flex', alignItems: 'center', gap: '4px', px: '10px', py: '6px',
+              borderRadius: '8px', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+              boxShadow: '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+            }}>
+              {exportLoading === 'xlsx' ? <CircularProgress size={12} sx={{ color: '#0F6E56' }} /> : <i className='ri-file-excel-line' style={{ fontSize: '14px', color: '#0F6E56' }} />}
+              <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#0F6E56' }}>Excel</Typography>
+            </Box>
+          </Box>
+        </Box>
       </Grid>
 
       {/* Kolom kiri — Info mahasiswa */}
       <Grid item xs={12} md={4}>
         <div className='flex flex-col gap-6'>
 
-          {/* Kartu profil */}
-          <Card>
-            <CardContent className='flex flex-col items-center gap-3 pt-6'>
+          {/* Kartu profil — PWA native */}
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+            {/* Hero profil */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', pt: '20px', pb: '16px', px: 2 }}>
               <Avatar
                 src={profile?.photo ? `https://cdn.aplikasikorwa.com/${profile.photo}` : undefined}
-                sx={{ width: 80, height: 80, fontSize: 28 }}>
+                sx={{
+                  width: 72, height: 72, fontSize: 22, borderRadius: '18px !important',
+                  background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                  boxShadow: '0 5px 14px rgba(180,0,30,0.28), inset 0 1px 0 rgba(255,180,180,0.45)',
+                }}>
                 {getInitials(student.full_name)}
               </Avatar>
-              <div className='text-center'>
-                <Typography variant='h6' fontWeight={700}>{student.full_name}</Typography>
-                <Typography variant='body2' color='text.secondary'>{profile?.nim}</Typography>
-              </div>
-              <div className='flex gap-2 flex-wrap justify-center'>
-                <Chip label={profile?.batch?.name || '—'} color='primary' size='small' variant='tonal' />
-                <Chip label={profile?.syndicate?.name || '—'} size='small' variant='tonal' />
-                <Chip
-                  label={student.is_active ? 'Aktif' : 'Non-aktif'}
-                  color={student.is_active ? 'success' : 'error'}
-                  size='small' variant='tonal'
-                />
-              </div>
-            </CardContent>
-            <Divider />
-            <CardContent>
-              <InfoRow label='Username'        value={student.username} />
-              <InfoRow label='Email'           value={student.email} />
-              <InfoRow label='Jenis Kelamin'   value={profile?.gender === 'M' ? 'Laki-laki' : 'Perempuan'} />
-              <InfoRow label='Agama'           value={profile?.religion} />
-              <InfoRow label='Status Pernikahan'
-                       value={profile?.marital_status === 'SINGLE' ? 'Belum Menikah' : 'Menikah'} />
-              <InfoRow label='Tempat Lahir'    value={profile?.birth_place} />
-              <InfoRow label='Tanggal Lahir'
-                       value={profile?.birth_date
-                         ? new Date(profile.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
-                         : null} />
-              <InfoRow label='No. HP'          value={profile?.phone} />
-              <InfoRow label='Kota'            value={profile?.city} />
-              <InfoRow label='Status Akademik' value={profile?.academic_status?.name} />
-            </CardContent>
-          </Card>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#3B1010' }}>{student.full_name}</Typography>
+                <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>{profile?.nim}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                {[
+                  { label: profile?.batch?.name || '—', bg: '#FAEEDA', color: '#BA7517' },
+                  { label: profile?.syndicate?.name || '—', bg: '#F1EFE8', color: '#5F5E5A' },
+                  { label: student.is_active ? 'Aktif' : 'Nonaktif', bg: student.is_active ? '#E1F5EE' : '#FCEBEB', color: student.is_active ? '#0F6E56' : '#A32D2D' },
+                ].map(b => (
+                  <Box key={b.label} sx={{ bgcolor: b.bg, borderRadius: '6px', px: '8px', py: '3px' }}>
+                    <Typography sx={{ fontSize: '10px', fontWeight: 500, color: b.color }}>{b.label}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
 
-          {/* Kartu Nilai NIMEN */}
-          <Card>
-            <CardHeader title='Nilai NIMEN' titleTypographyProps={{ variant: 'subtitle1' }} />
-            <Divider />
-            <CardContent className='flex flex-col gap-3'>
+            {/* Info rows */}
+            <Box sx={{ borderTop: '0.5px solid rgba(180,100,100,0.1)', px: 2, py: 1 }}>
+              {[
+                { label: 'Username',          value: student.username },
+                { label: 'Email',             value: student.email },
+                { label: 'Jenis Kelamin',     value: profile?.gender === 'M' ? 'Laki-laki' : 'Perempuan' },
+                { label: 'Agama',             value: profile?.religion },
+                { label: 'Status Pernikahan', value: profile?.marital_status === 'SINGLE' ? 'Belum Menikah' : 'Menikah' },
+                { label: 'Tempat Lahir',      value: profile?.birth_place },
+                { label: 'Tanggal Lahir',     value: profile?.birth_date ? new Date(profile.birth_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : null },
+                { label: 'No. HP',            value: profile?.phone },
+                { label: 'Kota',              value: profile?.city },
+                { label: 'Status Akademik',   value: profile?.academic_status?.name },
+              ].map((r, i, arr) => (
+                <Box key={r.label} sx={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  py: '9px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+                }}>
+                  <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>{r.label}</Typography>
+                  <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#3B1010', textAlign: 'right', wordBreak: 'break-all', ml: 2 }}>
+                    {r.value || '—'}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          {/* Kartu Nilai NIMEN — PWA native */}
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Nilai NIMEN</Typography>
+            </Box>
+            <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {ranking ? (
                 <>
                   <div className='flex items-center justify-between'>
@@ -281,31 +325,29 @@ const StudentProfileView = ({ studentId }) => {
                   Belum ada data nilai.
                 </Typography>
               )}
-            </CardContent>
-          </Card>
+            </Box>
+          </Box>
         </div>
       </Grid>
 
       {/* Kolom kanan — Riwayat nilai */}
       <Grid item xs={12} md={8}>
-        <Card>
-          <CardHeader
-            title='Riwayat Nilai'
-            subheader={`${history.length} entri nilai tercatat`}
-          />
-          <Divider />
+        <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Riwayat Nilai</Typography>
+            <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{history.length} entri</Typography>
+          </Box>
           {history.length === 0 ? (
-            <Box className='flex flex-col items-center py-10 gap-2' sx={{ color: 'text.secondary' }}>
-              <i className='ri-inbox-line text-5xl opacity-30' />
-              <Typography variant='body2'>Belum ada riwayat nilai.</Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: '40px', gap: '8px', color: '#9A5A5A' }}>
+              <i className='ri-inbox-line' style={{ fontSize: '40px', opacity: 0.3 }} />
+              <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Belum ada riwayat nilai.</Typography>
             </Box>
           ) : isMobile ? (
-            // ── Mobile: Card List ──
-            <div>
+            <Box>
               {history.map(entry => (
                 <HistoryMobileCard key={entry.id} entry={entry} />
               ))}
-            </div>
+            </Box>
           ) : (
             // ── Desktop: Table ──
             <Table size='small'>
@@ -356,7 +398,7 @@ const StudentProfileView = ({ studentId }) => {
               </TableBody>
             </Table>
           )}
-        </Card>
+        </Box>
       </Grid>
     </Grid>
   )

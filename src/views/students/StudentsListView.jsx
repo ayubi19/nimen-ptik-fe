@@ -605,211 +605,247 @@ const StudentsListView = () => {
         </Card>
       )}
 
-      {/* Drawer Detail */}
+      {/* Drawer Detail — PWA native */}
       <Drawer anchor='right' open={detailOpen} onClose={() => setDetailOpen(false)}
-              PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
-        <div className='flex items-center justify-between p-4 border-b'>
-          <Typography variant='h6'>Detail Mahasiswa</Typography>
-          <IconButton onClick={() => setDetailOpen(false)}><i className='ri-close-line' /></IconButton>
-        </div>
+              PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, bgcolor: '#F5F2F0' } }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '14px 16px', bgcolor: '#fff', borderBottom: '0.5px solid rgba(180,100,100,0.15)' }}>
+          <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#3B1010' }}>Detail Mahasiswa</Typography>
+          <Box component='button' onClick={() => setDetailOpen(false)} sx={{
+            width: 30, height: 30, borderRadius: '8px', border: 'none', cursor: 'pointer',
+            background: '#F5F2F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <i className='ri-close-line' style={{ fontSize: '16px', color: '#9A5A5A' }} />
+          </Box>
+        </Box>
+
         {detailData && (
-          <div className='p-4 flex flex-col gap-4 overflow-y-auto'>
-            {/* Header profil */}
-            <div className='flex flex-col items-center gap-2 py-2'>
-              <Avatar sx={{ width: 72, height: 72, fontSize: 24, bgcolor: 'primary.main' }}>
+          <Box sx={{ p: '14px', display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto' }}>
+            {/* Avatar hero */}
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+              <Avatar sx={{
+                width: 64, height: 64, fontSize: 20, borderRadius: '16px !important',
+                background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                boxShadow: '0 5px 14px rgba(180,0,30,0.28), inset 0 1px 0 rgba(255,180,180,0.45)',
+              }}>
                 {getInitials(detailData.full_name)}
               </Avatar>
-              <div className='text-center'>
-                <Typography variant='h6' fontWeight={600}>{detailData.full_name}</Typography>
-                <Typography variant='caption' color='text.secondary'>
-                  {detailData.student_profile?.nim || '—'}
-                </Typography>
-              </div>
-              <div className='flex gap-2'>
-                <Chip label={detailData.is_active ? 'Aktif' : 'Nonaktif'}
-                      color={detailData.is_active ? 'success' : 'default'} size='small' variant='tonal' />
-                <Chip label={detailData.student_profile?.academic_status?.name || '—'}
-                      size='small' variant='tonal' color='info' />
-              </div>
-            </div>
-            <Divider />
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#3B1010' }}>{detailData.full_name}</Typography>
+                <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>{detailData.student_profile?.nim || '—'}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: '6px' }}>
+                <Box sx={{ bgcolor: detailData.is_active ? '#E1F5EE' : '#FCEBEB', borderRadius: '6px', px: '8px', py: '3px' }}>
+                  <Typography sx={{ fontSize: '10px', fontWeight: 500, color: detailData.is_active ? '#0F6E56' : '#A32D2D' }}>
+                    {detailData.is_active ? 'Aktif' : 'Nonaktif'}
+                  </Typography>
+                </Box>
+                <Box sx={{ bgcolor: '#E6F1FB', borderRadius: '6px', px: '8px', py: '3px' }}>
+                  <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#185FA5' }}>
+                    {detailData.student_profile?.academic_status?.name || '—'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
 
-            {/* Akademik */}
-            <div>
-              <Typography variant='caption' color='text.secondary'
-                          sx={{ textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 10, fontWeight: 600, display: 'block', mb: 1.5 }}>
-                Informasi Akademik
-              </Typography>
+            {/* Informasi Akademik */}
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Typography sx={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9A5A5A' }}>Informasi Akademik</Typography>
+              </Box>
               {[
-                { label: 'Sindikat', value: detailData.student_profile?.syndicate?.name, icon: 'ri-team-line' },
-                { label: 'Angkatan', value: detailData.student_profile?.batch?.year, icon: 'ri-calendar-line' },
+                { label: 'Sindikat',        value: detailData.student_profile?.syndicate?.name, icon: 'ri-team-line' },
+                { label: 'Angkatan',        value: detailData.student_profile?.batch?.year,     icon: 'ri-calendar-line' },
                 { label: 'Status Akademik', value: detailData.student_profile?.academic_status?.name, icon: 'ri-graduation-cap-line' },
-              ].map(r => (
-                <div key={r.label} className='flex items-center gap-3 mb-2'>
-                  <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: 'primary.light', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className={`${r.icon} text-sm`} style={{ color: 'var(--mui-palette-primary-main)' }} />
+              ].map((r, i, arr) => (
+                <Box key={r.label} sx={{ display: 'flex', alignItems: 'center', gap: '12px', px: 2, py: '10px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none' }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: '10px', background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 3px 8px rgba(180,0,30,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={r.icon} style={{ fontSize: '15px', color: 'rgba(255,255,255,0.92)' }} />
                   </Box>
-                  <div>
-                    <Typography variant='caption' color='text.secondary'>{r.label}</Typography>
-                    <Typography variant='body2' fontWeight={500}>{r.value || '—'}</Typography>
-                  </div>
-                </div>
+                  <Box>
+                    <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{r.label}</Typography>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010' }}>{r.value || '—'}</Typography>
+                  </Box>
+                </Box>
               ))}
-            </div>
-            <Divider />
+            </Box>
 
-            {/* Personal */}
-            <div>
-              <Typography variant='caption' color='text.secondary'
-                          sx={{ textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 10, fontWeight: 600, display: 'block', mb: 1.5 }}>
-                Informasi Personal
-              </Typography>
+            {/* Informasi Personal */}
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Typography sx={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9A5A5A' }}>Informasi Personal</Typography>
+              </Box>
               {[
-                { label: 'Email', value: detailData.email, icon: 'ri-mail-line' },
-                { label: 'Telepon', value: detailData.student_profile?.phone, icon: 'ri-phone-line' },
-                { label: 'Jenis Kelamin', value: detailData.student_profile?.gender === 'M' ? 'Laki-laki' : detailData.student_profile?.gender === 'F' ? 'Perempuan' : null, icon: 'ri-user-line' },
-                { label: 'Agama', value: detailData.student_profile?.religion, icon: 'ri-heart-line' },
-                { label: 'Tanggal Lahir', value: fmtDate(detailData.student_profile?.birth_date), icon: 'ri-cake-line' },
-                { label: 'Kota', value: detailData.student_profile?.city, icon: 'ri-building-line' },
-              ].map(r => (
-                <div key={r.label} className='flex items-center gap-3 mb-2'>
-                  <Box sx={{ width: 32, height: 32, borderRadius: 1, bgcolor: 'action.hover', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className={`${r.icon} text-sm`} />
+                { label: 'Email',          value: detailData.email,                                                     icon: 'ri-mail-line' },
+                { label: 'Telepon',        value: detailData.student_profile?.phone,                                    icon: 'ri-phone-line' },
+                { label: 'Jenis Kelamin',  value: detailData.student_profile?.gender === 'M' ? 'Laki-laki' : detailData.student_profile?.gender === 'F' ? 'Perempuan' : null, icon: 'ri-user-line' },
+                { label: 'Agama',          value: detailData.student_profile?.religion,                                 icon: 'ri-heart-line' },
+                { label: 'Tanggal Lahir',  value: fmtDate(detailData.student_profile?.birth_date),                     icon: 'ri-cake-line' },
+                { label: 'Kota',           value: detailData.student_profile?.city,                                     icon: 'ri-building-line' },
+              ].filter(r => r.value).map((r, i, arr) => (
+                <Box key={r.label} sx={{ display: 'flex', alignItems: 'center', gap: '12px', px: 2, py: '10px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none' }}>
+                  <Box sx={{ width: 32, height: 32, borderRadius: '10px', background: '#F5F2F0', border: '0.5px solid rgba(180,100,100,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={r.icon} style={{ fontSize: '15px', color: '#9A5A5A' }} />
                   </Box>
-                  <div>
-                    <Typography variant='caption' color='text.secondary'>{r.label}</Typography>
-                    <Typography variant='body2' fontWeight={500}>{r.value || '—'}</Typography>
-                  </div>
-                </div>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{r.label}</Typography>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', wordBreak: 'break-all' }}>{r.value}</Typography>
+                  </Box>
+                </Box>
               ))}
-            </div>
+            </Box>
 
-            <div className='flex gap-2 mt-2'>
-              <Button fullWidth variant='contained'
-                      startIcon={<i className='ri-edit-line' />}
-                      onClick={() => { setDetailOpen(false); handleOpenEdit(detailData) }}>
-                Edit Data
-              </Button>
-              <Button fullWidth variant='tonal'
-                      color={detailData.is_active ? 'error' : 'success'}
-                      onClick={() => { setDetailOpen(false); setToggleTarget(detailData); setToggleOpen(true) }}>
-                {detailData.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-              </Button>
-            </div>
-          </div>
+            {/* Action buttons */}
+            <Box sx={{ display: 'flex', gap: '8px' }}>
+              <Box component='button' onClick={() => { setDetailOpen(false); handleOpenEdit(detailData) }} sx={{
+                flex: 1, py: '10px', borderRadius: '10px', cursor: 'pointer', border: 'none',
+                background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              }}>
+                <i className='ri-edit-line' style={{ fontSize: '14px', color: '#fff' }} />
+                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Edit Data</Typography>
+              </Box>
+              <Box component='button' onClick={() => { setDetailOpen(false); setToggleTarget(detailData); setToggleOpen(true) }} sx={{
+                flex: 1, py: '10px', borderRadius: '10px', cursor: 'pointer',
+                bgcolor: detailData.is_active ? '#FCEBEB' : '#E1F5EE',
+                border: `0.5px solid ${detailData.is_active ? 'rgba(163,45,45,0.2)' : 'rgba(15,110,86,0.2)'}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              }}>
+                <i className={detailData.is_active ? 'ri-user-unfollow-line' : 'ri-user-follow-line'} style={{ fontSize: '14px', color: detailData.is_active ? '#A32D2D' : '#0F6E56' }} />
+                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: detailData.is_active ? '#A32D2D' : '#0F6E56' }}>
+                  {detailData.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
         )}
       </Drawer>
 
-      {/* Drawer Edit */}
+      {/* Drawer Edit — PWA native */}
       <Drawer anchor='right' open={editOpen} onClose={() => setEditOpen(false)}
-              PaperProps={{ sx: { width: { xs: '100%', sm: 480 } } }}>
-        <div className='flex items-center justify-between p-4 border-b'>
-          <div>
-            <Typography variant='h6'>Edit Data Mahasiswa</Typography>
-            {editTarget && <Typography variant='caption' color='text.secondary'>{editTarget.full_name}</Typography>}
-          </div>
-          <IconButton onClick={() => setEditOpen(false)}><i className='ri-close-line' /></IconButton>
-        </div>
-        <form onSubmit={handleSubmit(handleEdit)} className='flex flex-col gap-4 p-4 overflow-y-auto'>
-          <Typography variant='caption' color='text.secondary'
-                      sx={{ textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 10, fontWeight: 600 }}>
-            Data Akademik
-          </Typography>
-          <Controller name='syndicate_id' control={control} rules={{ required: 'Wajib dipilih' }}
-                      render={({ field }) => (
-                        <FormControl fullWidth size='small' error={!!errors.syndicate_id}>
-                          <InputLabel>Sindikat</InputLabel>
-                          <Select {...field} label='Sindikat'>
-                            {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      )}
-          />
-          <Controller name='batch_id' control={control} rules={{ required: 'Wajib dipilih' }}
-                      render={({ field }) => (
-                        <FormControl fullWidth size='small' error={!!errors.batch_id}>
-                          <InputLabel>Angkatan</InputLabel>
-                          <Select {...field} label='Angkatan'>
-                            {batches.map(b => <MenuItem key={b.id} value={b.id}>{b.name} ({b.year})</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      )}
-          />
-          <Controller name='academic_status_id' control={control} rules={{ required: 'Wajib dipilih' }}
-                      render={({ field }) => (
-                        <FormControl fullWidth size='small' error={!!errors.academic_status_id}>
-                          <InputLabel>Status Akademik</InputLabel>
-                          <Select {...field} label='Status Akademik'>
-                            {academicStatuses.map(a => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}
-                          </Select>
-                        </FormControl>
-                      )}
-          />
-          <Divider><Typography variant='caption'>Data Personal</Typography></Divider>
-          <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <Controller name='gender' control={control} rules={{ required: true }}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 480 }, bgcolor: '#F5F2F0' } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '14px 16px', bgcolor: '#fff', borderBottom: '0.5px solid rgba(180,100,100,0.15)' }}>
+          <Box>
+            <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#3B1010' }}>Edit Data Mahasiswa</Typography>
+            {editTarget && <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{editTarget.full_name}</Typography>}
+          </Box>
+          <Box component='button' onClick={() => setEditOpen(false)} sx={{ width: 30, height: 30, borderRadius: '8px', border: 'none', cursor: 'pointer', background: '#F5F2F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className='ri-close-line' style={{ fontSize: '16px', color: '#9A5A5A' }} />
+          </Box>
+        </Box>
+        <Box component='form' onSubmit={handleSubmit(handleEdit)} sx={{ display: 'flex', flexDirection: 'column', gap: '10px', p: '14px', overflowY: 'auto' }}>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Typography sx={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9A5A5A' }}>Data Akademik</Typography>
+            </Box>
+            <Box sx={{ p: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <Controller name='syndicate_id' control={control} rules={{ required: 'Wajib dipilih' }}
                           render={({ field }) => (
                             <FormControl fullWidth size='small'>
-                              <InputLabel>Jenis Kelamin</InputLabel>
-                              <Select {...field} label='Jenis Kelamin'>
-                                <MenuItem value='M'>Laki-laki</MenuItem>
-                                <MenuItem value='F'>Perempuan</MenuItem>
+                              <Select displayEmpty {...field} renderValue={val => syndicates.find(s => s.id === val)?.name || 'Pilih Sindikat'}
+                                      sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
                               </Select>
                             </FormControl>
                           )}
               />
-            </Grid>
-            <Grid item xs={6}>
-              <Controller name='marital_status' control={control} rules={{ required: true }}
+              <Controller name='batch_id' control={control} rules={{ required: 'Wajib dipilih' }}
                           render={({ field }) => (
                             <FormControl fullWidth size='small'>
-                              <InputLabel>Status Pernikahan</InputLabel>
-                              <Select {...field} label='Status Pernikahan'>
-                                <MenuItem value='SINGLE'>Belum Menikah</MenuItem>
-                                <MenuItem value='MARRIED'>Menikah</MenuItem>
+                              <Select displayEmpty {...field}
+                                      renderValue={val => { const b = batches.find(x => x.id === val); return b ? `${b.name} (${b.year})` : 'Pilih Angkatan' }}
+                                      sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                {batches.map(b => (
+                                  <MenuItem key={b.id} value={b.id}>
+                                    <Box><Typography variant='body2' fontWeight={500}>{b.name}</Typography><Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year}</Typography></Box>
+                                  </MenuItem>
+                                ))}
                               </Select>
                             </FormControl>
                           )}
               />
-            </Grid>
-          </Grid>
-          <Controller name='religion' control={control} rules={{ required: true }}
-                      render={({ field }) => (
-                        <FormControl fullWidth size='small'>
-                          <InputLabel>Agama</InputLabel>
-                          <Select {...field} label='Agama'>
-                            {['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu'].map(r => (
-                              <MenuItem key={r} value={r}>{r}</MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      )}
-          />
-          <Controller name='phone' control={control}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth size='small' label='Nomor Telepon' placeholder='08xxx' />
-                      )}
-          />
-          <Controller name='city' control={control}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth size='small' label='Kota' />
-                      )}
-          />
-          <Controller name='address' control={control}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth size='small' multiline rows={2} label='Alamat' />
-                      )}
-          />
-          <div className='flex gap-2 mt-2'>
-            <Button fullWidth variant='tonal' color='secondary'
-                    onClick={() => setEditOpen(false)} disabled={editLoading}>Batal</Button>
-            <Button fullWidth variant='contained' type='submit' disabled={editLoading}
-                    startIcon={editLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-              {editLoading ? 'Menyimpan...' : 'Simpan'}
-            </Button>
-          </div>
-        </form>
+              <Controller name='academic_status_id' control={control} rules={{ required: 'Wajib dipilih' }}
+                          render={({ field }) => (
+                            <FormControl fullWidth size='small'>
+                              <Select displayEmpty {...field} renderValue={val => academicStatuses.find(a => a.id === val)?.name || 'Pilih Status Akademik'}
+                                      sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                {academicStatuses.map(a => <MenuItem key={a.id} value={a.id}>{a.name}</MenuItem>)}
+                              </Select>
+                            </FormControl>
+                          )}
+              />
+            </Box>
+          </Box>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Typography sx={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9A5A5A' }}>Data Personal</Typography>
+            </Box>
+            <Box sx={{ p: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <Box sx={{ display: 'flex', gap: '8px' }}>
+                <Controller name='gender' control={control} rules={{ required: true }}
+                            render={({ field }) => (
+                              <FormControl fullWidth size='small' sx={{ flex: 1 }}>
+                                <Select displayEmpty {...field} renderValue={val => val === 'M' ? 'Laki-laki' : val === 'F' ? 'Perempuan' : 'Jenis Kelamin'}
+                                        sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                  <MenuItem value='M'>Laki-laki</MenuItem>
+                                  <MenuItem value='F'>Perempuan</MenuItem>
+                                </Select>
+                              </FormControl>
+                            )}
+                />
+                <Controller name='marital_status' control={control} rules={{ required: true }}
+                            render={({ field }) => (
+                              <FormControl fullWidth size='small' sx={{ flex: 1 }}>
+                                <Select displayEmpty {...field} renderValue={val => val === 'SINGLE' ? 'Belum Menikah' : val === 'MARRIED' ? 'Menikah' : 'Status Nikah'}
+                                        sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                  <MenuItem value='SINGLE'>Belum Menikah</MenuItem>
+                                  <MenuItem value='MARRIED'>Menikah</MenuItem>
+                                </Select>
+                              </FormControl>
+                            )}
+                />
+              </Box>
+              <Controller name='religion' control={control} rules={{ required: true }}
+                          render={({ field }) => (
+                            <FormControl fullWidth size='small'>
+                              <Select displayEmpty {...field} renderValue={val => val || 'Agama'}
+                                      sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                {['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu'].map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+                              </Select>
+                            </FormControl>
+                          )}
+              />
+              <Controller name='phone' control={control}
+                          render={({ field }) => (
+                            <TextField {...field} fullWidth size='small' placeholder='Nomor Telepon'
+                                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                          )}
+              />
+              <Controller name='city' control={control}
+                          render={({ field }) => (
+                            <TextField {...field} fullWidth size='small' placeholder='Kota'
+                                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                          )}
+              />
+              <Controller name='address' control={control}
+                          render={({ field }) => (
+                            <TextField {...field} fullWidth size='small' multiline rows={2} placeholder='Alamat'
+                                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& textarea': { fontSize: '12px' } }} />
+                          )}
+              />
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: '8px' }}>
+            <Box component='button' type='button' onClick={() => setEditOpen(false)} disabled={editLoading} sx={{ flex: 1, py: '10px', borderRadius: '10px', cursor: 'pointer', background: '#fff', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 2px 6px rgba(139,0,0,0.07)' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#9A5A5A' }}>Batal</Typography>
+            </Box>
+            <Box component='button' type='submit' disabled={editLoading} sx={{ flex: 2, py: '10px', borderRadius: '10px', cursor: 'pointer', border: 'none', background: editLoading ? '#ccc' : 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {editLoading && <CircularProgress size={14} sx={{ color: '#fff' }} />}
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{editLoading ? 'Menyimpan...' : 'Simpan'}</Typography>
+            </Box>
+          </Box>
+        </Box>
       </Drawer>
 
       {/* Dialog Toggle Active */}
