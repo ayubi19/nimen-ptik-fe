@@ -123,118 +123,129 @@ const PositionValueView = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Nilai Jabatan Bulanan</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{
+          width: 34, height: 34, borderRadius: '10px',
+          background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+          boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+          '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+        }} onClick={() => window.history.back()}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Nilai Jabatan Bulanan</Typography>
+        </Box>
+      </Box>
 
-      {/* Filter Card */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Typography variant='subtitle1' fontWeight={600} className='mb-4'>
-            Pilih Angkatan & Bulan
+      {/* Filter Card — PWA native */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px 14px', mb: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#9A5A5A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+          Pilih Angkatan & Bulan
+        </Typography>
+        <FormControl fullWidth size='small'>
+          <Select displayEmpty value={batchID}
+                  onChange={e => { setBatchID(e.target.value); setPreview(null) }}
+                  renderValue={val => {
+                    const b = batches.find(x => x.id === parseInt(val))
+                    return b ? `${b.name} (${b.year})` : 'Pilih Angkatan'
+                  }}
+                  sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+            {batches.map(b => (
+              <MenuItem key={b.id} value={b.id}>
+                <Box>
+                  <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                  <Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year}</Typography>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <TextField fullWidth size='small' type='month'
+                   value={month} onChange={e => { setMonth(e.target.value); setPreview(null) }}
+                   InputLabelProps={{ shrink: true }}
+                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '7px', px: '10px', fontSize: '12px' } }}
+        />
+        <Box component='button' onClick={handlePreview} disabled={previewLoading || !batchID} sx={{
+          width: '100%', py: '10px', borderRadius: '10px', border: 'none', cursor: (!batchID || previewLoading) ? 'not-allowed' : 'pointer',
+          background: (!batchID || previewLoading) ? 'rgba(180,100,100,0.2)' : 'linear-gradient(145deg, #E63946, #6D0E13)',
+          boxShadow: (!batchID || previewLoading) ? 'none' : '0 4px 10px rgba(180,0,30,0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+        }}>
+          {previewLoading
+            ? <CircularProgress size={14} sx={{ color: '#fff' }} />
+            : <i className='ri-eye-line' style={{ fontSize: '14px', color: '#fff' }} />
+          }
+          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
+            {previewLoading ? 'Memuat...' : 'Preview'}
           </Typography>
-          <Grid container spacing={3} alignItems='flex-end'>
-            <Grid item xs={12} sm={5}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Angkatan</InputLabel>
-                <Select label='Angkatan' value={batchID}
-                        onChange={e => { setBatchID(e.target.value); setPreview(null) }}
-                        renderValue={(val) => {
-                          const b = batches.find(x => x.id === parseInt(val))
-                          if (!b) return ''
-                          return `${b.name} · ke-${b.batch_number} (${b.year}) · ${b.program_type || 'S1'}`
-                        }}>
-                  {batches.map(b => (
-                    <MenuItem key={b.id} value={b.id}>
-                      <div className='flex items-center justify-between w-full gap-2'>
-                        <div>
-                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
-                          <Typography variant='caption' color='text.secondary'>
-                            Angkatan ke-{b.batch_number} · {b.year}
-                          </Typography>
-                        </div>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'} />
-                      </div>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField fullWidth size='small' type='month' label='Bulan'
-                         value={month} onChange={e => { setMonth(e.target.value); setPreview(null) }}
-                         InputLabelProps={{ shrink: true }} />
-            </Grid>
-            <Grid item xs={12} sm={3}>
-              <Button fullWidth variant='contained' onClick={handlePreview}
-                      disabled={previewLoading || !batchID}
-                      startIcon={previewLoading
-                        ? <CircularProgress size={16} color='inherit' />
-                        : <i className='ri-eye-line' />}>
-                {previewLoading ? 'Memuat...' : 'Preview'}
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+        </Box>
+      </Box>
 
       {/* Empty state */}
       {!preview && !previewLoading && (
-        <Card>
-          <CardContent sx={{ py: 6 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <i className='ri-medal-line' style={{ fontSize: 48, opacity: 0.25 }} />
-              <Typography variant='body2' color='text.secondary' sx={{ textAlign: 'center' }}>
-                Pilih angkatan dan bulan, lalu klik <strong>Preview</strong> untuk melihat
-                daftar pejabat yang akan mendapat nilai jabatan.
-              </Typography>
-            </Box>
-          </CardContent>
-        </Card>
+        <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', py: '40px', px: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <i className='ri-medal-line' style={{ fontSize: 40, opacity: 0.25 }} />
+            <Typography sx={{ fontSize: '12px', color: '#9A5A5A', textAlign: 'center' }}>
+              Pilih angkatan dan bulan, lalu klik <strong>Preview</strong> untuk melihat
+              daftar pejabat yang akan mendapat nilai jabatan.
+            </Typography>
+          </Box>
+        </Box>
       )}
 
       {/* Preview Result */}
       {preview && (
         <>
-          {/* Info bar */}
-          <Card className='mb-4'>
-            <CardContent>
-              <div className='flex items-center justify-between flex-wrap gap-3'>
-                <div className='flex items-center gap-3 flex-wrap'>
-                  <Chip
-                    icon={<i className='ri-calendar-line' />}
-                    label={`${fmtMonth(month)} · ${preview.batch_name}`}
-                    color='primary' variant='tonal'
-                  />
-                  {preview.all_granted ? (
-                    <Chip icon={<i className='ri-checkbox-circle-line' />}
-                          label='Seluruh pejabat aktif telah menerima nilai jabatan pada periode ini'
-                          color='success' variant='tonal' />
-                  ) : (
-                    <>
-                      <Chip label={`${preview.total_eligible} belum mendapat nilai`} color='warning' variant='tonal' />
-                      {grantedItems.length > 0 && (
-                        <Chip label={`${grantedItems.length} sudah mendapat nilai`} color='success' variant='tonal' />
-                      )}
-                    </>
+          {/* Info bar — PWA native */}
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px 14px', mb: '10px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', mb: '8px', flexWrap: 'wrap' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', bgcolor: '#E6F1FB', borderRadius: '6px', px: '8px', py: '4px' }}>
+                <i className='ri-calendar-line' style={{ fontSize: '11px', color: '#185FA5' }} />
+                <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#185FA5' }}>
+                  {fmtMonth(month)} · {preview.batch_name}
+                </Typography>
+              </Box>
+              {preview.all_granted ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', bgcolor: '#E1F5EE', borderRadius: '6px', px: '8px', py: '4px' }}>
+                  <i className='ri-checkbox-circle-line' style={{ fontSize: '11px', color: '#0F6E56' }} />
+                  <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#0F6E56' }}>Semua sudah mendapat nilai</Typography>
+                </Box>
+              ) : (
+                <>
+                  <Box sx={{ bgcolor: '#FAEEDA', borderRadius: '6px', px: '8px', py: '4px' }}>
+                    <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#BA7517' }}>{preview.total_eligible} belum mendapat</Typography>
+                  </Box>
+                  {grantedItems.length > 0 && (
+                    <Box sx={{ bgcolor: '#E1F5EE', borderRadius: '6px', px: '8px', py: '4px' }}>
+                      <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#0F6E56' }}>{grantedItems.length} sudah</Typography>
+                    </Box>
                   )}
-                </div>
-                {!preview.all_granted && eligibleItems.length > 0 && (
-                  <Button variant='contained' onClick={handleGrant}
-                          disabled={grantLoading || checkedCount === 0}
-                          startIcon={grantLoading
-                            ? <CircularProgress size={16} color='inherit' />
-                            : <i className='ri-gift-line' />}>
-                    {grantLoading ? 'Memberikan...' : `Berikan Nilai ke ${checkedCount} Pejabat`}
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </>
+              )}
+            </Box>
+            {!preview.all_granted && eligibleItems.length > 0 && (
+              <Box component='button' onClick={handleGrant} disabled={grantLoading || checkedCount === 0} sx={{
+                width: '100%', py: '9px', borderRadius: '9px', border: 'none',
+                cursor: (grantLoading || checkedCount === 0) ? 'not-allowed' : 'pointer',
+                background: (grantLoading || checkedCount === 0) ? 'rgba(180,100,100,0.15)' : 'linear-gradient(145deg, #E63946, #6D0E13)',
+                boxShadow: (grantLoading || checkedCount === 0) ? 'none' : '0 4px 10px rgba(180,0,30,0.25)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+              }}>
+                {grantLoading
+                  ? <CircularProgress size={14} sx={{ color: '#fff' }} />
+                  : <i className='ri-gift-line' style={{ fontSize: '14px', color: '#fff' }} />
+                }
+                <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>
+                  {grantLoading ? 'Memberikan...' : `Berikan Nilai ke ${checkedCount} Pejabat`}
+                </Typography>
+              </Box>
+            )}
+          </Box>
 
           {/* Tidak ada pejabat sama sekali */}
           {preview && preview.items?.length === 0 && (
@@ -257,54 +268,59 @@ const PositionValueView = () => {
 
           {/* Eligible list */}
           {eligibleItems.length > 0 && (
-            <Card className='mb-4'>
-              <CardContent className='pb-2'>
-                <div className='flex items-center justify-between mb-3'>
-                  <Typography variant='subtitle2' fontWeight={600}>
-                    Belum Mendapat Nilai ({eligibleItems.length} pejabat)
-                  </Typography>
-                  <div className='flex items-center gap-2'>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={allChecked}
-                          indeterminate={someChecked && !allChecked}
-                          onChange={e => handleToggleAll(e.target.checked)}
-                          size='small'
-                        />
-                      }
-                      label={<Typography variant='caption'>Pilih Semua</Typography>}
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', mb: '10px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>
+                  Belum Mendapat Nilai ({eligibleItems.length})
+                </Typography>
+                <FormControlLabel
+                  control={
+                    <Checkbox checked={allChecked} indeterminate={someChecked && !allChecked}
+                              onChange={e => handleToggleAll(e.target.checked)} size='small'
+                              sx={{ color: '#8B2020', '&.Mui-checked': { color: '#8B2020' } }}
                     />
-                  </div>
-                </div>
-              </CardContent>
+                  }
+                  label={<Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Pilih Semua</Typography>}
+                />
+              </Box>
 
               {isMobile ? (
-                // Mobile cards
-                <div className='px-4 pb-4 flex flex-col gap-3'>
-                  {eligibleItems.map(item => (
-                    <Card key={item.user_id} variant='outlined'
-                          sx={{ borderColor: checked[item.user_id] ? 'primary.main' : 'divider' }}>
-                      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <div className='flex items-start gap-3'>
-                          <Checkbox
-                            checked={!!checked[item.user_id]}
-                            onChange={e => setChecked(p => ({ ...p, [item.user_id]: e.target.checked }))}
-                            size='small' sx={{ mt: -0.5 }}
-                          />
-                          <div className='flex-1'>
-                            <Typography variant='body2' fontWeight={600}>{item.full_name}</Typography>
-                            <Typography variant='caption' color='text.secondary'>{item.nim}</Typography>
-                            <div className='flex items-center gap-2 mt-1 flex-wrap'>
-                              <Chip label={item.position_name} size='small' variant='tonal' />
-                              <Chip label={`+${item.value}`} size='small' color='success' variant='tonal' />
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                <Box>
+                  {eligibleItems.map((item, i) => (
+                    <Box key={item.user_id}
+                         onClick={() => setChecked(p => ({ ...p, [item.user_id]: !p[item.user_id] }))}
+                         sx={{
+                           display: 'flex', alignItems: 'center', gap: '10px', px: 2, py: '12px', cursor: 'pointer',
+                           bgcolor: checked[item.user_id] ? 'rgba(235,61,71,0.04)' : 'transparent',
+                           borderBottom: i < eligibleItems.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+                           '&:active': { opacity: 0.7 },
+                         }}>
+                      <Checkbox checked={!!checked[item.user_id]}
+                                onChange={e => { e.stopPropagation(); setChecked(p => ({ ...p, [item.user_id]: e.target.checked })) }}
+                                size='small' sx={{ p: '4px', color: '#8B2020', '&.Mui-checked': { color: '#8B2020' } }}
+                      />
+                      <Box sx={{ width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
+                        background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                        boxShadow: '0 3px 8px rgba(180,0,30,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.92)',
+                      }}>
+                        {getInitials(item.full_name)}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{item.full_name}</Typography>
+                        <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{item.nim}</Typography>
+                        <Box sx={{ display: 'flex', gap: '5px', mt: '4px', flexWrap: 'wrap' }}>
+                          <Box sx={{ bgcolor: '#F1EFE8', borderRadius: '5px', px: '6px', py: '2px' }}>
+                            <Typography sx={{ fontSize: '9px', fontWeight: 500, color: '#5F5E5A' }}>{item.position_name}</Typography>
+                          </Box>
+                          <Box sx={{ bgcolor: '#E1F5EE', borderRadius: '5px', px: '6px', py: '2px' }}>
+                            <Typography sx={{ fontSize: '9px', fontWeight: 700, color: '#0F6E56' }}>+{item.value}</Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
                   ))}
-                </div>
+                </Box>
               ) : (
                 // Desktop table
                 <Table size='small'>
@@ -351,33 +367,41 @@ const PositionValueView = () => {
                   </TableBody>
                 </Table>
               )}
-            </Card>
+            </Box>
           )}
 
           {/* Already granted list */}
           {grantedItems.length > 0 && (
-            <Card>
-              <CardContent className='pb-2'>
-                <Typography variant='subtitle2' fontWeight={600} color='text.secondary' className='mb-3'>
-                  Sudah Mendapat Nilai ({grantedItems.length} pejabat)
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#9A5A5A' }}>
+                  Sudah Mendapat Nilai ({grantedItems.length})
                 </Typography>
-              </CardContent>
+              </Box>
               {isMobile ? (
-                <div className='px-4 pb-4 flex flex-col gap-2'>
-                  {grantedItems.map(item => (
-                    <Card key={item.user_id} variant='outlined' sx={{ opacity: 0.6 }}>
-                      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <div className='flex items-center justify-between'>
-                          <div>
-                            <Typography variant='body2' fontWeight={500}>{item.full_name}</Typography>
-                            <Typography variant='caption' color='text.secondary'>{item.position_name}</Typography>
-                          </div>
-                          <Chip label='Sudah' size='small' color='success' variant='tonal' />
-                        </div>
-                      </CardContent>
-                    </Card>
+                <Box>
+                  {grantedItems.map((item, i) => (
+                    <Box key={item.user_id} sx={{
+                      display: 'flex', alignItems: 'center', gap: '10px', px: 2, py: '12px', opacity: 0.65,
+                      borderBottom: i < grantedItems.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+                    }}>
+                      <Box sx={{ width: 36, height: 36, borderRadius: '10px', flexShrink: 0,
+                        background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                        boxShadow: '0 3px 8px rgba(180,0,30,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.92)',
+                      }}>
+                        {getInitials(item.full_name)}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010' }} noWrap>{item.full_name}</Typography>
+                        <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{item.position_name}</Typography>
+                      </Box>
+                      <Box sx={{ bgcolor: '#E1F5EE', borderRadius: '6px', px: '8px', py: '3px', flexShrink: 0 }}>
+                        <Typography sx={{ fontSize: '9px', fontWeight: 600, color: '#0F6E56' }}>✓ Sudah</Typography>
+                      </Box>
+                    </Box>
                   ))}
-                </div>
+                </Box>
               ) : (
                 <Table size='small'>
                   <TableBody>
@@ -401,8 +425,7 @@ const PositionValueView = () => {
                   </TableBody>
                 </Table>
               )}
-              <Divider />
-            </Card>
+            </Box>
           )}
         </>
       )}
