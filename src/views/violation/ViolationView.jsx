@@ -22,6 +22,7 @@ import DialogTitle from '@mui/material/DialogTitle'
 import Divider from '@mui/material/Divider'
 import FormControl from '@mui/material/FormControl'
 import Grid from '@mui/material/Grid'
+import InputAdornment from '@mui/material/InputAdornment'
 import IconButton from '@mui/material/IconButton'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
@@ -59,38 +60,31 @@ const avatarColor   = (name = '') => {
   return { bg: AVATAR_COLORS[i], color: AVATAR_TEXT[i] }
 }
 
-// ── Standard Select Angkatan ──────────────────────────────────────────────────
+// ── Standard Select Angkatan — PWA native ─────────────────────────────────────
+const nativeSelectSx = {
+  borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0',
+  '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' },
+  '& .MuiSelect-select': { py: '7px', px: '10px' },
+}
+
 function BatchSelect({ batches, value, onChange, includeAll = true }) {
   return (
     <FormControl fullWidth size='small'>
-      <InputLabel>Angkatan</InputLabel>
       <Select
-        label='Angkatan'
+        displayEmpty
         value={value}
         onChange={e => onChange(e.target.value)}
         renderValue={val => {
           const b = batches.find(x => x.id === val || String(x.id) === String(val))
-          if (!b) return includeAll ? 'Semua Angkatan' : ''
-          return (
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-              <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
-              <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                    color={b.program_type === 'S2' ? 'info' : 'success'} sx={{ flexShrink: 0 }} />
-            </Box>
-          )
-        }}>
+          return b ? `${b.name} (${b.year})` : (includeAll ? 'Semua Angkatan' : 'Pilih Angkatan')
+        }}
+        sx={nativeSelectSx}>
         {includeAll && <MenuItem value=''>Semua Angkatan</MenuItem>}
         {batches.map(b => (
           <MenuItem key={b.id} value={b.id}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 1 }}>
-              <Box>
-                <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
-                <Typography variant='caption' color='text.secondary'>
-                  Angkatan ke-{b.batch_number} · {b.year}
-                </Typography>
-              </Box>
-              <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                    color={b.program_type === 'S2' ? 'info' : 'success'} />
+            <Box>
+              <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+              <Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year}</Typography>
             </Box>
           </MenuItem>
         ))}
@@ -99,14 +93,16 @@ function BatchSelect({ batches, value, onChange, includeAll = true }) {
   )
 }
 
-// ── Avatar ────────────────────────────────────────────────────────────────────
-function Avatar({ name, size = 32 }) {
-  const { bg, color } = avatarColor(name)
+// ── Avatar — crystal ──────────────────────────────────────────────────────────
+function Avatar({ name, size = 36 }) {
   return (
     <Box sx={{
-      width: size, height: size, borderRadius: '50%', flexShrink: 0,
-      bgcolor: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: size * 0.35, fontWeight: 500,
+      width: size, height: size, borderRadius: `${size * 0.3}px`, flexShrink: 0,
+      background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+      boxShadow: '0 3px 8px rgba(180,0,30,0.22), inset 0 1px 0 rgba(255,180,180,0.35)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.32, fontWeight: 500, color: 'rgba(255,255,255,0.92)',
+      position: 'relative', overflow: 'hidden',
     }}>
       {getInitials(name)}
     </Box>
@@ -225,74 +221,81 @@ function ViolationValueCard({ isMobile, batches, showToast, isAdmin, studentID }
 
   return (
     <>
-      <Card sx={{ borderRadius: 1, height: '100%' }}>
-        <CardHeader
-          title='Pelanggaran Nilai'
-          titleTypographyProps={{ variant: 'body1', fontWeight: 500 }}
-          action={isAdmin && (
-            <Button size='small' variant='contained' color='error'
-                    startIcon={<i className='ri-add-line' />}
-                    onClick={handleOpenDialog}>
-              Input
-            </Button>
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Pelanggaran Nilai</Typography>
+          {isAdmin && (
+            <Box component='button' onClick={handleOpenDialog} sx={{
+              display: 'flex', alignItems: 'center', gap: '4px', px: '10px', py: '5px',
+              borderRadius: '8px', border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+              boxShadow: '0 3px 8px rgba(180,0,30,0.22)',
+            }}>
+              <i className='ri-add-line' style={{ fontSize: '13px', color: '#fff' }} />
+              <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#fff' }}>Input</Typography>
+            </Box>
           )}
-          sx={{ pb: 1 }}
-        />
-        <Divider />
+        </Box>
 
         {/* Filter — hanya admin */}
         {isAdmin && (
-          <Box sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <Box sx={{ minWidth: 180, flex: 1 }}>
-              <BatchSelect batches={batches} value={batchID}
-                           onChange={v => { setBatchID(v); setSyndicateID(''); setPage(0) }} />
-            </Box>
-            <FormControl size='small' sx={{ minWidth: 160, flex: 1 }} disabled={!batchID}>
-              <InputLabel>Sindikat</InputLabel>
-              <Select label='Sindikat' value={syndicateID}
-                      onChange={e => { setSyndicateID(e.target.value); setPage(0) }}>
+          <Box sx={{ px: 2, py: '10px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+            <BatchSelect batches={batches} value={batchID}
+                         onChange={v => { setBatchID(v); setSyndicateID(''); setPage(0) }} />
+            <FormControl fullWidth size='small' disabled={!batchID}>
+              <Select displayEmpty value={syndicateID}
+                      onChange={e => { setSyndicateID(e.target.value); setPage(0) }}
+                      renderValue={val => syndicates.find(s => String(s.id) === String(val))?.name || 'Semua Sindikat'}
+                      sx={nativeSelectSx}>
                 <MenuItem value=''>Semua Sindikat</MenuItem>
-                {syndicates.map(s => (
-                  <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-                ))}
+                {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField size='small' placeholder='Cari nama / NIM...' value={search}
                        onChange={e => { setSearch(e.target.value); setPage(0) }}
-                       sx={{ flex: 1, minWidth: 140 }}
-                       InputProps={{ startAdornment: <i className='ri-search-line' style={{ marginRight: 6, color: 'var(--mui-palette-text-secondary)' }} /> }} />
+                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '7px', px: '10px', fontSize: '12px' } }}
+                       InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' style={{ fontSize: '14px', color: '#9A5A5A' }} /></InputAdornment> }} />
           </Box>
         )}
-        {isAdmin && <Divider />}
 
         {/* Table */}
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
         ) : isMobile ? (
-          // Mobile: card list
-          <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box>
             {rows.length === 0
-              ? <Box sx={{ py: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              ? <Box sx={{ py: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                 <i className='ri-file-list-3-line' style={{ fontSize: 32, opacity: 0.3 }} />
-                <Typography variant='caption' color='text.secondary'>Tidak ada data</Typography>
+                <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Tidak ada data</Typography>
               </Box>
-              : rows.map(r => (
-                <Box key={r.id} sx={{ p: 1.5, borderRadius: 1, border: '0.5px solid', borderColor: 'divider' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Avatar name={r.full_name} size={28} />
+              : rows.map((r, i) => (
+                <Box key={r.id} sx={{
+                  px: 2, py: '12px',
+                  borderBottom: i < rows.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '8px' }}>
+                    <Avatar name={r.full_name} size={36} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant='body2' fontWeight={500} noWrap>{r.full_name}</Typography>
-                      <Typography variant='caption' color='text.secondary'>{r.nim}</Typography>
+                      <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{r.full_name}</Typography>
+                      <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{r.nim}</Typography>
                     </Box>
-                    <Chip label={`${r.value}`} size='small' color='error' variant='tonal' />
+                    <Box sx={{ bgcolor: '#FCEBEB', borderRadius: '6px', px: '8px', py: '3px', flexShrink: 0 }}>
+                      <Typography sx={{ fontSize: '12px', fontWeight: 700, color: '#A32D2D' }}>{r.value}</Typography>
+                    </Box>
                   </Box>
-                  <Typography variant='caption' color='text.secondary'>
+                  <Typography sx={{ fontSize: '11px', color: '#9A5A5A', mb: '6px' }}>
                     {r.indicator_name} · {fmtDate(r.event_date)}
                   </Typography>
-                  <Box sx={{ mt: 0.5 }}>
-                    <Chip label={r.punishment_active ? 'Sanksi Aktif' : 'Selesai'}
-                          size='small' color={r.punishment_active ? 'error' : 'default'} variant='tonal'
-                          sx={{ height: 18, fontSize: 10 }} />
+                  <Box sx={{
+                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                    bgcolor: r.punishment_active ? '#FCEBEB' : '#F1EFE8',
+                    borderRadius: '6px', px: '7px', py: '2px',
+                  }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: r.punishment_active ? '#A32D2D' : '#5F5E5A' }} />
+                    <Typography sx={{ fontSize: '9px', fontWeight: 500, color: r.punishment_active ? '#A32D2D' : '#5F5E5A' }}>
+                      {r.punishment_active ? 'Sanksi Aktif' : 'Selesai'}
+                    </Typography>
                   </Box>
                 </Box>
               ))}
@@ -354,7 +357,7 @@ function ViolationValueCard({ isMobile, batches, showToast, isAdmin, studentID }
           rowsPerPageOptions={[10, 20, 50]}
           labelRowsPerPage='Per halaman'
         />
-      </Card>
+      </Box>
 
       {/* Dialog Input Pelanggaran Nilai */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}
@@ -527,73 +530,82 @@ function ViolationNoteCard({ isMobile, batches, showToast, isAdmin, studentID })
 
   return (
     <>
-      <Card sx={{ borderRadius: 1, height: '100%' }}>
-        <CardHeader
-          title='Catatan Pelanggaran'
-          titleTypographyProps={{ variant: 'body1', fontWeight: 500 }}
-          action={isAdmin && (
-            <Button size='small' variant='contained' color='primary'
-                    startIcon={<i className='ri-add-line' />}
-                    onClick={() => {
-                      setStudents([]); setEventDate(''); setDescription('')
-                      const initialBatch = batchID || ''
-                      setFormBatchID(initialBatch)
-                      if (initialBatch) loadStudents(initialBatch)
-                      else setStudentOptions([])
-                      setOpenDialog(true)
-                    }}>
-              Tambah
-            </Button>
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+        {/* Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Catatan Pelanggaran</Typography>
+          {isAdmin && (
+            <Box component='button' onClick={() => {
+              setStudents([]); setEventDate(''); setDescription('')
+              const initialBatch = batchID || ''
+              setFormBatchID(initialBatch)
+              if (initialBatch) loadStudents(initialBatch)
+              else setStudentOptions([])
+              setOpenDialog(true)
+            }} sx={{
+              display: 'flex', alignItems: 'center', gap: '4px', px: '10px', py: '5px',
+              borderRadius: '8px', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+              boxShadow: '0 2px 6px rgba(139,0,0,0.07)',
+            }}>
+              <i className='ri-add-line' style={{ fontSize: '13px', color: '#8B2020' }} />
+              <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#8B2020' }}>Tambah</Typography>
+            </Box>
           )}
-          sx={{ pb: 1 }}
-        />
-        <Divider />
+        </Box>
 
         {/* Filter — hanya admin */}
         {isAdmin && (
-          <Box sx={{ p: 1.5, display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <Box sx={{ minWidth: 180, flex: 1 }}>
-              <BatchSelect batches={batches} value={batchID}
-                           onChange={v => { setBatchID(v); setSyndicateID(''); setPage(0) }} />
-            </Box>
-            <FormControl size='small' sx={{ minWidth: 160, flex: 1 }} disabled={!batchID}>
-              <InputLabel>Sindikat</InputLabel>
-              <Select label='Sindikat' value={syndicateID}
-                      onChange={e => { setSyndicateID(e.target.value); setPage(0) }}>
+          <Box sx={{ px: 2, py: '10px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+            <BatchSelect batches={batches} value={batchID}
+                         onChange={v => { setBatchID(v); setSyndicateID(''); setPage(0) }} />
+            <FormControl fullWidth size='small' disabled={!batchID}>
+              <Select displayEmpty value={syndicateID}
+                      onChange={e => { setSyndicateID(e.target.value); setPage(0) }}
+                      renderValue={val => syndicates.find(s => String(s.id) === String(val))?.name || 'Semua Sindikat'}
+                      sx={nativeSelectSx}>
                 <MenuItem value=''>Semua Sindikat</MenuItem>
-                {syndicates.map(s => (
-                  <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-                ))}
+                {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
               </Select>
             </FormControl>
             <TextField size='small' placeholder='Cari nama / NIM...' value={search}
                        onChange={e => { setSearch(e.target.value); setPage(0) }}
-                       sx={{ flex: 1, minWidth: 140 }}
-                       InputProps={{ startAdornment: <i className='ri-search-line' style={{ marginRight: 6, color: 'var(--mui-palette-text-secondary)' }} /> }} />
+                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '7px', px: '10px', fontSize: '12px' } }}
+                       InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' style={{ fontSize: '14px', color: '#9A5A5A' }} /></InputAdornment> }} />
           </Box>
         )}
-        {isAdmin && <Divider />}
 
         {/* Table */}
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
         ) : isMobile ? (
-          <Box sx={{ p: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box>
             {rows.length === 0
-              ? <Typography variant='caption' color='text.secondary' sx={{ textAlign: 'center', py: 2, display: 'block' }}>Tidak ada catatan</Typography>
-              : rows.map(r => (
-                <Box key={r.id} sx={{ p: 1.5, borderRadius: 1, border: '0.5px solid', borderColor: 'divider' }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Avatar name={r.full_name} size={28} />
+              ? <Box sx={{ py: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                <i className='ri-file-list-3-line' style={{ fontSize: 32, opacity: 0.3 }} />
+                <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Tidak ada catatan</Typography>
+              </Box>
+              : rows.map((r, i) => (
+                <Box key={r.id} sx={{
+                  px: 2, py: '12px',
+                  borderBottom: i < rows.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+                }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '6px' }}>
+                    <Avatar name={r.full_name} size={36} />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant='body2' fontWeight={500} noWrap>{r.full_name}</Typography>
-                      <Typography variant='caption' color='text.secondary'>{r.nim}</Typography>
+                      <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{r.full_name}</Typography>
+                      <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{r.nim}</Typography>
                     </Box>
-                    {isAdmin && <IconButton size='small' color='error' onClick={() => setDeleteTarget(r)}>
-                      <i className='ri-delete-bin-line' style={{ fontSize: 16 }} />
-                    </IconButton>}
+                    {isAdmin && (
+                      <Box component='button' onClick={() => setDeleteTarget(r)} sx={{
+                        width: 28, height: 28, borderRadius: '8px', border: 'none', cursor: 'pointer',
+                        bgcolor: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      }}>
+                        <i className='ri-delete-bin-line' style={{ fontSize: '14px', color: '#A32D2D' }} />
+                      </Box>
+                    )}
                   </Box>
-                  <Typography variant='caption' color='text.secondary'>
+                  <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
                     {r.description} · {fmtDate(r.event_date)}
                   </Typography>
                 </Box>
@@ -652,7 +664,7 @@ function ViolationNoteCard({ isMobile, batches, showToast, isAdmin, studentID })
           rowsPerPageOptions={[10, 20, 50]}
           labelRowsPerPage='Per halaman'
         />
-      </Card>
+      </Box>
 
       {/* Dialog Tambah Catatan */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)}
@@ -770,12 +782,23 @@ export default function ViolationView() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2'>
-        <Typography variant='caption' color='text.secondary'>AKADEMIK</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Pelanggaran</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <Box sx={{
+          width: 34, height: 34, borderRadius: '10px',
+          background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+          boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+          '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+        }} onClick={() => window.history.back()}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>AKADEMIK</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Pelanggaran</Typography>
+        </Box>
+      </Box>
 
       <ViolationValueCard isMobile={isMobile} batches={batches} showToast={showToast}
                           isAdmin={isAdmin} studentID={studentID} />
