@@ -638,7 +638,7 @@ function AdminPWADashboard({ session }) {
       </Card>
 
       {/* Sprint Terbaru — 5 sprint terakhir */}
-      <Card sx={{ borderRadius: 1, bgcolor: '#FDF1F1', border: '0.5px solid #F5C6C6' }}>
+      <Card sx={{ borderRadius: 1, bgcolor: '#FFFFFF', border: '0.5px solid #FFFFFF' }}>
         <CardContent sx={{ p: 2.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
             <Typography variant='body2' fontWeight={600}>Sprint Terbaru</Typography>
