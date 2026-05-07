@@ -49,57 +49,45 @@ const fmtDate = (d) => d
   ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
   : '—'
 
-// ── Mobile Card ───────────────────────────────────────────────────────────────
+// ── Mobile Card — PWA native ─────────────────────────────────────────────────
 const ParticipantMobileCard = ({ item, showKendala, onViewDocs, onManual }) => (
-  <Card variant='outlined' className='mb-3'>
-    <CardContent sx={{ p: '12px !important' }}>
-      <div className='flex items-center gap-2 mb-2'>
-        <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
-          {getInitials(item.student_name)}
-        </Avatar>
-        <div className='flex-1 min-w-0'>
-          <Typography variant='body2' fontWeight={600} noWrap>{item.student_name}</Typography>
-          <Typography variant='caption' color='text.secondary'>{item.nim}</Typography>
-        </div>
-        <Chip
-          label={`${item.document_count} file`}
-          size='small'
-          color={item.document_submitted ? 'success' : 'error'}
-          variant='tonal'
-          sx={{ flexShrink: 0 }}
-        />
-      </div>
-
-      {showKendala && (
-        <Box sx={{ bgcolor: 'error.lighter', borderRadius: 1, p: 1, mb: 2 }}>
-          <Typography variant='caption' color='error.main' fontWeight={500}>
-            <i className='ri-error-warning-line mr-1' />{item.block_reason}
-          </Typography>
-          {item.has_active_punishment && (
-            <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mt: 0.5 }}>
-              Punishment s/d {fmtDate(item.punishment_end_date)}
-            </Typography>
-          )}
+  <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px', mb: '10px' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '8px' }}>
+      <Box sx={{ width: 38, height: 38, borderRadius: '10px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 3px 8px rgba(180,0,30,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>
+        {getInitials(item.student_name)}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{item.student_name}</Typography>
+        <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{item.nim}</Typography>
+      </Box>
+      <Box sx={{ bgcolor: item.document_submitted ? '#E1F5EE' : '#FCEBEB', borderRadius: '6px', px: '7px', py: '2px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '3px' }}>
+        <i className={item.document_submitted ? 'ri-checkbox-circle-line' : 'ri-close-circle-line'} style={{ fontSize: '11px', color: item.document_submitted ? '#0F6E56' : '#A32D2D' }} />
+        <Typography sx={{ fontSize: '10px', fontWeight: 500, color: item.document_submitted ? '#0F6E56' : '#A32D2D' }}>{item.document_count} file</Typography>
+      </Box>
+    </Box>
+    {showKendala && (
+      <Box sx={{ bgcolor: '#FCEBEB', borderRadius: '8px', p: '8px', mb: '8px' }}>
+        <Typography sx={{ fontSize: '11px', color: '#A32D2D', fontWeight: 500 }}>
+          <i className='ri-error-warning-line' /> {item.block_reason}
+        </Typography>
+        {item.has_active_punishment && (
+          <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px' }}>Punishment s/d {fmtDate(item.punishment_end_date)}</Typography>
+        )}
+      </Box>
+    )}
+    <Box sx={{ display: 'flex', gap: '6px' }}>
+      {item.document_count > 0 && (
+        <Box component='button' onClick={() => onViewDocs(item)} sx={{ flex: 1, py: '6px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+          <i className='ri-folder-open-line' style={{ fontSize: '12px', color: '#185FA5' }} />
+          <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#3B1010' }}>Dokumen</Typography>
         </Box>
       )}
-
-      <div className='flex gap-2'>
-        {item.document_count > 0 && (
-          <Button fullWidth size='small' variant='tonal' color='info'
-                  startIcon={<i className='ri-folder-open-line' />}
-                  onClick={() => onViewDocs(item)}>
-            Dokumen
-          </Button>
-        )}
-        <Button fullWidth size='small' variant='tonal'
-                color={showKendala ? 'warning' : 'secondary'}
-                startIcon={<i className={showKendala ? 'ri-edit-box-line' : 'ri-settings-3-line'} />}
-                onClick={() => onManual(item)}>
-          {showKendala ? 'Putuskan' : 'Manual'}
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
+      <Box component='button' onClick={() => onManual(item)} sx={{ flex: 1, py: '6px', borderRadius: '8px', cursor: 'pointer', background: showKendala ? 'linear-gradient(145deg, #E63946, #6D0E13)' : 'rgba(255,255,255,0.72)', border: showKendala ? 'none' : '0.5px solid rgba(180,100,100,0.18)', boxShadow: showKendala ? '0 3px 8px rgba(180,0,30,0.2)' : '0 2px 6px rgba(139,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+        <i className={showKendala ? 'ri-edit-box-line' : 'ri-settings-3-line'} style={{ fontSize: '12px', color: showKendala ? '#fff' : '#444441' }} />
+        <Typography sx={{ fontSize: '11px', fontWeight: showKendala ? 600 : 500, color: showKendala ? '#fff' : '#3B1010' }}>{showKendala ? 'Putuskan' : 'Manual'}</Typography>
+      </Box>
+    </Box>
+  </Box>
 )
 
 // ── Main View ─────────────────────────────────────────────────────────────────
@@ -295,68 +283,42 @@ const NimenSprintApprovalView = ({ sprintId }) => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN › Sprint</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Approval</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' } }} onClick={() => router.push(`/nimen/sprints/${sprintId}`)}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN › Sprint</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Approval Sprint</Typography>
+        </Box>
+        {!allProcessed && summary.auto_approve?.length > 0 && (
+          <Box component='button' onClick={handleBulkApprove} disabled={bulkLoading} sx={{ display: 'flex', alignItems: 'center', gap: '5px', px: '10px', py: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'linear-gradient(145deg, #0F6E56, #0a4a3a)', boxShadow: '0 3px 8px rgba(15,110,86,0.25)' }}>
+            {bulkLoading ? <CircularProgress size={12} sx={{ color: '#fff' }} /> : <i className='ri-check-double-line' style={{ fontSize: '13px', color: '#fff' }} />}
+            <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#fff' }}>{bulkLoading ? '...' : `Setujui ${summary.auto_approve.length}`}</Typography>
+          </Box>
+        )}
+      </Box>
+
+      {/* Sprint info card */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px 14px', mb: '10px' }}>
+        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', mb: '4px' }}>{summary.sprint_number} — {summary.title}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <Box sx={{ bgcolor: summary.is_positive ? '#E1F5EE' : '#FCEBEB', borderRadius: '6px', px: '8px', py: '3px' }}>
+            <Typography sx={{ fontSize: '11px', fontWeight: 700, color: summary.is_positive ? '#0F6E56' : '#A32D2D' }}>
+              {summary.indicator_value >= 0 ? `+${summary.indicator_value}` : `${summary.indicator_value}`}
+            </Typography>
+          </Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+            {totalPending} menunggu · {summary.auto_approve?.length || 0} siap diapprove
+          </Typography>
+        </Box>
+      </Box>
 
       <Grid container spacing={4}>
 
-        {/* Header */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <div className='flex flex-col gap-3'>
-                {/* Info sprint */}
-                <div className='flex items-start justify-between gap-3 flex-wrap'>
-                  <div>
-                    <Typography variant='h6' fontWeight={700} className='mb-1'>Approval Sprint</Typography>
-                    <Typography variant='body2' color='text.secondary'>
-                      {summary.sprint_number} — {summary.title}
-                    </Typography>
-                    <div className='flex items-center gap-2 mt-2 flex-wrap'>
-                      <Chip
-                        label={summary.indicator_value >= 0 ? `+${summary.indicator_value}` : `${summary.indicator_value}`}
-                        color={summary.is_positive ? 'success' : 'error'}
-                        sx={{ fontWeight: 700 }}
-                      />
-                      <Typography variant='caption' color='text.secondary'>
-                        {totalPending} peserta menunggu • {summary.auto_approve?.length || 0} bisa langsung diapprove
-                      </Typography>
-                    </div>
-                  </div>
-                  {/* Kembali — di desktop tampil di kanan */}
-                  <Button variant='tonal' color='secondary' size='small'
-                          sx={{ display: { xs: 'none', md: 'inline-flex' } }}
-                          startIcon={<i className='ri-arrow-left-line' />}
-                          onClick={() => router.push(`/nimen/sprints/${sprintId}`)}>
-                    Kembali
-                  </Button>
-                </div>
-
-                {/* Tombol aksi — full width di mobile, normal di desktop */}
-                <div className='flex flex-col gap-2 sm:flex-row sm:justify-end'>
-                  <Button variant='tonal' color='secondary' size='small'
-                          sx={{ display: { xs: 'flex', md: 'none' } }}
-                          startIcon={<i className='ri-arrow-left-line' />}
-                          onClick={() => router.push(`/nimen/sprints/${sprintId}`)}>
-                    Kembali
-                  </Button>
-                  {!allProcessed && summary.auto_approve?.length > 0 && (
-                    <Button variant='contained' color='success' size='small'
-                            startIcon={bulkLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-check-double-line' />}
-                            onClick={handleBulkApprove}
-                            disabled={bulkLoading}>
-                      {bulkLoading ? 'Memproses...' : `Setujui ${summary.auto_approve.length} Peserta Sekaligus`}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Grid>
+        {/* Spacer for grid structure */}
+        <Grid item xs={12} sx={{ display: 'none' }} />
 
         {allProcessed && (
           <Grid item xs={12}>
@@ -369,38 +331,36 @@ const NimenSprintApprovalView = ({ sprintId }) => {
         {/* Siap Diapprove */}
         {summary.auto_approve?.length > 0 && (
           <Grid item xs={12}>
-            <Card>
-              <CardHeader
-                title={
-                  <div className='flex items-center gap-2'>
-                    <span>Siap Diapprove</span>
-                    <Chip label={summary.auto_approve.length} color='success' size='small' />
-                  </div>
-                }
-                subheader='Dokumen lengkap, tidak sedang punishment — bisa langsung bulk approve'
-              />
-              <Divider />
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Box>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Siap Diapprove</Typography>
+                  <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Dokumen lengkap, tidak sedang punishment</Typography>
+                </Box>
+                <Box sx={{ bgcolor: '#E1F5EE', borderRadius: '6px', px: '8px', py: '3px' }}>
+                  <Typography sx={{ fontSize: '10px', fontWeight: 600, color: '#0F6E56' }}>{summary.auto_approve.length}</Typography>
+                </Box>
+              </Box>
               {renderParticipants(summary.auto_approve, false)}
-            </Card>
+            </Box>
           </Grid>
         )}
 
         {/* Butuh Keputusan Manual */}
         {summary.needs_action?.length > 0 && (
           <Grid item xs={12}>
-            <Card>
-              <CardHeader
-                title={
-                  <div className='flex items-center gap-2'>
-                    <span>Butuh Keputusan Manual</span>
-                    <Chip label={summary.needs_action.length} color='warning' size='small' />
-                  </div>
-                }
-                subheader='Dokumen tidak ada atau sedang dalam masa hukuman — admin harus memutuskan'
-              />
-              <Divider />
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Box>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Butuh Keputusan Manual</Typography>
+                  <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Dokumen tidak ada / masa hukuman</Typography>
+                </Box>
+                <Box sx={{ bgcolor: '#FAEEDA', borderRadius: '6px', px: '8px', py: '3px' }}>
+                  <Typography sx={{ fontSize: '10px', fontWeight: 600, color: '#BA7517' }}>{summary.needs_action.length}</Typography>
+                </Box>
+              </Box>
               {renderParticipants(summary.needs_action, true)}
-            </Card>
+            </Box>
           </Grid>
         )}
       </Grid>

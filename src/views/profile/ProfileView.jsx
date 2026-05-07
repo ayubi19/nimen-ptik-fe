@@ -163,391 +163,277 @@ const ProfileView = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='id'>
-      <>
-        <Grid container spacing={6}>
-          {/* ── Left Card — Avatar + Info Akademik ── */}
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent className='flex flex-col items-center gap-6 pbs-12'>
-                {/* Avatar */}
-                <div className='relative'>
-                  <Box className='relative'>
-                    {photoUrl ? (
-                      <>
-                        {/* Klik foto → buka fullsize */}
-                        <Tooltip title='Lihat foto'>
-                          <div
-                            className='cursor-pointer rounded-full overflow-hidden'
-                            style={{ width: 112, height: 112 }}
-                            onClick={() => setPhotoPreview(true)}
-                          >
-                            <Image
-                              src={photoUrl}
-                              alt={profile?.full_name}
-                              width={112}
-                              height={112}
-                              className='rounded-full object-cover'
-                              style={{ width: 112, height: 112 }}
-                            />
-                          </div>
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <CustomAvatar skin='light' color='primary' size={112} className='text-4xl'>
-                        {getInitials(profile?.full_name || '')}
-                      </CustomAvatar>
-                    )}
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {/* Profil card */}
+        <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', pt: '20px', pb: '16px', px: 2 }}>
+            {/* Avatar */}
+            <Box sx={{ position: 'relative' }}>
+              {photoUrl ? (
+                <>
+                  {/* Klik foto → buka fullsize */}
+                  <Tooltip title='Lihat foto'>
+                    <div
+                      className='cursor-pointer rounded-full overflow-hidden'
+                      style={{ width: 112, height: 112 }}
+                      onClick={() => setPhotoPreview(true)}
+                    >
+                      <Image
+                        src={photoUrl}
+                        alt={profile?.full_name}
+                        width={112}
+                        height={112}
+                        className='rounded-full object-cover'
+                        style={{ width: 112, height: 112 }}
+                      />
+                    </div>
+                  </Tooltip>
+                </>
+              ) : (
+                <Box sx={{ width: 80, height: 80, borderRadius: '20px', background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 5px 14px rgba(180,0,30,0.28), inset 0 1px 0 rgba(255,180,180,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 600, color: 'rgba(255,255,255,0.95)' }}>
+                  {getInitials(profile?.full_name || '')}
+                </Box>
+              )}
 
-                    {/* Tombol kamera — hanya untuk ganti foto, terpisah dari area klik foto */}
-                    {isStudent && (
-                      <Tooltip title='Ganti foto'>
-                        <label
-                          htmlFor='avatar-upload'
-                          className='absolute bottom-0 right-0 cursor-pointer'
-                          style={{ zIndex: 1 }}
-                        >
-                          <input
-                            id='avatar-upload'
-                            type='file'
-                            accept='.jpg,.jpeg,.png,.webp'
-                            className='hidden'
-                            onChange={handleAvatarChange}
-                          />
-                          <Box
-                            sx={{
-                              width: 32,
-                              height: 32,
-                              borderRadius: '50%',
-                              bgcolor: 'primary.main',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              border: '2px solid white',
-                              '&:hover': { bgcolor: 'primary.dark' },
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {avatarLoading
-                              ? <CircularProgress size={14} sx={{ color: 'white' }} />
-                              : <i className='ri-camera-line text-white text-sm' />
-                            }
-                          </Box>
-                        </label>
-                      </Tooltip>
-                    )}
+              {/* Tombol kamera — hanya untuk ganti foto, terpisah dari area klik foto */}
+              {isStudent && (
+                <label htmlFor='avatar-upload' style={{ position: 'absolute', bottom: -2, right: -2, cursor: 'pointer', zIndex: 1 }}>
+                  <input id='avatar-upload' type='file' accept='.jpg,.jpeg,.png,.webp' className='hidden' onChange={handleAvatarChange} />
+                  <Box sx={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 2px 6px rgba(180,0,30,0.3)', border: '2px solid #F5F2F0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                    {avatarLoading ? <CircularProgress size={12} sx={{ color: '#fff' }} /> : <i className='ri-camera-line' style={{ fontSize: '12px', color: '#fff' }} />}
                   </Box>
-                </div>
+                </label>
+              )}
+            </Box>
 
-                {/* Nama & username */}
-                <div className='text-center'>
-                  <Typography variant='h5'>{profile?.full_name}</Typography>
-                  <Typography color='text.secondary'>@{profile?.username}</Typography>
-                </div>
+            {/* Nama & username */}
+            <Box sx={{ textAlign: 'center' }}>
+              <Typography sx={{ fontSize: '17px', fontWeight: 600, color: '#3B1010' }}>{profile?.full_name}</Typography>
+              <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>@{profile?.username}</Typography>
+            </Box>
+          </Box>
 
-                <Divider className='w-full' />
-
-                {/* Info detail */}
-                <div className='w-full flex flex-col gap-4'>
-                  <Typography variant='subtitle2' color='text.secondary' className='uppercase tracking-wider text-xs'>
-                    Detail
-                  </Typography>
-                  {isStudent && [
-                    { icon: 'ri-id-card-line', label: 'NIM', value: profile?.student_profile?.nim || '-' },
-                    { icon: 'ri-team-line', label: 'Sindikat', value: profile?.student_profile?.syndicate?.name || '-' },
-                    { icon: 'ri-calendar-line', label: 'Angkatan', value: profile?.student_profile?.batch?.year || '-' },
-                    { icon: 'ri-graduation-cap-line', label: 'Status', value: profile?.student_profile?.academic_status?.name || '-' },
-                    { icon: 'ri-mail-line', label: 'Email', value: profile?.email || '-' },
-                    { icon: 'ri-phone-line', label: 'Telepon', value: profile?.student_profile?.phone || '-' },
-                  ].map(({ icon, label, value }) => (
-                    <Box key={label} className='flex items-center gap-3'>
-                      <i className={`${icon} text-textSecondary text-xl`} />
-                      <div>
-                        <Typography variant='caption' color='text.secondary'>{label}</Typography>
-                        <Typography variant='body2'>{value}</Typography>
-                      </div>
-                    </Box>
-                  ))}
-                  {!isStudent && (
-                    <Box className='flex items-center gap-3'>
-                      <i className='ri-shield-star-line text-textSecondary text-xl' />
-                      <div>
-                        <Typography variant='caption' color='text.secondary'>Role</Typography>
-                        <div className='mt-0.5'>
-                          <Chip label='Developer' color='error' size='small' variant='tonal' />
-                        </div>
-                      </div>
-                    </Box>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
-
-          {/* ── Right Column ── */}
-          <Grid item xs={12} md={8}>
-            <div className='flex flex-col gap-6'>
-
-              {/* Edit Profil */}
-              <Card>
-                <CardContent>
-                  <Typography variant='h5' className='mb-6'>Edit Profil</Typography>
-                  <form onSubmit={handleProfileSubmit(handleUpdateProfile)}>
-                    <Grid container spacing={4}>
-                      <Grid item xs={12} sm={6}>
-                        <Controller name='full_name' control={profileControl}
-                                    rules={{ required: 'Nama wajib diisi', minLength: { value: 2, message: 'Min 2 karakter' } }}
-                                    render={({ field }) => (
-                                      <TextField {...field} fullWidth label='Nama Lengkap'
-                                                 error={!!profileErrors.full_name} helperText={profileErrors.full_name?.message} />
-                                    )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Controller name='email' control={profileControl}
-                                    rules={{ required: 'Email wajib diisi', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email tidak valid' } }}
-                                    render={({ field }) => (
-                                      <TextField {...field} fullWidth label='Email'
-                                                 error={!!profileErrors.email} helperText={profileErrors.email?.message} />
-                                    )}
-                        />
-                      </Grid>
-                      {isStudent && (
-                        <>
-                          <Grid item xs={12} sm={6}>
-                            <Controller name='birth_place' control={profileControl}
-                                        rules={{ required: 'Tempat lahir wajib diisi' }}
-                                        render={({ field }) => (
-                                          <TextField {...field} fullWidth label='Tempat Lahir'
-                                                     error={!!profileErrors.birth_place} helperText={profileErrors.birth_place?.message} />
-                                        )}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <Controller name='birth_date' control={profileControl}
-                                        rules={{ required: 'Tanggal lahir wajib diisi' }}
-                                        render={({ field }) => (
-                                          <DatePicker
-                                            label='Tanggal Lahir'
-                                            value={field.value}
-                                            onChange={field.onChange}
-                                            format='DD/MM/YYYY'
-                                            slotProps={{
-                                              textField: {
-                                                fullWidth: true,
-                                                error: !!profileErrors.birth_date,
-                                                helperText: profileErrors.birth_date?.message,
-                                              }
-                                            }}
-                                          />
-                                        )}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <Controller name='gender' control={profileControl}
-                                        rules={{ required: 'Wajib dipilih' }}
-                                        render={({ field }) => (
-                                          <FormControl fullWidth>
-                                            <InputLabel>Jenis Kelamin</InputLabel>
-                                            <Select {...field} label='Jenis Kelamin'>
-                                              <MenuItem value='M'>Laki-laki</MenuItem>
-                                              <MenuItem value='F'>Perempuan</MenuItem>
-                                            </Select>
-                                          </FormControl>
-                                        )}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <Controller name='marital_status' control={profileControl}
-                                        rules={{ required: 'Wajib dipilih' }}
-                                        render={({ field }) => (
-                                          <FormControl fullWidth>
-                                            <InputLabel>Status Pernikahan</InputLabel>
-                                            <Select {...field} label='Status Pernikahan'>
-                                              <MenuItem value='SINGLE'>Belum Menikah</MenuItem>
-                                              <MenuItem value='MARRIED'>Menikah</MenuItem>
-                                            </Select>
-                                          </FormControl>
-                                        )}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <Controller name='religion' control={profileControl}
-                                        rules={{ required: 'Wajib dipilih' }}
-                                        render={({ field }) => (
-                                          <FormControl fullWidth>
-                                            <InputLabel>Agama</InputLabel>
-                                            <Select {...field} label='Agama'>
-                                              {['Islam', 'Kristen', 'Katolik', 'Hindu', 'Buddha', 'Konghucu'].map(r => (
-                                                <MenuItem key={r} value={r}>{r}</MenuItem>
-                                              ))}
-                                            </Select>
-                                          </FormControl>
-                                        )}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <Controller name='phone' control={profileControl}
-                                        render={({ field }) => (
-                                          <TextField {...field} fullWidth label='Nomor Telepon' />
-                                        )}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={4}>
-                            <Controller name='city' control={profileControl}
-                                        render={({ field }) => (
-                                          <TextField {...field} fullWidth label='Kota' />
-                                        )}
-                            />
-                          </Grid>
-                          <Grid item xs={12}>
-                            <Controller name='address' control={profileControl}
-                                        render={({ field }) => (
-                                          <TextField {...field} fullWidth multiline rows={2} label='Alamat' />
-                                        )}
-                            />
-                          </Grid>
-                        </>
-                      )}
-                      <Grid item xs={12}>
-                        <div className='flex justify-end'>
-                          <Button type='submit' variant='contained' disabled={editLoading}
-                                  startIcon={editLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-                            {editLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
-                          </Button>
-                        </div>
-                      </Grid>
-                    </Grid>
-                  </form>
-                </CardContent>
-              </Card>
-
-              {/* Ganti Password */}
-              <Card>
-                <CardContent>
-                  <Typography variant='h5' className='mb-2'>Ganti Password</Typography>
-                  <Typography variant='body2' color='text.secondary' className='mb-6'>
-                    Pastikan password baru minimal 6 karakter dan mudah kamu ingat.
-                  </Typography>
-                  <form onSubmit={handlePwSubmit(handleChangePassword)}>
-                    <Grid container spacing={4}>
-                      <Grid item xs={12}>
-                        <Controller name='old_password' control={pwControl}
-                                    rules={{ required: 'Password lama wajib diisi' }}
-                                    render={({ field }) => (
-                                      <TextField {...field} fullWidth label='Password Saat Ini'
-                                                 type={showOld ? 'text' : 'password'}
-                                                 error={!!pwErrors.old_password} helperText={pwErrors.old_password?.message}
-                                                 InputProps={{
-                                                   endAdornment: (
-                                                     <InputAdornment position='end'>
-                                                       <IconButton onClick={() => setShowOld(!showOld)} edge='end'>
-                                                         <i className={`ri-${showOld ? 'eye-off' : 'eye'}-line`} />
-                                                       </IconButton>
-                                                     </InputAdornment>
-                                                   )
-                                                 }}
-                                      />
-                                    )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Controller name='new_password' control={pwControl}
-                                    rules={{ required: 'Password baru wajib diisi', minLength: { value: 6, message: 'Min 6 karakter' } }}
-                                    render={({ field }) => (
-                                      <TextField {...field} fullWidth label='Password Baru'
-                                                 type={showNew ? 'text' : 'password'}
-                                                 error={!!pwErrors.new_password} helperText={pwErrors.new_password?.message}
-                                                 InputProps={{
-                                                   endAdornment: (
-                                                     <InputAdornment position='end'>
-                                                       <IconButton onClick={() => setShowNew(!showNew)} edge='end'>
-                                                         <i className={`ri-${showNew ? 'eye-off' : 'eye'}-line`} />
-                                                       </IconButton>
-                                                     </InputAdornment>
-                                                   )
-                                                 }}
-                                      />
-                                    )}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <Controller name='confirm_password' control={pwControl}
-                                    rules={{
-                                      required: 'Konfirmasi wajib diisi',
-                                      validate: val => val === newPassword || 'Password tidak cocok'
-                                    }}
-                                    render={({ field }) => (
-                                      <TextField {...field} fullWidth label='Konfirmasi Password'
-                                                 type={showConfirm ? 'text' : 'password'}
-                                                 error={!!pwErrors.confirm_password} helperText={pwErrors.confirm_password?.message}
-                                                 InputProps={{
-                                                   endAdornment: (
-                                                     <InputAdornment position='end'>
-                                                       <IconButton onClick={() => setShowConfirm(!showConfirm)} edge='end'>
-                                                         <i className={`ri-${showConfirm ? 'eye-off' : 'eye'}-line`} />
-                                                       </IconButton>
-                                                     </InputAdornment>
-                                                   )
-                                                 }}
-                                      />
-                                    )}
-                        />
-                      </Grid>
-                      <Grid item xs={12}>
-                        <div className='flex justify-end'>
-                          <Button type='submit' variant='contained' color='warning' disabled={pwLoading}
-                                  startIcon={pwLoading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-lock-password-line' />}>
-                            {pwLoading ? 'Menyimpan...' : 'Ubah Password'}
-                          </Button>
-                        </div>
-                      </Grid>
-                    </Grid>
-                  </form>
-                </CardContent>
-              </Card>
-
-            </div>
-          </Grid>
-        </Grid>
-
-        {/* ── Dialog Foto Fullsize ── */}
-        <Dialog
-          open={photoPreview}
-          onClose={() => setPhotoPreview(false)}
-          maxWidth='sm'
-          fullWidth
-        >
-          <DialogContent className='flex items-center justify-center p-4 relative'>
-            <IconButton
-              onClick={() => setPhotoPreview(false)}
-              className='absolute top-2 right-2'
-              size='small'
-            >
-              <i className='ri-close-line text-xl' />
-            </IconButton>
-            {photoUrl && (
-              <Image
-                src={photoUrl}
-                alt={profile?.full_name || ''}
-                width={480}
-                height={480}
-                className='rounded-lg object-contain'
-                style={{ maxWidth: '100%', maxHeight: '70vh' }}
-              />
+          {/* Info detail */}
+          <Box sx={{ borderTop: '0.5px solid rgba(180,100,100,0.1)', px: 2, py: '10px', display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <Typography sx={{ fontSize: '9px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9A5A5A', mb: '8px' }}>Detail</Typography>
+            {isStudent && [
+              { icon: 'ri-id-card-line',         label: 'NIM',      value: profile?.student_profile?.nim || '-' },
+              { icon: 'ri-team-line',             label: 'Sindikat', value: profile?.student_profile?.syndicate?.name || '-' },
+              { icon: 'ri-calendar-line',         label: 'Angkatan', value: profile?.student_profile?.batch?.year || '-' },
+              { icon: 'ri-graduation-cap-line',   label: 'Status',   value: profile?.student_profile?.academic_status?.name || '-' },
+              { icon: 'ri-mail-line',             label: 'Email',    value: profile?.email || '-' },
+              { icon: 'ri-phone-line',            label: 'Telepon',  value: profile?.student_profile?.phone || '-' },
+            ].map(({ icon, label, value }, i, arr) => (
+              <Box key={label} sx={{ display: 'flex', alignItems: 'center', gap: '12px', py: '9px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none' }}>
+                <i className={icon} style={{ fontSize: '18px', color: '#9A5A5A', width: 20, textAlign: 'center', flexShrink: 0 }} />
+                <Box>
+                  <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{label}</Typography>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010' }}>{value}</Typography>
+                </Box>
+              </Box>
+            ))}
+            {!isStudent && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '12px', py: '9px' }}>
+                <i className='ri-shield-star-line' style={{ fontSize: '18px', color: '#9A5A5A', width: 20, textAlign: 'center', flexShrink: 0 }} />
+                <Box>
+                  <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Role</Typography>
+                  <Box sx={{ bgcolor: '#FCEBEB', borderRadius: '6px', px: '8px', py: '2px', display: 'inline-block', mt: '2px' }}>
+                    <Typography sx={{ fontSize: '10px', fontWeight: 600, color: '#A32D2D' }}>Developer</Typography>
+                  </Box>
+                </Box>
+              </Box>
             )}
-          </DialogContent>
-        </Dialog>
+          </Box>
+        </Box>
 
-        {/* ── Toast ── */}
-        <Snackbar open={toast.open} autoHideDuration={4000}
-                  onClose={() => setToast(t => ({ ...t, open: false }))}
-                  anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
-          <Alert severity={toast.severity} variant='filled'
-                 onClose={() => setToast(t => ({ ...t, open: false }))}>
-            {toast.message}
-          </Alert>
-        </Snackbar>
-      </>
+        {/* Edit Profil — native */}
+        <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+          <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Edit Profil</Typography>
+          </Box>
+          <Box component='form' onSubmit={handleProfileSubmit(handleUpdateProfile)} sx={{ p: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Controller name='full_name' control={profileControl}
+                        rules={{ required: 'Nama wajib diisi', minLength: { value: 2, message: 'Min 2 karakter' } }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small' placeholder='Nama Lengkap'
+                                     error={!!profileErrors.full_name} helperText={profileErrors.full_name?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                        )}
+            />
+            <Controller name='email' control={profileControl}
+                        rules={{ required: 'Email wajib diisi', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email tidak valid' } }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small' placeholder='Email'
+                                     error={!!profileErrors.email} helperText={profileErrors.email?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                        )}
+            />
+            {isStudent && (
+              <>
+                <Controller name='birth_place' control={profileControl}
+                            rules={{ required: 'Tempat lahir wajib diisi' }}
+                            render={({ field }) => (
+                              <TextField {...field} fullWidth size='small' placeholder='Tempat Lahir'
+                                         error={!!profileErrors.birth_place} helperText={profileErrors.birth_place?.message}
+                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                            )}
+                />
+                <Controller name='birth_date' control={profileControl}
+                            rules={{ required: 'Tanggal lahir wajib diisi' }}
+                            render={({ field }) => (
+                              <DatePicker value={field.value} onChange={field.onChange} format='DD/MM/YYYY'
+                                          slotProps={{ textField: { fullWidth: true, size: 'small', placeholder: 'Tanggal Lahir', error: !!profileErrors.birth_date, helperText: profileErrors.birth_date?.message,
+                                              sx: { '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } } } }}
+                              />
+                            )}
+                />
+                <Box sx={{ display: 'flex', gap: '8px' }}>
+                  <Controller name='gender' control={profileControl} rules={{ required: 'Wajib dipilih' }}
+                              render={({ field }) => (
+                                <FormControl fullWidth size='small' sx={{ flex: 1 }}>
+                                  <Select displayEmpty {...field} renderValue={val => val === 'M' ? 'Laki-laki' : val === 'F' ? 'Perempuan' : 'Jenis Kelamin'}
+                                          sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                    <MenuItem value='M'>Laki-laki</MenuItem>
+                                    <MenuItem value='F'>Perempuan</MenuItem>
+                                  </Select>
+                                </FormControl>
+                              )}
+                  />
+                  <Controller name='marital_status' control={profileControl} rules={{ required: 'Wajib dipilih' }}
+                              render={({ field }) => (
+                                <FormControl fullWidth size='small' sx={{ flex: 1 }}>
+                                  <Select displayEmpty {...field} renderValue={val => val === 'SINGLE' ? 'Belum Menikah' : val === 'MARRIED' ? 'Menikah' : 'Status Nikah'}
+                                          sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                    <MenuItem value='SINGLE'>Belum Menikah</MenuItem>
+                                    <MenuItem value='MARRIED'>Menikah</MenuItem>
+                                  </Select>
+                                </FormControl>
+                              )}
+                  />
+                </Box>
+                <Controller name='religion' control={profileControl} rules={{ required: 'Wajib dipilih' }}
+                            render={({ field }) => (
+                              <FormControl fullWidth size='small'>
+                                <Select displayEmpty {...field} renderValue={val => val || 'Agama'}
+                                        sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                                  {['Islam','Kristen','Katolik','Hindu','Buddha','Konghucu'].map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}
+                                </Select>
+                              </FormControl>
+                            )}
+                />
+                <Controller name='phone' control={profileControl}
+                            render={({ field }) => (
+                              <TextField {...field} fullWidth size='small' placeholder='Nomor Telepon'
+                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                            )}
+                />
+                <Controller name='city' control={profileControl}
+                            render={({ field }) => (
+                              <TextField {...field} fullWidth size='small' placeholder='Kota'
+                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                            )}
+                />
+                <Controller name='address' control={profileControl}
+                            render={({ field }) => (
+                              <TextField {...field} fullWidth size='small' multiline rows={2} placeholder='Alamat'
+                                         sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& textarea': { fontSize: '12px' } }} />
+                            )}
+                />
+              </>
+            )}
+            <Box component='button' type='submit' disabled={editLoading} sx={{ width: '100%', py: '10px', borderRadius: '10px', border: 'none', cursor: editLoading ? 'not-allowed' : 'pointer', background: editLoading ? '#ccc' : 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {editLoading && <CircularProgress size={14} sx={{ color: '#fff' }} />}
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{editLoading ? 'Menyimpan...' : 'Simpan Perubahan'}</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Ganti Password — native */}
+        <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+          <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Ganti Password</Typography>
+            <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Minimal 6 karakter</Typography>
+          </Box>
+          <Box component='form' onSubmit={handlePwSubmit(handleChangePassword)} sx={{ p: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Controller name='old_password' control={pwControl}
+                        rules={{ required: 'Password lama wajib diisi' }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small' placeholder='Password Saat Ini'
+                                     type={showOld ? 'text' : 'password'}
+                                     error={!!pwErrors.old_password} helperText={pwErrors.old_password?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }}
+                                     InputProps={{ endAdornment: <InputAdornment position='end'><IconButton onClick={() => setShowOld(!showOld)} edge='end' size='small'><i className={`ri-${showOld ? 'eye-off' : 'eye'}-line`} /></IconButton></InputAdornment> }}
+                          />
+                        )}
+            />
+            <Controller name='new_password' control={pwControl}
+                        rules={{ required: 'Password baru wajib diisi', minLength: { value: 6, message: 'Min 6 karakter' } }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small' placeholder='Password Baru'
+                                     type={showNew ? 'text' : 'password'}
+                                     error={!!pwErrors.new_password} helperText={pwErrors.new_password?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }}
+                                     InputProps={{ endAdornment: <InputAdornment position='end'><IconButton onClick={() => setShowNew(!showNew)} edge='end' size='small'><i className={`ri-${showNew ? 'eye-off' : 'eye'}-line`} /></IconButton></InputAdornment> }}
+                          />
+                        )}
+            />
+            <Controller name='confirm_password' control={pwControl}
+                        rules={{ required: 'Konfirmasi wajib diisi', validate: val => val === newPassword || 'Password tidak cocok' }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small' placeholder='Konfirmasi Password'
+                                     type={showConfirm ? 'text' : 'password'}
+                                     error={!!pwErrors.confirm_password} helperText={pwErrors.confirm_password?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }}
+                                     InputProps={{ endAdornment: <InputAdornment position='end'><IconButton onClick={() => setShowConfirm(!showConfirm)} edge='end' size='small'><i className={`ri-${showConfirm ? 'eye-off' : 'eye'}-line`} /></IconButton></InputAdornment> }}
+                          />
+                        )}
+            />
+            <Box component='button' type='submit' disabled={pwLoading} sx={{ width: '100%', py: '10px', borderRadius: '10px', border: 'none', cursor: pwLoading ? 'not-allowed' : 'pointer', background: pwLoading ? '#ccc' : 'linear-gradient(145deg, #BA7517, #8a5510)', boxShadow: '0 4px 10px rgba(186,117,23,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {pwLoading ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <i className='ri-lock-password-line' style={{ fontSize: '14px', color: '#fff' }} />}
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{pwLoading ? 'Menyimpan...' : 'Ubah Password'}</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+      </Box>
+
+      {/* ── Dialog Foto Fullsize ── */}
+      <Dialog
+        open={photoPreview}
+        onClose={() => setPhotoPreview(false)}
+        maxWidth='sm'
+        fullWidth
+      >
+        <DialogContent className='flex items-center justify-center p-4 relative'>
+          <IconButton
+            onClick={() => setPhotoPreview(false)}
+            className='absolute top-2 right-2'
+            size='small'
+          >
+            <i className='ri-close-line text-xl' />
+          </IconButton>
+          {photoUrl && (
+            <Image
+              src={photoUrl}
+              alt={profile?.full_name || ''}
+              width={480}
+              height={480}
+              className='rounded-lg object-contain'
+              style={{ maxWidth: '100%', maxHeight: '70vh' }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Toast ── */}
+      <Snackbar open={toast.open} autoHideDuration={4000}
+                onClose={() => setToast(t => ({ ...t, open: false }))}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
+        <Alert severity={toast.severity} variant='filled'
+               onClose={() => setToast(t => ({ ...t, open: false }))}>
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </LocalizationProvider>
   )
 }

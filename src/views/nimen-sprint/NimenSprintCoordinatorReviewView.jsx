@@ -141,39 +141,38 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN › Sprint</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Review Koordinator</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' } }} onClick={() => router.back()}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN › Sprint</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Review Koordinator</Typography>
+        </Box>
+      </Box>
 
       <Grid container spacing={4}>
 
-        {/* Header */}
+        {/* Header — native */}
         <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <div className='flex items-start justify-between gap-2'>
-                <div className='flex-1 min-w-0'>
-                  <Typography variant='h6' fontWeight={700} className='mb-1'>Review Daftar Peserta</Typography>
-                  <div className='flex items-center gap-2 flex-wrap'>
-                    <Chip label={sprint.sprint_number} size='small' color='primary' variant='tonal' />
-                    <Typography variant='body2' color='text.secondary' noWrap>{sprint.title}</Typography>
-                  </div>
-                  <Typography variant='caption' color='text.secondary' sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                    <i className='ri-calendar-line' />{fmtDate(sprint.event_date)}
-                  </Typography>
-                </div>
-                <Button variant='tonal' color='secondary' size='small'
-                        startIcon={<i className='ri-arrow-left-line' />}
-                        onClick={() => router.back()}
-                        sx={{ flexShrink: 0 }}>
-                  Batal
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px 14px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#3B1010', mb: '4px' }}>Review Daftar Peserta</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', mb: '4px' }}>
+                  <Box sx={{ bgcolor: '#E6F1FB', borderRadius: '6px', px: '7px', py: '2px' }}>
+                    <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#185FA5' }}>{sprint.sprint_number}</Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }} noWrap>{sprint.title}</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <i className='ri-calendar-line' style={{ fontSize: '11px', color: '#9A5A5A' }} />
+                  <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{fmtDate(sprint.event_date)}</Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
         </Grid>
 
         {/* Petunjuk */}
@@ -187,54 +186,38 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
 
         {/* Daftar Peserta */}
         <Grid item xs={12}>
-          <Card>
-            <CardHeader
-              title={
-                <div className='flex items-center gap-2'>
-                  <span>Daftar Peserta</span>
-                  <Chip label={`${participants.length} / ${sprint.participant_quota}`}
-                        size='small' color='primary' variant='tonal' />
-                </div>
-              }
-            />
-            <Divider />
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Daftar Peserta</Typography>
+              <Box sx={{ bgcolor: '#E6F1FB', borderRadius: '6px', px: '8px', py: '3px' }}>
+                <Typography sx={{ fontSize: '10px', fontWeight: 600, color: '#185FA5' }}>{participants.length} / {sprint.participant_quota}</Typography>
+              </Box>
+            </Box>
 
             {isMobile ? (
-              // ── Mobile: Card List ──
-              <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box>
                 {participants.map((p, idx) => {
                   const student = p.student
                   const profile = student?.student_profile
+                  const isAdded = p.change_type === 'ADDED'
                   return (
-                    <Card key={p.id || idx} variant='outlined'
-                          sx={p.change_type === 'ADDED' ? { borderColor: 'success.main', bgcolor: 'success.lighter' } : {}}>
-                      <CardContent sx={{ p: '12px !important' }}>
-                        <div className='flex items-center gap-2'>
-                          <Typography variant='caption' color='text.secondary' sx={{ width: 20, flexShrink: 0 }}>
-                            {idx + 1}
-                          </Typography>
-                          <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
-                            {getInitials(student?.full_name || '')}
-                          </Avatar>
-                          <div className='flex-1 min-w-0'>
-                            <Typography variant='body2' fontWeight={600} noWrap>{student?.full_name}</Typography>
-                            <Typography variant='caption' color='text.secondary'>{profile?.nim || '—'}</Typography>
-                          </div>
-                          <Chip
-                            label={p.change_type === 'ADDED' ? 'Ditambah' : p.change_type === 'REMOVED' ? 'Dihapus' : 'Original'}
-                            color={p.change_type === 'ADDED' ? 'success' : p.change_type === 'REMOVED' ? 'error' : 'default'}
-                            size='small' variant='tonal' sx={{ flexShrink: 0 }}
-                          />
-                        </div>
-                        <Box className='mt-2'>
-                          <Button fullWidth size='small' variant='tonal' color='warning'
-                                  startIcon={<i className='ri-arrow-left-right-line' />}
-                                  onClick={() => handleOpenSwap(p)}>
-                            Ganti Peserta Ini
-                          </Button>
+                    <Box key={p.id || idx} sx={{ display: 'flex', alignItems: 'center', gap: '10px', px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.08)', bgcolor: isAdded ? 'rgba(15,110,86,0.04)' : 'transparent' }}>
+                      <Typography sx={{ fontSize: '10px', color: '#9A5A5A', width: 18, flexShrink: 0 }}>{idx + 1}</Typography>
+                      <Box sx={{ width: 36, height: 36, borderRadius: '10px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 3px 8px rgba(180,0,30,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>
+                        {getInitials(student?.full_name || '')}
+                      </Box>
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{student?.full_name}</Typography>
+                        <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{profile?.nim || '—'}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                        {isAdded && <Box sx={{ bgcolor: '#E1F5EE', borderRadius: '5px', px: '5px', py: '1px' }}><Typography sx={{ fontSize: '9px', fontWeight: 500, color: '#0F6E56' }}>Ditambah</Typography></Box>}
+                        <Box component='button' onClick={() => handleOpenSwap(p)} sx={{ px: '8px', py: '4px', borderRadius: '7px', border: 'none', cursor: 'pointer', background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 2px 6px rgba(180,0,30,0.2)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                          <i className='ri-arrow-left-right-line' style={{ fontSize: '11px', color: '#fff' }} />
+                          <Typography sx={{ fontSize: '10px', fontWeight: 600, color: '#fff' }}>Ganti</Typography>
                         </Box>
-                      </CardContent>
-                    </Card>
+                      </Box>
+                    </Box>
                   )
                 })}
               </Box>
@@ -291,7 +274,7 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
                 </TableBody>
               </Table>
             )}
-          </Card>
+          </Box>
         </Grid>
 
         {/* Catatan & Submit */}
@@ -350,27 +333,20 @@ const NimenSprintCoordinatorReviewView = ({ sprintId }) => {
               <Typography variant='body2'>Tidak ada mahasiswa tersedia</Typography>
             </Box>
           ) : isMobile ? (
-            // Mobile: card list
-            <div className='flex flex-col gap-2'>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {filteredAvailable.map(s => (
-                <Box key={s.student_id}
-                     onClick={() => handleSwap(s)}
-                     sx={{
-                       display: 'flex', alignItems: 'center', gap: 2, p: 1.5,
-                       borderRadius: 2, border: 1, borderColor: 'divider',
-                       cursor: 'pointer', '&:active': { bgcolor: 'action.selected' }
-                     }}>
-                  <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
+                <Box key={s.student_id} onClick={() => handleSwap(s)} sx={{ display: 'flex', alignItems: 'center', gap: '10px', p: '10px 12px', borderRadius: '10px', border: '0.5px solid rgba(180,100,100,0.15)', cursor: 'pointer', bgcolor: '#fff', '&:active': { opacity: 0.7 } }}>
+                  <Box sx={{ width: 36, height: 36, borderRadius: '10px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>
                     {getInitials(s.full_name || '')}
-                  </Avatar>
-                  <div className='flex-1 min-w-0'>
-                    <Typography variant='body2' fontWeight={600} noWrap>{s.full_name}</Typography>
-                    <Typography variant='caption' color='text.secondary'>{s.nim}</Typography>
-                  </div>
-                  <i className='ri-arrow-right-line opacity-40' />
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010' }} noWrap>{s.full_name}</Typography>
+                    <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{s.nim}</Typography>
+                  </Box>
+                  <i className='ri-arrow-right-s-line' style={{ fontSize: '16px', color: '#9A5A5A', opacity: 0.5 }} />
                 </Box>
               ))}
-            </div>
+            </Box>
           ) : (
             // Desktop: table
             <Table size='small'>

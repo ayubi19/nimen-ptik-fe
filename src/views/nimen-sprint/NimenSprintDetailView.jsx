@@ -401,194 +401,125 @@ const NimenSprintDetailView = ({ sprintId }) => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'
-                    sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
-                    onClick={() => router.push('/nimen/sprints')}>
-          Daftar Sprint
-        </Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary' noWrap
-                    sx={{ maxWidth: { xs: 160, sm: 'none' } }}>
-          {sprint.sprint_number}
-        </Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' } }} onClick={() => router.push('/nimen/sprints')}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Daftar Sprint</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }} noWrap>{sprint.sprint_number}</Typography>
+        </Box>
+      </Box>
 
       <Grid container spacing={6}>
 
-        {/* Stepper Status */}
+        {/* Stepper Status — native */}
         <Grid item xs={12}>
-          <Card>
-            <CardContent sx={{ py: { xs: 1.5, md: 2 } }}>
-              {isMobile ? (
-                // Mobile — horizontal scrollable steps
-                <Box sx={{ overflowX: 'auto', pb: 0.5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content', gap: 0 }}>
-                    {SPRINT_STEPS.map((label, i) => {
-                      const isDone = i < statusCfg.step
-                      const isActive = i === statusCfg.step
-                      return (
-                        <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                            <Box sx={{
-                              width: 28, height: 28, borderRadius: '50%',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 12, fontWeight: 700,
-                              bgcolor: isDone || isActive ? 'primary.main' : 'action.hover',
-                              color: isDone || isActive ? '#fff' : 'text.secondary',
-                            }}>
-                              {isDone ? <i className='ri-check-line' style={{ fontSize: 13 }} /> : i + 1}
-                            </Box>
-                            <Typography variant='caption'
-                                        sx={{
-                                          fontSize: 10, whiteSpace: 'nowrap',
-                                          color: isActive ? 'primary.main' : isDone ? 'text.primary' : 'text.secondary',
-                                          fontWeight: isActive ? 700 : 400,
-                                        }}>
-                              {label}
-                            </Typography>
-                          </div>
-                          {i < SPRINT_STEPS.length - 1 && (
-                            <Box sx={{
-                              width: 32, height: 2, mx: 0.5, mb: 2.5, flexShrink: 0,
-                              bgcolor: isDone ? 'primary.main' : 'divider',
-                            }} />
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px' }}>
+            {isMobile ? (
+              <Box sx={{ overflowX: 'auto', pb: '4px' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 'max-content', gap: 0 }}>
+                  {SPRINT_STEPS.map((label, i) => {
+                    const isDone = i < statusCfg.step
+                    const isActive = i === statusCfg.step
+                    return (
+                      <Box key={label} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          <Box sx={{ width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, background: isDone ? 'linear-gradient(145deg, #E63946, #6D0E13)' : isActive ? '#EB3D47' : '#F5F2F0', color: isDone || isActive ? '#fff' : '#9A5A5A', boxShadow: isDone || isActive ? '0 2px 6px rgba(180,0,30,0.2)' : 'none' }}>
+                            {isDone ? <i className='ri-check-line' style={{ fontSize: 12 }} /> : i + 1}
+                          </Box>
+                          <Typography sx={{ fontSize: '9px', whiteSpace: 'nowrap', color: isActive ? '#EB3D47' : isDone ? '#3B1010' : '#9A5A5A', fontWeight: isActive ? 700 : 400 }}>{label}</Typography>
+                        </Box>
+                        {i < SPRINT_STEPS.length - 1 && (
+                          <Box sx={{ width: 28, height: '2px', mx: '4px', mb: '18px', flexShrink: 0, bgcolor: isDone ? '#EB3D47' : 'rgba(180,100,100,0.15)' }} />
+                        )}
+                      </Box>
+                    )
+                  })}
                 </Box>
-              ) : (
-                // Desktop — standard MUI stepper
-                <Stepper activeStep={statusCfg.step} alternativeLabel>
-                  {SPRINT_STEPS.map(label => (
-                    <Step key={label}><StepLabel>{label}</StepLabel></Step>
-                  ))}
-                </Stepper>
-              )}
-            </CardContent>
-          </Card>
+              </Box>
+            ) : (
+              <Stepper activeStep={statusCfg.step} alternativeLabel>
+                {SPRINT_STEPS.map(label => (
+                  <Step key={label}><StepLabel>{label}</StepLabel></Step>
+                ))}
+              </Stepper>
+            )}
+          </Box>
         </Grid>
 
-        {/* Header Info */}
+        {/* Header Info — native */}
         <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              {/* Title + Status */}
-              <div className='flex items-start justify-between gap-2 mb-3 flex-wrap'>
-                <div className='flex items-center gap-2 flex-wrap flex-1 min-w-0'>
-                  <Typography variant='h6' fontWeight={600} sx={{ wordBreak: 'break-word' }}>
-                    {sprint.title}
-                  </Typography>
-                  <Chip label={statusCfg.label} color={statusCfg.color} size='small' variant='tonal'
-                        sx={{ flexShrink: 0 }} />
-                </div>
-              </div>
-
-              {/* Info baris */}
-              <div className='flex flex-col gap-1.5 mb-4'>
-                <div className='flex items-center gap-2'>
-                  <i className='ri-file-list-3-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
-                  <Typography variant='body2' color='text.secondary'>{sprint.sprint_number}</Typography>
-                </div>
-                {sprint.location && (
-                  <div className='flex items-center gap-2'>
-                    <i className='ri-map-pin-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
-                    <Typography variant='body2' color='text.secondary'>{sprint.location}</Typography>
-                  </div>
-                )}
-                <div className='flex items-center gap-2'>
-                  <i className='ri-calendar-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
-                  <Typography variant='body2' color='text.secondary'>
-                    {new Date(sprint.event_date).toLocaleDateString('id-ID', {
-                      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
-                    })}
-                  </Typography>
-                </div>
-                {(sprint.coordinators?.length > 0 || sprint.coordinator) && (
-                  <div className='flex items-center gap-2'>
-                    <i className='ri-user-star-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
-                    <Typography variant='body2' color='text.secondary'>
-                      Koordinator:{' '}
-                      <strong>
-                        {sprint.coordinators?.length > 0
-                          ? sprint.coordinators.map(c => c.full_name).join(', ')
-                          : sprint.coordinator?.full_name}
-                      </strong>
-                    </Typography>
-                  </div>
-                )}
-              </div>
-
-              <Divider className='mb-4' />
-
-              {/* Action buttons */}
-              <div className={`flex flex-wrap gap-2 ${isMobile ? 'flex-col' : 'items-center'}`}>
-                {isEditable && isAdmin && (
-                  <>
-                    <Button variant='tonal' color='secondary'
-                            startIcon={<i className='ri-edit-line' />}
-                            fullWidth={isMobile}
-                            onClick={handleOpenEdit}>
-                      Edit
-                    </Button>
-                    <Button variant='tonal' color='error'
-                            startIcon={<i className='ri-delete-bin-line' />}
-                            fullWidth={isMobile}
-                            onClick={() => setDeleteOpen(true)}>
-                      Hapus
-                    </Button>
-                    <Button variant='contained' color='warning'
-                            startIcon={<i className='ri-send-plane-line' />}
-                            fullWidth={isMobile}
-                            onClick={handleOpenSend}
-                            disabled={quotaUsed === 0}>
-                      Kirim ke Koordinator
-                    </Button>
-                    <Button variant='tonal' color='info'
-                            startIcon={<i className='ri-user-settings-line' />}
-                            fullWidth={isMobile}
-                            onClick={() => setSelfReviewOpen(true)}
-                            disabled={quotaUsed === 0}>
-                      Review Sendiri
-                    </Button>
-                  </>
-                )}
-                {isReviewSubmitted && isAdmin && (
-                  <Button variant='contained' color='success'
-                          startIcon={<i className='ri-check-double-line' />}
-                          fullWidth={isMobile}
-                          onClick={handleOpenFinalize}>
-                    Finalisasi Sprint
-                  </Button>
-                )}
-                {sprint.status === 'ACTIVE' && isAdmin && (
-                  <Button variant='contained' color='warning'
-                          startIcon={<i className='ri-shield-check-line' />}
-                          fullWidth={isMobile}
-                          onClick={() => router.push(`/nimen/sprints/${sprintId}/approval`)}>
-                    Approval Nilai
-                  </Button>
-                )}
-                {isDraftPejabat && isCoordinator && (
-                  <Button variant='contained' color='info'
-                          startIcon={<i className='ri-edit-box-line' />}
-                          fullWidth={isMobile}
-                          onClick={() => router.push(`/nimen/sprints/${sprintId}/coordinator-review`)}>
-                    Review Peserta
-                  </Button>
-                )}
-                <Button variant='tonal' color='secondary'
-                        startIcon={<i className='ri-arrow-left-line' />}
-                        fullWidth={isMobile}
-                        onClick={() => router.push('/nimen/sprints')}>
-                  Kembali
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+            <Box sx={{ px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', mb: '10px' }}>
+                <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#3B1010', flex: 1, minWidth: 0 }} noWrap>{sprint.title}</Typography>
+                <Box sx={{ bgcolor: { DRAFT_ADMIN:'#F1EFE8', DRAFT_PEJABAT:'#FAEEDA', REVIEW_SUBMITTED:'#E6F1FB', ACTIVE:'#E1F5EE', APPROVAL_PENDING:'#FAEEDA', CLOSED:'#F1EFE8' }[sprint.status] || '#F1EFE8', borderRadius: '6px', px: '8px', py: '3px', flexShrink: 0 }}>
+                  <Typography sx={{ fontSize: '10px', fontWeight: 500, color: { DRAFT_ADMIN:'#5F5E5A', DRAFT_PEJABAT:'#BA7517', REVIEW_SUBMITTED:'#185FA5', ACTIVE:'#0F6E56', APPROVAL_PENDING:'#BA7517', CLOSED:'#5F5E5A' }[sprint.status] || '#5F5E5A' }}>{statusCfg.label}</Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                {[
+                  { icon: 'ri-file-list-3-line', text: sprint.sprint_number },
+                  sprint.location ? { icon: 'ri-map-pin-line', text: sprint.location } : null,
+                  { icon: 'ri-calendar-line', text: new Date(sprint.event_date).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) },
+                  (sprint.coordinators?.length > 0 || sprint.coordinator) ? { icon: 'ri-user-star-line', text: `Koordinator: ${sprint.coordinators?.length > 0 ? sprint.coordinators.map(co => co.full_name).join(', ') : sprint.coordinator?.full_name}` } : null,
+                ].filter(Boolean).map((r, i) => (
+                  <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <i className={r.icon} style={{ fontSize: '12px', color: '#9A5A5A', flexShrink: 0 }} />
+                    <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>{r.text}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+            {/* Action buttons */}
+            <Box sx={{ px: 2, py: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {isEditable && isAdmin && (
+                <>
+                  <Box component='button' onClick={handleOpenSend} disabled={quotaUsed === 0} sx={{ width: '100%', py: '9px', borderRadius: '9px', border: 'none', cursor: quotaUsed > 0 ? 'pointer' : 'not-allowed', background: quotaUsed > 0 ? 'linear-gradient(145deg, #E63946, #6D0E13)' : 'rgba(180,100,100,0.2)', boxShadow: quotaUsed > 0 ? '0 4px 10px rgba(180,0,30,0.25)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                    <i className='ri-send-plane-line' style={{ fontSize: '14px', color: '#fff' }} />
+                    <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Kirim ke Koordinator</Typography>
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: '8px' }}>
+                    <Box component='button' onClick={handleOpenEdit} sx={{ flex: 1, py: '7px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                      <i className='ri-edit-line' style={{ fontSize: '12px', color: '#444441' }} />
+                      <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#3B1010' }}>Edit</Typography>
+                    </Box>
+                    <Box component='button' onClick={() => setSelfReviewOpen(true)} disabled={quotaUsed === 0} sx={{ flex: 1, py: '7px', borderRadius: '8px', cursor: 'pointer', background: '#E6F1FB', border: '0.5px solid rgba(24,95,165,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                      <i className='ri-user-settings-line' style={{ fontSize: '12px', color: '#185FA5' }} />
+                      <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#185FA5' }}>Review Sendiri</Typography>
+                    </Box>
+                    <Box component='button' onClick={() => setDeleteOpen(true)} sx={{ px: '12px', py: '7px', borderRadius: '8px', cursor: 'pointer', background: '#FCEBEB', border: '0.5px solid rgba(163,45,45,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <i className='ri-delete-bin-line' style={{ fontSize: '13px', color: '#A32D2D' }} />
+                    </Box>
+                  </Box>
+                </>
+              )}
+              {isReviewSubmitted && isAdmin && (
+                <Box component='button' onClick={handleOpenFinalize} sx={{ width: '100%', py: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', background: 'linear-gradient(145deg, #0F6E56, #0a4a3a)', boxShadow: '0 4px 10px rgba(15,110,86,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <i className='ri-check-double-line' style={{ fontSize: '14px', color: '#fff' }} />
+                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Finalisasi Sprint</Typography>
+                </Box>
+              )}
+              {sprint.status === 'ACTIVE' && isAdmin && (
+                <Box component='button' onClick={() => router.push(`/nimen/sprints/${sprintId}/approval`)} sx={{ width: '100%', py: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', background: 'linear-gradient(145deg, #BA7517, #8a5510)', boxShadow: '0 4px 10px rgba(186,117,23,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <i className='ri-shield-check-line' style={{ fontSize: '14px', color: '#fff' }} />
+                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Approval Nilai</Typography>
+                </Box>
+              )}
+              {isDraftPejabat && isCoordinator && (
+                <Box component='button' onClick={() => router.push(`/nimen/sprints/${sprintId}/coordinator-review`)} sx={{ width: '100%', py: '9px', borderRadius: '9px', border: 'none', cursor: 'pointer', background: 'linear-gradient(145deg, #185FA5, #103f6e)', boxShadow: '0 4px 10px rgba(24,95,165,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <i className='ri-edit-box-line' style={{ fontSize: '14px', color: '#fff' }} />
+                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Review Peserta</Typography>
+                </Box>
+              )}
+              <Box component='button' onClick={() => router.push('/nimen/sprints')} sx={{ width: '100%', py: '7px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                <i className='ri-arrow-left-s-line' style={{ fontSize: '14px', color: '#9A5A5A' }} />
+                <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Kembali</Typography>
+              </Box>
+            </Box>
+          </Box>
         </Grid>
 
         {/* Catatan koordinator (jika ada) */}
@@ -602,48 +533,45 @@ const NimenSprintDetailView = ({ sprintId }) => {
 
         {/* Indikator & Deadline */}
         <Grid item xs={12} md={4}>
-          <Card className='h-full'>
-            <CardHeader title='Indikator Nilai' />
-            <Divider />
-            <CardContent>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', height: '100%' }}>
+            <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Indikator Nilai</Typography>
+            </Box>
+            <Box sx={{ p: 2 }}>
               {sprint.indicator && (
-                <div className='flex flex-col gap-2'>
-                  <Chip
-                    label={sprint.indicator.value >= 0 ? `+${sprint.indicator.value}` : `${sprint.indicator.value}`}
-                    color={sprint.indicator.value >= 0 ? 'success' : 'error'}
-                    sx={{ fontWeight: 700, fontSize: 18, height: 40, width: 'fit-content' }}
-                  />
-                  <Typography variant='body1' fontWeight={600}>{sprint.indicator.name}</Typography>
-                  <Typography variant='caption' color='text.secondary'>
-                    {sprint.indicator.variable?.name} • {sprint.indicator.variable?.category?.name}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: '6px', mb: '12px' }}>
+                  <Box sx={{ bgcolor: sprint.indicator.value >= 0 ? '#E1F5EE' : '#FCEBEB', borderRadius: '8px', px: '12px', py: '8px', display: 'inline-flex', width: 'fit-content' }}>
+                    <Typography sx={{ fontSize: '20px', fontWeight: 800, color: sprint.indicator.value >= 0 ? '#0F6E56' : '#A32D2D' }}>
+                      {sprint.indicator.value >= 0 ? `+${sprint.indicator.value}` : `${sprint.indicator.value}`}
+                    </Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>{sprint.indicator.name}</Typography>
+                  <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+                    {sprint.indicator.variable?.category?.name} · {sprint.indicator.variable?.name}
                   </Typography>
-                </div>
+                </Box>
               )}
-              <Divider className='my-4' />
-              <Typography variant='subtitle2' color='text.secondary' className='mb-1'>Batas Pengumpulan Dokumen</Typography>
-              <Typography variant='body1' fontWeight={600}>
-                {new Date(sprint.submission_deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
-              </Typography>
-            </CardContent>
-          </Card>
+              <Box sx={{ pt: '10px', borderTop: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Typography sx={{ fontSize: '11px', color: '#9A5A5A', mb: '4px' }}>Batas Pengumpulan Dokumen</Typography>
+                <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#3B1010' }}>
+                  {new Date(sprint.submission_deadline).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
         </Grid>
 
         {/* Dokumen Penunjang Sprint */}
         <Grid item xs={12} md={8}>
-          <Card className='h-full'>
-            <CardHeader
-              title='Dokumen Penunjang Sprint'
-              subheader='Dokumen referensi yang dilampirkan untuk peserta dan koordinator'
-              action={
-                isAdmin && (
-                  <Typography variant='caption' color='text.secondary' sx={{ pr: 1 }}>
-                    {attachments.length}/10 file
-                  </Typography>
-                )
-              }
-            />
-            <Divider />
-            <CardContent>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Dokumen Penunjang Sprint</Typography>
+                <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Dokumen referensi untuk peserta dan koordinator</Typography>
+              </Box>
+              {isAdmin && <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{attachments.length}/10 file</Typography>}
+            </Box>
+            <Box sx={{ p: 2 }}>
               <DocumentManager
                 documents={attachments}
                 onUpload={isAdmin ? async (file) => {
@@ -659,8 +587,8 @@ const NimenSprintDetailView = ({ sprintId }) => {
                 canDelete={isAdmin}
                 emptyText='Belum ada dokumen penunjang yang dilampirkan.'
               />
-            </CardContent>
-          </Card>
+            </Box>
+          </Box>
         </Grid>
 
         {/* Daftar Peserta */}

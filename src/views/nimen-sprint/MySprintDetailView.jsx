@@ -113,95 +113,71 @@ const MySprintDetailView = ({ sprintId }) => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' color='text.secondary'
-                    className='cursor-pointer hover:underline'
-                    onClick={() => router.push('/nimen/my-sprints')}>
-          Sprint Saya
-        </Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary' noWrap>{sprint.title}</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' } }} onClick={() => router.push('/nimen/my-sprints')}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Sprint Saya</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }} noWrap>{sprint.title}</Typography>
+        </Box>
+      </Box>
 
       <Grid container spacing={4}>
 
-        {/* ── Hero Card ── */}
+        {/* ── Hero Card — PWA native ── */}
         <Grid item xs={12}>
-          <Card sx={{
-            background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
-            border: `1px solid ${theme.palette.primary.main}20`,
-          }}>
-            <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-              <div className='flex items-start justify-between gap-3 mb-3'>
-                <div className='flex-1 min-w-0'>
-                  <Typography variant={isMobile ? 'h6' : 'h5'} fontWeight={700} className='mb-1'>
-                    {sprint.title}
-                  </Typography>
-                  <div className='flex flex-wrap gap-2 mt-2'>
-                    <Chip label={sprint.sprint_number} size='small' color='primary' variant='tonal' />
-                    {sprint.batch?.name && (
-                      <Chip label={sprint.batch.name} size='small' variant='tonal' />
-                    )}
-                  </div>
-                </div>
-                {/* Nilai besar */}
-                <Box sx={{
-                  minWidth: 72, height: 72, borderRadius: 3, flexShrink: 0,
-                  bgcolor: isPlus ? 'success.main' : 'error.main',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Typography variant='h5' fontWeight={800} sx={{ color: '#fff', lineHeight: 1 }}>
-                    {isPlus ? `+${indicatorVal}` : indicatorVal}
-                  </Typography>
-                  <Typography variant='caption' sx={{ color: '#ffffff99', fontSize: 10 }}>poin</Typography>
+          <Box sx={{ background: 'linear-gradient(135deg, #EB3D47 0%, #8B0000 100%)', borderRadius: '12px', p: '16px', color: '#fff', position: 'relative', overflow: 'hidden' }}>
+            <Box sx={{ position: 'absolute', top: -20, right: 15, width: 90, height: 90, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.08)' }} />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', mb: '12px' }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#fff', lineHeight: 1.3, mb: '6px' }} noWrap>{sprint.title}</Typography>
+                <Box sx={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '6px', px: '8px', py: '3px' }}>
+                    <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#fff' }}>{sprint.sprint_number}</Typography>
+                  </Box>
+                  {sprint.batch?.name && (
+                    <Box sx={{ bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '6px', px: '8px', py: '3px' }}>
+                      <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#fff' }}>{sprint.batch.name}</Typography>
+                    </Box>
+                  )}
                 </Box>
-              </div>
-
-              {/* Info rows */}
-              <div className='flex flex-col gap-1.5 mb-3'>
-                <div className='flex items-center gap-2'>
-                  <i className='ri-calendar-event-line' style={{ color: theme.palette.text.secondary }} />
-                  <Typography variant='body2' color='text.secondary'>
-                    {fmtDate(sprint.event_date, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-                  </Typography>
-                </div>
-                {sprint.location && (
-                  <div className='flex items-center gap-2'>
-                    <i className='ri-map-pin-line' style={{ color: theme.palette.text.secondary }} />
-                    <Typography variant='body2' color='text.secondary'>{sprint.location}</Typography>
-                  </div>
-                )}
-                <div className='flex items-center gap-2'>
-                  <i className='ri-time-line' style={{ color: isDeadlinePassed ? theme.palette.error.main : theme.palette.text.secondary }} />
-                  <Typography variant='body2' color={isDeadlinePassed ? 'error.main' : 'text.secondary'}>
-                    Deadline: {fmtDate(sprint.submission_deadline)}
-                    {canUpload && ` · ${daysLeft} hari lagi`}
-                    {isDeadlinePassed && ' · Sudah lewat'}
-                  </Typography>
-                </div>
-              </div>
-
-              {/* Status + Kembali */}
-              <div className='flex items-center justify-between gap-2 flex-wrap'>
-                {participant && (
-                  <Chip
-                    label={approvalCfg.label}
-                    color={approvalCfg.color}
-                    variant='tonal'
-                    icon={<i className={approvalCfg.icon} />}
-                  />
-                )}
-                <Button variant='tonal' color='secondary' size='small'
-                        startIcon={<i className='ri-arrow-left-line' />}
-                        onClick={() => router.push('/nimen/my-sprints')}>
-                  Kembali
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </Box>
+              <Box sx={{ width: 64, height: 64, borderRadius: '14px', background: isPlus ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.15)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Typography sx={{ fontSize: '22px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+                  {isPlus ? `+${indicatorVal}` : indicatorVal}
+                </Typography>
+                <Typography sx={{ fontSize: '9px', color: 'rgba(255,255,255,0.7)' }}>poin</Typography>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <i className='ri-calendar-event-line' style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }} />
+                <Typography sx={{ fontSize: '12px', color: 'rgba(255,255,255,0.9)' }}>
+                  {fmtDate(sprint.event_date, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                </Typography>
+              </Box>
+              {sprint.location && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <i className='ri-map-pin-line' style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }} />
+                  <Typography sx={{ fontSize: '12px', color: 'rgba(255,255,255,0.9)' }}>{sprint.location}</Typography>
+                </Box>
+              )}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <i className='ri-time-line' style={{ fontSize: '12px', color: isDeadlinePassed ? '#FFB3B3' : 'rgba(255,255,255,0.8)' }} />
+                <Typography sx={{ fontSize: '12px', color: isDeadlinePassed ? '#FFB3B3' : 'rgba(255,255,255,0.9)' }}>
+                  Deadline: {fmtDate(sprint.submission_deadline)}{canUpload ? ` · ${daysLeft} hari lagi` : ''}{isDeadlinePassed ? ' · Sudah lewat' : ''}
+                </Typography>
+              </Box>
+              {participant && (
+                <Box sx={{ mt: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <i className={approvalCfg.icon} style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }} />
+                  <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>{approvalCfg.label}</Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
         </Grid>
 
         {/* ── Alert Status Upload ── */}
@@ -237,19 +213,17 @@ const MySprintDetailView = ({ sprintId }) => {
         {/* ── Dokumen Penunjang Sprint ── */}
         {attachments.length > 0 && (
           <Grid item xs={12} md={5}>
-            <Card sx={{ height: '100%' }}>
-              <CardHeader
-                title='Dokumen Penunjang'
-                subheader='Dilampirkan admin sebagai referensi'
-                titleTypographyProps={{ variant: 'subtitle1', fontWeight: 600 }}
-                avatar={
-                  <Box sx={{ width: 36, height: 36, borderRadius: 2, bgcolor: '#E0F9FC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <i className='ri-file-list-3-line' style={{ fontSize: 18, color: '#00CFE8' }} />
-                  </Box>
-                }
-              />
-              <Divider />
-              <CardContent>
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', height: '100%' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'linear-gradient(145deg, #E63946, #6D0E13)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <i className='ri-file-list-3-line' style={{ fontSize: '16px', color: '#fff' }} />
+                </Box>
+                <Box>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Dokumen Penunjang</Typography>
+                  <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Dilampirkan admin sebagai referensi</Typography>
+                </Box>
+              </Box>
+              <Box sx={{ p: 2 }}>
                 <DocumentManager
                   documents={attachments}
                   onGetPresignedURL={handleAttachmentPresign}
@@ -257,35 +231,26 @@ const MySprintDetailView = ({ sprintId }) => {
                   canDelete={false}
                   emptyText='Tidak ada dokumen penunjang.'
                 />
-              </CardContent>
-            </Card>
+              </Box>
+            </Box>
           </Grid>
         )}
 
         {/* ── Dokumen Kamu ── */}
         <Grid item xs={12} md={attachments.length > 0 ? 7 : 12}>
-          <Card>
-            <CardHeader
-              title='Dokumen Kamu'
-              subheader={
-                canUpload ? 'Upload bukti keikutsertaan kamu di sprint ini'
-                  : isDeadlinePassed ? 'Batas waktu sudah lewat, tidak bisa upload'
-                    : 'Pengumpulan belum dibuka'
-              }
-              titleTypographyProps={{ variant: 'subtitle1', fontWeight: 600 }}
-              avatar={
-                <Box sx={{
-                  width: 36, height: 36, borderRadius: 2,
-                  bgcolor: canUpload ? '#E6F9EE' : '#F4F4F4',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <i className={canUpload ? 'ri-upload-cloud-2-line' : 'ri-lock-line'}
-                     style={{ fontSize: 18, color: canUpload ? '#28C76F' : '#A8AAAE' }} />
-                </Box>
-              }
-            />
-            <Divider />
-            <CardContent>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+              <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: canUpload ? 'linear-gradient(145deg, #E63946, #6D0E13)' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className={canUpload ? 'ri-upload-cloud-2-line' : 'ri-lock-line'} style={{ fontSize: '16px', color: canUpload ? '#fff' : '#9A5A5A' }} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Dokumen Kamu</Typography>
+                <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>
+                  {canUpload ? 'Upload bukti keikutsertaan kamu' : isDeadlinePassed ? 'Batas waktu sudah lewat' : 'Pengumpulan belum dibuka'}
+                </Typography>
+              </Box>
+            </Box>
+            <Box sx={{ p: 2 }}>
               <DocumentManager
                 documents={myDocuments}
                 onUpload={handleUpload}
@@ -296,8 +261,8 @@ const MySprintDetailView = ({ sprintId }) => {
                 uploadHint={canUpload ? `Deadline: ${fmtDate(sprint.submission_deadline)}` : ''}
                 emptyText='Kamu belum mengupload dokumen apapun.'
               />
-            </CardContent>
-          </Card>
+            </Box>
+          </Box>
         </Grid>
 
       </Grid>

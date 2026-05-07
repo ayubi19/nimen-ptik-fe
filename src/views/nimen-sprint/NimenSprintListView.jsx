@@ -63,79 +63,78 @@ const fmtDate = (d) => d
   ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
   : '—'
 
-// ── Mobile Card ───────────────────────────────────────────────────────────────
+// ── Mobile Card — PWA native ─────────────────────────────────────────────────
+const STATUS_BADGE = {
+  DRAFT_ADMIN:      { bg: '#F1EFE8', color: '#5F5E5A' },
+  DRAFT_PEJABAT:    { bg: '#FAEEDA', color: '#BA7517' },
+  REVIEW_SUBMITTED: { bg: '#E6F1FB', color: '#185FA5' },
+  ACTIVE:           { bg: '#E1F5EE', color: '#0F6E56' },
+  APPROVAL_PENDING: { bg: '#FAEEDA', color: '#BA7517' },
+  CLOSED:           { bg: '#F1EFE8', color: '#5F5E5A' },
+}
+
 const SprintMobileCard = ({ sprint, onDelete, router }) => {
-  const cfg = STATUS_CONFIG[sprint.status] || { label: sprint.status, color: 'default' }
+  const cfg = STATUS_CONFIG[sprint.status] || { label: sprint.status }
+  const badge = STATUS_BADGE[sprint.status] || { bg: '#F1EFE8', color: '#5F5E5A' }
   const indicator = sprint.indicator
   const isPlus = (indicator?.value ?? 0) >= 0
+  const isDraft = sprint.status === 'DRAFT_ADMIN'
 
   return (
-    <Card className='mb-3' sx={{ overflow: 'hidden' }}>
-      <Box sx={{ px: 2, py: 1.5, bgcolor: 'action.hover' }}>
-        <div className='flex items-start justify-between gap-2'>
-          <div className='flex-1 min-w-0'>
-            <Typography variant='body2' fontWeight={700} color='primary.main' noWrap>
-              {sprint.sprint_number}
-            </Typography>
-            <Typography variant='body2' fontWeight={600} color='text.primary' noWrap>
-              {sprint.title}
-            </Typography>
-          </div>
-          <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
-        </div>
+    <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', mb: '10px' }}>
+      <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#EB3D47', mb: '2px' }} noWrap>{sprint.sprint_number}</Typography>
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{sprint.title}</Typography>
+        </Box>
+        <Box sx={{ bgcolor: badge.bg, borderRadius: '6px', px: '8px', py: '3px', flexShrink: 0 }}>
+          <Typography sx={{ fontSize: '10px', fontWeight: 500, color: badge.color }}>{cfg.label}</Typography>
+        </Box>
       </Box>
-      <CardContent sx={{ pt: 1.5, pb: '12px !important' }}>
-        <div className='flex flex-col gap-1 mb-3'>
-          {sprint.location && (
-            <div className='flex items-center gap-1'>
-              <i className='ri-map-pin-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
-              <Typography variant='caption' color='text.secondary'>{sprint.location}</Typography>
-            </div>
+      <Box sx={{ px: 2, py: '10px', display: 'flex', flexDirection: 'column', gap: '5px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+        {sprint.location && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <i className='ri-map-pin-line' style={{ fontSize: '11px', color: '#9A5A5A', flexShrink: 0 }} />
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }} noWrap>{sprint.location}</Typography>
+          </Box>
+        )}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <i className='ri-calendar-line' style={{ fontSize: '11px', color: '#9A5A5A', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{fmtDate(sprint.event_date)} · Deadline: {fmtDate(sprint.submission_deadline)}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', mt: '2px' }}>
+          {sprint.batch && (
+            <Box sx={{ bgcolor: '#FAEEDA', borderRadius: '6px', px: '7px', py: '2px' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#BA7517' }}>{sprint.batch.name}</Typography>
+            </Box>
           )}
-          <div className='flex items-center gap-1'>
-            <i className='ri-calendar-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
-            <Typography variant='caption' color='text.secondary'>
-              {fmtDate(sprint.event_date)} · Deadline: {fmtDate(sprint.submission_deadline)}
-            </Typography>
-          </div>
-          <div className='flex items-center gap-2 flex-wrap mt-1'>
-            {sprint.batch && (
-              <Chip label={sprint.batch.name} size='small' color='primary' variant='tonal' />
-            )}
-            {indicator && (
-              <Chip
-                label={isPlus ? `+${indicator.value}` : `${indicator.value}`}
-                color={isPlus ? 'success' : 'error'}
-                size='small' variant='tonal'
-                sx={{ fontWeight: 700 }}
-              />
-            )}
-          </div>
-        </div>
-        <Divider className='mb-2' />
-        <div className='flex gap-2'>
-          <Button fullWidth variant='tonal' size='small' color='primary'
-                  startIcon={<i className='ri-eye-line' />}
-                  onClick={() => router.push(`/nimen/sprints/${sprint.id}`)}>
-            Detail
-          </Button>
-          {sprint.status === 'DRAFT_ADMIN' && (
-            <>
-              <Button fullWidth variant='tonal' size='small' color='secondary'
-                      startIcon={<i className='ri-edit-line' />}
-                      onClick={() => router.push(`/nimen/sprints/${sprint.id}/edit`)}>
-                Edit
-              </Button>
-              <Button fullWidth variant='tonal' size='small' color='error'
-                      startIcon={<i className='ri-delete-bin-line' />}
-                      onClick={() => onDelete(sprint)}>
-                Hapus
-              </Button>
-            </>
+          {indicator && (
+            <Box sx={{ bgcolor: isPlus ? '#E1F5EE' : '#FCEBEB', borderRadius: '6px', px: '7px', py: '2px' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 700, color: isPlus ? '#0F6E56' : '#A32D2D' }}>
+                {isPlus ? `+${indicator.value}` : `${indicator.value}`}
+              </Typography>
+            </Box>
           )}
-        </div>
-      </CardContent>
-    </Card>
+        </Box>
+      </Box>
+      <Box sx={{ px: 2, py: '10px', display: 'flex', gap: '6px' }}>
+        <Box component='button' onClick={() => router.push(`/nimen/sprints/${sprint.id}`)} sx={{ flex: 1, py: '6px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 2px 6px rgba(139,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+          <i className='ri-eye-line' style={{ fontSize: '12px', color: '#185FA5' }} />
+          <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#3B1010' }}>Detail</Typography>
+        </Box>
+        {isDraft && (
+          <>
+            <Box component='button' onClick={() => router.push(`/nimen/sprints/${sprint.id}/edit`)} sx={{ flex: 1, py: '6px', borderRadius: '8px', cursor: 'pointer', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 2px 6px rgba(139,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+              <i className='ri-edit-line' style={{ fontSize: '12px', color: '#444441' }} />
+              <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#3B1010' }}>Edit</Typography>
+            </Box>
+            <Box component='button' onClick={() => onDelete(sprint)} sx={{ px: '12px', py: '6px', borderRadius: '8px', cursor: 'pointer', border: '0.5px solid rgba(163,45,45,0.2)', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className='ri-delete-bin-line' style={{ fontSize: '13px', color: '#A32D2D' }} />
+            </Box>
+          </>
+        )}
+      </Box>
+    </Box>
   )
 }
 
@@ -217,114 +216,77 @@ const NimenSprintListView = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Daftar Sprint</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', mb: '14px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' } }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Daftar Sprint</Typography>
+          </Box>
+        </Box>
+        <Box component='button' onClick={() => router.push('/nimen/sprints/create')} sx={{ display: 'flex', alignItems: 'center', gap: '5px', px: '12px', py: '7px', borderRadius: '10px', border: 'none', cursor: 'pointer', background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25)' }}>
+          <i className='ri-add-line' style={{ fontSize: '14px', color: '#fff' }} />
+          <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Buat Sprint</Typography>
+        </Box>
+      </Box>
 
-      {/* Header */}
-      <div className='flex items-center justify-between mb-6 flex-wrap gap-3'>
-        <div />
-        <Button variant='contained' startIcon={<i className='ri-add-line' />}
-                onClick={() => router.push('/nimen/sprints/create')}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          Buat Sprint
-        </Button>
-      </div>
-
-      {/* Stats */}
-      <Grid container spacing={3} className='mb-6'>
+      {/* Stats — 2x2 crystal */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
         {[
-          { label: 'Total Sprint', value: total, icon: 'ri-flag-line', color: '#7367F0', bg: '#F3EDFF' },
-          { label: 'Aktif', value: data.filter(d => d.status === 'ACTIVE').length, icon: 'ri-checkbox-circle-line', color: '#28C76F', bg: '#E6F9EE' },
-          { label: 'Draft', value: data.filter(d => d.status === 'DRAFT_ADMIN').length, icon: 'ri-draft-line', color: '#A8AAAE', bg: '#F4F4F4' },
-          { label: 'Selesai', value: data.filter(d => d.status === 'CLOSED').length, icon: 'ri-check-double-line', color: '#00CFE8', bg: '#E0F9FC' },
+          { label: 'Total Sprint', value: total,                                              icon: 'ri-flag-line' },
+          { label: 'Aktif',        value: data.filter(d => d.status === 'ACTIVE').length,     icon: 'ri-checkbox-circle-line' },
+          { label: 'Draft',        value: data.filter(d => d.status === 'DRAFT_ADMIN').length, icon: 'ri-draft-line' },
+          { label: 'Selesai',      value: data.filter(d => d.status === 'CLOSED').length,     icon: 'ri-check-double-line' },
         ].map(s => (
-          <Grid item xs={6} sm={3} key={s.label}>
-            <Card>
-              <CardContent sx={{ p: '16px !important', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 8, flexShrink: 0,
-                  background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
-                </div>
-                <div>
-                  <Typography variant='h4' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 11, sm: 13 } }}>
-                    {s.label}
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Box key={s.label} sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Box sx={{ width: 44, height: 44, borderRadius: '12px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', borderRadius: '12px 12px 0 0', background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)' } }}>
+              <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>{s.value}</Typography>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px' }}>{s.label}</Typography>
+            </Box>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
-      {/* Filter */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Angkatan</InputLabel>
-                <Select label='Angkatan' value={batchFilter}
-                        onChange={e => { setBatchFilter(e.target.value); setPage(0) }}
-                        renderValue={val => {
-                          const b = batches.find(x => x.id === val || String(x.id) === String(val))
-                          if (!b) return 'Semua Angkatan'
-                          return (
-                            <div className='flex items-center justify-between gap-2'>
-                              <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
-                              <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                                    color={b.program_type === 'S2' ? 'info' : 'success'} sx={{ flexShrink: 0 }} />
-                            </div>
-                          )
-                        }}>
-                  <MenuItem value=''>Semua Angkatan</MenuItem>
-                  {batches.map(b => (
-                    <MenuItem key={b.id} value={b.id}>
-                      <div className='flex items-center justify-between w-full gap-2'>
-                        <div>
-                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
-                          <Typography variant='caption' color='text.secondary'>
-                            Angkatan ke-{b.batch_number} · {b.year}
-                          </Typography>
-                        </div>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'} />
-                      </div>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Status</InputLabel>
-                <Select label='Status' value={statusFilter}
-                        onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
-                  <MenuItem value=''>Semua Status</MenuItem>
-                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                    <MenuItem key={key} value={key}>
-                      <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <DebouncedInput fullWidth value={globalFilter}
-                              onChange={val => { setGlobalFilter(val); setPage(0) }}
-                              placeholder='Cari sprint...'
-                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* Filter — PWA native */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '10px 12px', mb: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <FormControl fullWidth size='small'>
+          <Select displayEmpty value={batchFilter} onChange={e => { setBatchFilter(e.target.value); setPage(0) }}
+                  renderValue={val => { const b = batches.find(x => String(x.id) === String(val)); return b ? `${b.name} (${b.year})` : 'Semua Angkatan' }}
+                  sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+            <MenuItem value=''>Semua Angkatan</MenuItem>
+            {batches.map(b => (
+              <MenuItem key={b.id} value={b.id}>
+                <Box><Typography variant='body2' fontWeight={500}>{b.name}</Typography><Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year}</Typography></Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl fullWidth size='small'>
+          <Select displayEmpty value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
+                  renderValue={val => STATUS_CONFIG[val]?.label || 'Semua Status'}
+                  sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+            <MenuItem value=''>Semua Status</MenuItem>
+            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+              <MenuItem key={key} value={key}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <i className={cfg.icon} style={{ fontSize: '14px', color: '#9A5A5A' }} />
+                  <span>{cfg.label}</span>
+                </Box>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <DebouncedInput fullWidth value={globalFilter} onChange={val => { setGlobalFilter(val); setPage(0) }} placeholder='Cari sprint...'
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '7px', px: '10px', fontSize: '12px' } }}
+                        InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' style={{ color: '#9A5A5A', fontSize: '14px' }} /></InputAdornment> }}
+        />
+      </Box>
 
       {/* Content */}
       {loading ? (
@@ -333,14 +295,10 @@ const NimenSprintListView = () => {
         // Mobile — Card List
         <>
           {data.length === 0 ? (
-            <Card>
-              <CardContent sx={{ py: 12 }}>
-                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                  <i className='ri-flag-line' style={{ fontSize: 48, opacity: 0.3 }} />
-                  <Typography variant='body2' color='text.secondary'>Tidak ada sprint ditemukan</Typography>
-                </Box>
-              </CardContent>
-            </Card>
+            <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', py: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <i className='ri-flag-line' style={{ fontSize: 40, opacity: 0.25 }} />
+              <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Tidak ada sprint ditemukan</Typography>
+            </Box>
           ) : data.map(sprint => (
             <SprintMobileCard key={sprint.id} sprint={sprint}
                               onDelete={setDeleteTarget} router={router} />
