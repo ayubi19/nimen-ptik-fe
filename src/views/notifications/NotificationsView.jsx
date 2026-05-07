@@ -114,109 +114,130 @@ export default function NotificationsView() {
 
   const unreadCount = items.filter(n => !n.is_read).length
 
+  // Color map per notif type
+  const NOTIF_COLOR = {
+    primary: { bg: '#E6F1FB', color: '#185FA5' },
+    success: { bg: '#E1F5EE', color: '#0F6E56' },
+    error:   { bg: '#FCEBEB', color: '#A32D2D' },
+    warning: { bg: '#FAEEDA', color: '#BA7517' },
+    info:    { bg: '#EEEDFE', color: '#534AB7' },
+  }
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2'>
-        <Typography variant='caption' color='text.secondary'>NIMEN PTIK</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Notifikasi</Typography>
-      </div>
-
-      <Card sx={{ borderRadius: 1 }}>
-        {/* Header */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant='body1' fontWeight={500}>Semua Notifikasi</Typography>
-            {unreadCount > 0 && (
-              <Chip label={`${unreadCount} belum dibaca`} size='small' color='error' variant='tonal' />
-            )}
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
           </Box>
-          {unreadCount > 0 && (
-            <Button size='small' variant='text' onClick={handleMarkAll}
-                    startIcon={<i className='ri-check-double-line' />}>
-              Tandai semua dibaca
-            </Button>
-          )}
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN PTIK</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Notifikasi</Typography>
+          </Box>
         </Box>
-        <Divider />
+        {unreadCount > 0 && (
+          <Box component='button' onClick={handleMarkAll} sx={{
+            display: 'flex', alignItems: 'center', gap: '5px', px: '10px', py: '6px',
+            borderRadius: '8px', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 2px 6px rgba(139,0,0,0.07)',
+          }}>
+            <i className='ri-check-double-line' style={{ fontSize: '13px', color: '#0F6E56' }} />
+            <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#3B1010', display: { xs: 'none', sm: 'block' } }}>
+              Tandai dibaca
+            </Typography>
+          </Box>
+        )}
+      </Box>
 
-        {/* Content */}
+      {/* Unread badge */}
+      {unreadCount > 0 && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#EB3D47' }} />
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+            {unreadCount} belum dibaca
+          </Typography>
+        </Box>
+      )}
+
+      {/* Content */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={28} />
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: '40px' }}>
+            <CircularProgress size={24} sx={{ color: '#EB3D47' }} />
           </Box>
         ) : items.length === 0 ? (
-          <Box sx={{ py: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <i className='ri-notification-off-line' style={{ fontSize: 48, opacity: 0.3 }} />
-            <Typography variant='body2' color='text.secondary'>Tidak ada notifikasi</Typography>
+          <Box sx={{ py: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <i className='ri-notification-off-line' style={{ fontSize: 40, opacity: 0.25 }} />
+            <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Tidak ada notifikasi</Typography>
           </Box>
         ) : (
           items.map((n, i) => {
             const cfg = getTypeConfig(n.type)
+            const clr = NOTIF_COLOR[cfg.color] || NOTIF_COLOR.info
             const url = getNotifUrl(n.type, n.ref_id)
             return (
-              <Box key={n.id}>
-                <Box
-                  onClick={() => handleClick(n)}
-                  sx={{
-                    display: 'flex', alignItems: 'flex-start', gap: 1.5,
-                    px: 2, py: isMobile ? 1.5 : 1.25,
-                    cursor: url ? 'pointer' : 'default',
-                    bgcolor: n.is_read ? 'transparent' : 'action.hover',
-                    transition: 'background 0.15s',
-                    '&:hover': url ? { bgcolor: 'action.selected' } : {},
-                  }}>
-                  {/* Icon */}
-                  <Box sx={{
-                    width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-                    bgcolor: `var(--mui-palette-${cfg.color}-lightOpacity)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <i className={cfg.icon}
-                       style={{ fontSize: 16, color: `var(--mui-palette-${cfg.color}-main)` }} />
-                  </Box>
+              <Box key={n.id} onClick={() => handleClick(n)} sx={{
+                display: 'flex', alignItems: 'flex-start', gap: '12px',
+                px: 2, py: '12px',
+                cursor: url ? 'pointer' : 'default',
+                bgcolor: n.is_read ? 'transparent' : 'rgba(235,61,71,0.03)',
+                borderBottom: i < items.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+                transition: 'background 0.15s',
+                '&:active': url ? { opacity: 0.7 } : {},
+              }}>
+                {/* Icon crystal style */}
+                <Box sx={{
+                  width: 38, height: 38, borderRadius: '10px', flexShrink: 0,
+                  bgcolor: clr.bg,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <i className={cfg.icon} style={{ fontSize: '18px', color: clr.color }} />
+                </Box>
 
-                  {/* Content */}
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-                      <Typography variant='body2' fontWeight={n.is_read ? 400 : 500} noWrap={!isMobile}>
-                        {n.title}
-                      </Typography>
-                      <Typography variant='caption' color='text.secondary' sx={{ flexShrink: 0 }}>
-                        {fmtTime(n.created_at)}
-                      </Typography>
-                    </Box>
-                    <Typography variant='caption' color='text.secondary'
-                                sx={{ display: 'block', mt: 0.25 }}>
-                      {n.body}
+                {/* Content */}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px', mb: '2px' }}>
+                    <Typography sx={{ fontSize: '13px', fontWeight: n.is_read ? 400 : 600, color: '#3B1010', lineHeight: 1.3 }}>
+                      {n.title}
+                    </Typography>
+                    <Typography sx={{ fontSize: '10px', color: '#9A5A5A', flexShrink: 0, mt: '1px' }}>
+                      {fmtTime(n.created_at)}
                     </Typography>
                   </Box>
-
-                  {/* Unread dot */}
-                  {!n.is_read && (
-                    <Box sx={{
-                      width: 8, height: 8, borderRadius: '50%', flexShrink: 0, mt: 0.75,
-                      bgcolor: 'error.main',
-                    }} />
-                  )}
+                  <Typography sx={{ fontSize: '11px', color: '#9A5A5A', lineHeight: 1.4 }}>
+                    {n.body}
+                  </Typography>
                 </Box>
-                {i < items.length - 1 && <Divider />}
+
+                {/* Unread dot */}
+                {!n.is_read && (
+                  <Box sx={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, mt: '5px', bgcolor: '#EB3D47' }} />
+                )}
               </Box>
             )
           })
         )}
 
-        <Divider />
-        <TablePagination
-          component='div' count={total} page={page} rowsPerPage={pageSize}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={e => { setPageSize(+e.target.value); setPage(0) }}
-          rowsPerPageOptions={[10, 20, 50]}
-          labelRowsPerPage='Per halaman'
-        />
-      </Card>
+        <Box sx={{ borderTop: '0.5px solid rgba(180,100,100,0.1)' }}>
+          <TablePagination
+            component='div' count={total} page={page} rowsPerPage={pageSize}
+            onPageChange={(_, p) => setPage(p)}
+            onRowsPerPageChange={e => { setPageSize(+e.target.value); setPage(0) }}
+            rowsPerPageOptions={[10, 20, 50]}
+            labelRowsPerPage='Per halaman'
+          />
+        </Box>
+      </Box>
 
       <Snackbar open={toast.open} autoHideDuration={4000}
                 onClose={() => setToast(p => ({ ...p, open: false }))}

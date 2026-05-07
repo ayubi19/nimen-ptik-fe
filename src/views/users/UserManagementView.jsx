@@ -77,49 +77,91 @@ const DebouncedInput = ({ value: initial, onChange, debounce = 400, ...props }) 
   return <TextField {...props} value={value} onChange={e => setValue(e.target.value)} size='small' />
 }
 
-// ── Mobile Card ───────────────────────────────────────────────────────────────
+// ── Mobile Card — PWA native ─────────────────────────────────────────────────
+const ROLE_BADGE = {
+  admin_nimen:      { bg: '#E6F1FB', color: '#185FA5' },
+  admin_initiative: { bg: '#FAEEDA', color: '#BA7517' },
+  student:          { bg: '#E1F5EE', color: '#0F6E56' },
+  student_pic:      { bg: '#EEEDFE', color: '#534AB7' },
+  viewer:           { bg: '#F1EFE8', color: '#5F5E5A' },
+}
+
 const UserMobileCard = ({ user, onEdit, onToggle, onDelete }) => (
-  <Card className='mb-3'>
-    <CardContent sx={{ p: '12px !important' }}>
-      <div className='flex items-start justify-between gap-2 mb-2'>
-        <div className='flex items-center gap-2 flex-1 min-w-0'>
-          <Avatar sx={{ width: 36, height: 36, fontSize: 13, flexShrink: 0 }}>
-            {getInitials(user.full_name || user.username)}
-          </Avatar>
-          <div className='min-w-0'>
-            <Typography variant='body2' fontWeight={600} noWrap>{user.full_name || user.username}</Typography>
-            <Typography variant='caption' color='text.secondary' noWrap>{user.username}</Typography>
-          </div>
-        </div>
-        <Chip label={user.is_active ? 'Aktif' : 'Nonaktif'}
-              color={user.is_active ? 'success' : 'default'} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
-      </div>
-      <div className='flex items-center gap-1 mb-1'>
-        <i className='ri-mail-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)' }} />
-        <Typography variant='caption' color='text.secondary' noWrap>{user.email || '—'}</Typography>
-      </div>
-      <div className='flex items-center gap-2 mb-3 flex-wrap'>
-        {(user.roles || []).map(r => (
-          <Chip key={r} label={ROLE_LABELS[r] || r}
-                color={ROLE_COLORS[r] || 'default'} size='small' variant='tonal' />
-        ))}
-      </div>
-      <Divider className='mb-2' />
-      <div className='flex gap-1.5 flex-wrap'>
-        <Button size='small' variant='tonal' color='secondary'
-                startIcon={<i className='ri-edit-line' />}
-                onClick={() => onEdit(user)}>Edit</Button>
-        <Button size='small' variant='tonal'
-                color={user.is_active ? 'error' : 'success'}
-                onClick={() => onToggle(user)}>
-          {user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-        </Button>
-        <Button size='small' variant='tonal' color='error'
-                startIcon={<i className='ri-delete-bin-line' />}
-                onClick={() => onDelete(user)}>Hapus</Button>
-      </div>
-    </CardContent>
-  </Card>
+  <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '12px', mb: '10px' }}>
+    {/* Header */}
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '10px' }}>
+      <Box sx={{
+        width: 40, height: 40, borderRadius: '12px', flexShrink: 0,
+        background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+        boxShadow: '0 3px 8px rgba(180,0,30,0.22), inset 0 1px 0 rgba(255,180,180,0.35)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '11px', fontWeight: 500, color: 'rgba(255,255,255,0.92)',
+        position: 'relative', overflow: 'hidden',
+      }}>
+        {getInitials(user.full_name || user.username)}
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>
+          {user.full_name || user.username}
+        </Typography>
+        <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }} noWrap>{user.username}</Typography>
+      </Box>
+      <Box sx={{ bgcolor: user.is_active ? '#E1F5EE' : '#F1EFE8', borderRadius: '6px', px: 1, py: '3px', flexShrink: 0 }}>
+        <Typography sx={{ fontSize: '10px', fontWeight: 500, color: user.is_active ? '#0F6E56' : '#5F5E5A' }}>
+          {user.is_active ? 'Aktif' : 'Nonaktif'}
+        </Typography>
+      </Box>
+    </Box>
+
+    {/* Meta */}
+    <Box sx={{ py: '8px', borderTop: '0.5px solid rgba(180,100,100,0.1)', borderBottom: '0.5px solid rgba(180,100,100,0.1)', mb: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <i className='ri-mail-line' style={{ fontSize: '12px', color: '#9A5A5A', flexShrink: 0 }} />
+        <Typography sx={{ fontSize: '11px', color: '#3B1010' }} noWrap>{user.email || '—'}</Typography>
+      </Box>
+      <Box sx={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+        {(user.roles || []).map(r => {
+          const b = ROLE_BADGE[r] || { bg: '#F1EFE8', color: '#5F5E5A' }
+          return (
+            <Box key={r} sx={{ bgcolor: b.bg, borderRadius: '6px', px: '7px', py: '2px' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 500, color: b.color }}>
+                {ROLE_LABELS[r] || r}
+              </Typography>
+            </Box>
+          )
+        })}
+      </Box>
+    </Box>
+
+    {/* Actions */}
+    <Box sx={{ display: 'flex', gap: '6px' }}>
+      <Box component='button' onClick={() => onEdit(user)} sx={{
+        flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+        border: '0.5px solid rgba(180,100,100,0.18)', background: 'rgba(255,255,255,0.72)',
+        boxShadow: '0 2px 6px rgba(139,0,0,0.07)', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#444441',
+      }}>
+        <i className='ri-edit-line' style={{ fontSize: '11px' }} /> Edit
+      </Box>
+      <Box component='button' onClick={() => onToggle(user)} sx={{
+        flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+        border: `0.5px solid ${user.is_active ? 'rgba(163,45,45,0.2)' : 'rgba(15,110,86,0.2)'}`,
+        background: user.is_active ? '#FCEBEB' : '#E1F5EE', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+        color: user.is_active ? '#A32D2D' : '#0F6E56',
+      }}>
+        <i className={user.is_active ? 'ri-forbid-line' : 'ri-checkbox-circle-line'} style={{ fontSize: '11px' }} />
+        {user.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+      </Box>
+      <Box component='button' onClick={() => onDelete(user)} sx={{
+        px: '10px', py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+        border: '0.5px solid rgba(163,45,45,0.2)', background: '#FCEBEB', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <i className='ri-delete-bin-line' style={{ fontSize: '13px', color: '#A32D2D' }} />
+      </Box>
+    </Box>
+  </Box>
 )
 
 // ── Main View ─────────────────────────────────────────────────────────────────
@@ -238,62 +280,67 @@ const UserManagementView = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>Administrasi</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Manajemen User</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', mb: '14px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Administrasi</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Manajemen User</Typography>
+          </Box>
+        </Box>
+        <Box component='button' onClick={handleOpenCreate} sx={{
+          display: 'flex', alignItems: 'center', gap: '5px', px: '12px', py: '7px',
+          borderRadius: '10px', border: 'none', cursor: 'pointer',
+          background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+          boxShadow: '0 4px 10px rgba(180,0,30,0.25)',
+        }}>
+          <i className='ri-add-line' style={{ fontSize: '14px', color: '#fff' }} />
+          <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Tambah User</Typography>
+        </Box>
+      </Box>
 
-      {/* Header */}
-      <div className='flex items-center justify-between mb-6 flex-wrap gap-3'>
-        <div />
-        <Button variant='contained' startIcon={<i className='ri-add-line' />}
-                onClick={handleOpenCreate}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          Tambah User
-        </Button>
-      </div>
-
-      {/* Filter */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Role</InputLabel>
-                <Select label='Role' value={roleFilter}
-                        onChange={e => { setRoleFilter(e.target.value); setPage(0) }}>
-                  <MenuItem value=''>Semua Role</MenuItem>
-                  {Object.entries(ROLE_LABELS).map(([key, label]) => (
-                    <MenuItem key={key} value={key}>
-                      <Chip label={label} color={ROLE_COLORS[key] || 'default'} size='small' variant='tonal' />
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Status</InputLabel>
-                <Select label='Status' value={statusFilter}
-                        onChange={e => { setStatusFilter(e.target.value); setPage(0) }}>
-                  <MenuItem value=''>Semua Status</MenuItem>
-                  <MenuItem value='true'>Aktif</MenuItem>
-                  <MenuItem value='false'>Nonaktif</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <DebouncedInput fullWidth value={globalFilter}
-                              onChange={v => { setGlobalFilter(v); setPage(0) }}
-                              placeholder='Cari nama, username...'
-                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-              />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* Filter — PWA native */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '10px 12px', mb: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <Box sx={{ display: 'flex', gap: '8px' }}>
+          <FormControl size='small' sx={{ flex: 1 }}>
+            <Select displayEmpty value={roleFilter}
+                    onChange={e => { setRoleFilter(e.target.value); setPage(0) }}
+                    renderValue={val => ROLE_LABELS[val] || 'Semua Role'}
+                    sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+              <MenuItem value=''>Semua Role</MenuItem>
+              {Object.entries(ROLE_LABELS).map(([key, label]) => (
+                <MenuItem key={key} value={key}>{label}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size='small' sx={{ flex: 1 }}>
+            <Select displayEmpty value={statusFilter}
+                    onChange={e => { setStatusFilter(e.target.value); setPage(0) }}
+                    renderValue={val => val === 'true' ? 'Aktif' : val === 'false' ? 'Nonaktif' : 'Semua Status'}
+                    sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+              <MenuItem value=''>Semua Status</MenuItem>
+              <MenuItem value='true'>Aktif</MenuItem>
+              <MenuItem value='false'>Nonaktif</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
+        <DebouncedInput fullWidth value={globalFilter}
+                        onChange={v => { setGlobalFilter(v); setPage(0) }}
+                        placeholder='Cari nama, username...'
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& .MuiOutlinedInput-input': { py: '7px', px: '10px' } }}
+                        InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' style={{ color: '#9A5A5A', fontSize: '14px' }} /></InputAdornment> }}
+        />
+      </Box>
 
       {/* Content */}
       {loading ? (
@@ -407,74 +454,83 @@ const UserManagementView = () => {
         </Card>
       )}
 
-      {/* Drawer Create/Edit */}
+      {/* Drawer Create/Edit — PWA native */}
       <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}
-              PaperProps={{ sx: { width: { xs: '100%', sm: 420 } } }}>
-        <div className='flex items-center justify-between p-4 border-b'>
-          <div>
-            <Typography variant='h6'>{editData ? 'Edit User' : 'Tambah User'}</Typography>
-            {editData && <Typography variant='caption' color='text.secondary'>{editData.username}</Typography>}
-          </div>
-          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line' /></IconButton>
-        </div>
-        <form onSubmit={handleSubmit(handleSave)} className='flex flex-col gap-4 p-4 overflow-y-auto'>
-          <Controller name='full_name' control={control} rules={{ required: 'Nama wajib diisi' }}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth size='small' label='Nama Lengkap'
-                                   error={!!errors.full_name} helperText={errors.full_name?.message} />
-                      )}
-          />
-          <Controller name='email' control={control} rules={{ required: 'Email wajib diisi' }}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth size='small' label='Email' type='email'
-                                   error={!!errors.email} helperText={errors.email?.message} />
-                      )}
-          />
-          {!editData && (
-            <Controller name='username' control={control} rules={{ required: 'Username wajib diisi' }}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, bgcolor: '#F5F2F0' } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '14px 16px', bgcolor: '#fff', borderBottom: '0.5px solid rgba(180,100,100,0.15)' }}>
+          <Box>
+            <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#3B1010' }}>{editData ? 'Edit User' : 'Tambah User'}</Typography>
+            {editData && <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{editData.username}</Typography>}
+          </Box>
+          <Box component='button' onClick={() => setDrawerOpen(false)} sx={{ width: 30, height: 30, borderRadius: '8px', border: 'none', cursor: 'pointer', background: '#F5F2F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className='ri-close-line' style={{ fontSize: '16px', color: '#9A5A5A' }} />
+          </Box>
+        </Box>
+
+        <Box component='form' onSubmit={handleSubmit(handleSave)} sx={{ display: 'flex', flexDirection: 'column', gap: '10px', p: '14px', overflowY: 'auto' }}>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Controller name='full_name' control={control} rules={{ required: 'Nama wajib diisi' }}
                         render={({ field }) => (
-                          <TextField {...field} fullWidth size='small' label='Username'
-                                     error={!!errors.username} helperText={errors.username?.message} />
+                          <TextField {...field} fullWidth size='small' placeholder='Nama Lengkap'
+                                     error={!!errors.full_name} helperText={errors.full_name?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
                         )}
             />
-          )}
-          <Controller name='password' control={control}
-                      rules={editData ? {} : { required: 'Password wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } }}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth size='small' label={editData ? 'Password Baru (opsional)' : 'Password'}
-                                   type='password' error={!!errors.password} helperText={errors.password?.message} />
-                      )}
-          />
-          <Controller name='role' control={control} rules={{ required: 'Role wajib dipilih' }}
-                      render={({ field }) => (
-                        <FormControl fullWidth size='small' error={!!errors.role}>
-                          <InputLabel>Role</InputLabel>
-                          <Select {...field} label='Role'>
-                            {/* Tampilkan role saat ini jika tidak ada di AVAILABLE_ROLES (misal: student) */}
-                            {editData && !AVAILABLE_ROLES.find(r => r.value === field.value) && (
-                              <MenuItem value={field.value} disabled>
-                                <Chip label={ROLE_LABELS[field.value] || field.value}
-                                      color={ROLE_COLORS[field.value] || 'default'} size='small' variant='tonal' />
-                              </MenuItem>
-                            )}
-                            {AVAILABLE_ROLES.map(r => (
-                              <MenuItem key={r.value} value={r.value}>
-                                <Chip label={r.label} color={ROLE_COLORS[r.value] || 'default'} size='small' variant='tonal' />
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      )}
-          />
-          <div className='flex gap-2 mt-2'>
-            <Button fullWidth variant='tonal' color='secondary'
-                    onClick={() => setDrawerOpen(false)} disabled={saveLoading}>Batal</Button>
-            <Button fullWidth variant='contained' type='submit' disabled={saveLoading}
-                    startIcon={saveLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-              {saveLoading ? 'Menyimpan...' : editData ? 'Simpan Perubahan' : 'Buat User'}
-            </Button>
-          </div>
-        </form>
+            <Controller name='email' control={control} rules={{ required: 'Email wajib diisi' }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small' placeholder='Email' type='email'
+                                     error={!!errors.email} helperText={errors.email?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                        )}
+            />
+            {!editData && (
+              <Controller name='username' control={control} rules={{ required: 'Username wajib diisi' }}
+                          render={({ field }) => (
+                            <TextField {...field} fullWidth size='small' placeholder='Username'
+                                       error={!!errors.username} helperText={errors.username?.message}
+                                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                          )}
+              />
+            )}
+            <Controller name='password' control={control}
+                        rules={editData ? {} : { required: 'Password wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } }}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small'
+                                     placeholder={editData ? 'Password Baru (opsional)' : 'Password'}
+                                     type='password' error={!!errors.password} helperText={errors.password?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                        )}
+            />
+            <Controller name='role' control={control} rules={{ required: 'Role wajib dipilih' }}
+                        render={({ field }) => (
+                          <FormControl fullWidth size='small'>
+                            <Select displayEmpty {...field}
+                                    renderValue={val => ROLE_LABELS[val] || 'Pilih Role'}
+                                    sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
+                              {editData && !AVAILABLE_ROLES.find(r => r.value === field.value) && (
+                                <MenuItem value={field.value} disabled>{ROLE_LABELS[field.value] || field.value}</MenuItem>
+                              )}
+                              {AVAILABLE_ROLES.map(r => (
+                                <MenuItem key={r.value} value={r.value}>{r.label}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        )}
+            />
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: '8px' }}>
+            <Box component='button' type='button' onClick={() => setDrawerOpen(false)} disabled={saveLoading} sx={{ flex: 1, py: '10px', borderRadius: '10px', cursor: 'pointer', background: '#fff', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 2px 6px rgba(139,0,0,0.07)' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#9A5A5A' }}>Batal</Typography>
+            </Box>
+            <Box component='button' type='submit' disabled={saveLoading} sx={{ flex: 2, py: '10px', borderRadius: '10px', cursor: 'pointer', border: 'none', background: saveLoading ? '#ccc' : 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {saveLoading && <CircularProgress size={14} sx={{ color: '#fff' }} />}
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
+                {saveLoading ? 'Menyimpan...' : editData ? 'Simpan Perubahan' : 'Buat User'}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Drawer>
 
       {/* Dialog Toggle */}

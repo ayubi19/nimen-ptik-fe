@@ -28,6 +28,11 @@ import Box from '@mui/material/Box'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import { batchApi } from '@/libs/api/masterDataApi'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { DatePicker } from '@mui/x-date-pickers/DatePicker'
+import dayjs from 'dayjs'
+import 'dayjs/locale/id'
 import { studentsApi } from '@/libs/api/studentsApi'
 import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
 import { getInitials } from '@/utils/getInitials'
@@ -58,80 +63,79 @@ const IndicatorSection = ({ indicatorName, categoryName, indicatorValue, entries
   const hasMore = entries.length > MAX_VISIBLE
 
   return (
-    <Card className='mb-4' sx={{ overflow: 'hidden' }}>
+    <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', mb: '10px' }}>
       {/* Header */}
-      <Box sx={{ px: 3, py: 1.5, bgcolor: isPlus ? '#E6F9EE' : '#FFE9EA' }}>
-        <div className='flex items-start justify-between gap-3'>
-          <div className='flex items-start gap-2 flex-1'>
-            <i className={cfg.icon} style={{ fontSize: 18, color: cfg.text, marginTop: 2, flexShrink: 0 }} />
-            <div>
-              <Typography variant='body2' fontWeight={700} color='text.primary'>
-                {indicatorName}
-              </Typography>
-              <div className='flex items-center gap-2 mt-0.5 flex-wrap'>
-                <Typography variant='caption' color='text.secondary'>{categoryName}</Typography>
-                <Chip label={cfg.label} size='small'
-                      sx={{ bgcolor: cfg.bg, color: cfg.text, fontWeight: 600, fontSize: 10, height: 18 }} />
-                <Typography variant='caption' color='text.secondary'>
-                  {entries.length} peserta
-                </Typography>
-              </div>
-            </div>
-          </div>
-          {/* Nilai per indikator — bukan dijumlah, langsung dari indikator */}
-          <Chip
-            label={fmtVal(indicatorValue)}
-            size='small'
-            color={isPlus ? 'success' : 'error'}
-            variant='tonal'
-            sx={{ fontWeight: 700, flexShrink: 0 }}
-          />
-        </div>
+      <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)', bgcolor: isPlus ? 'rgba(15,110,86,0.04)' : 'rgba(163,45,45,0.04)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flex: 1, minWidth: 0 }}>
+          <i className={cfg.icon} style={{ fontSize: '16px', color: cfg.text, marginTop: 2, flexShrink: 0 }} />
+          <Box sx={{ minWidth: 0 }}>
+            <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#3B1010', lineHeight: 1.3 }} noWrap>
+              {indicatorName}
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', mt: '3px', flexWrap: 'wrap' }}>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{categoryName}</Typography>
+              <Box sx={{ bgcolor: cfg.bg, borderRadius: '5px', px: '5px', py: '1px' }}>
+                <Typography sx={{ fontSize: '9px', fontWeight: 600, color: cfg.text }}>{cfg.label}</Typography>
+              </Box>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{entries.length} peserta</Typography>
+            </Box>
+          </Box>
+        </Box>
+        <Box sx={{ bgcolor: isPlus ? '#E1F5EE' : '#FCEBEB', borderRadius: '6px', px: '8px', py: '3px', flexShrink: 0 }}>
+          <Typography sx={{ fontSize: '11px', fontWeight: 700, color: isPlus ? '#0F6E56' : '#A32D2D' }}>
+            {fmtVal(indicatorValue)}
+          </Typography>
+        </Box>
       </Box>
 
       {/* Daftar peserta */}
       {isMobile ? (
         <>
-          <div className='px-3 py-3 flex flex-col gap-2'>
-            {visibleEntries.map(e => (
-              <Box key={e.id} className='flex items-center justify-between gap-2 p-2 rounded-lg'
-                   sx={{ bgcolor: 'action.hover' }}>
-                <div className='flex items-center gap-2 flex-1 min-w-0'>
-                  {showStudent && (
-                    <Avatar sx={{ width: 28, height: 28, fontSize: 10, flexShrink: 0 }}>
-                      {getInitials(e.student?.full_name || '')}
-                    </Avatar>
-                  )}
-                  <div className='min-w-0'>
-                    {showStudent ? (
-                      <>
-                        <Typography variant='body2' fontWeight={500} noWrap>
-                          {e.student?.full_name || '—'}
-                        </Typography>
-                        <Typography variant='caption' color='text.secondary'>
-                          {e.student?.student_profile?.nim || '—'} · {fmtDate(e.event_date)}
-                        </Typography>
-                      </>
-                    ) : (
-                      <Typography variant='caption' color='text.secondary'>
-                        {fmtDate(e.event_date)}
+          <Box>
+            {visibleEntries.map((e, i) => (
+              <Box key={e.id} sx={{
+                display: 'flex', alignItems: 'center', gap: '10px', px: 2, py: '10px',
+                borderBottom: i < visibleEntries.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+              }}>
+                {showStudent && (
+                  <Box sx={{ width: 32, height: 32, borderRadius: '9px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 2px 6px rgba(180,0,30,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>
+                    {getInitials(e.student?.full_name || '')}
+                  </Box>
+                )}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  {showStudent ? (
+                    <>
+                      <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>
+                        {e.student?.full_name || '—'}
                       </Typography>
-                    )}
-                  </div>
-                </div>
+                      <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>
+                        {e.student?.student_profile?.nim || '—'} · {fmtDate(e.event_date)}
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{fmtDate(e.event_date)}</Typography>
+                  )}
+                </Box>
                 {e.status === 'DISPENSED' && (
-                  <Chip label='Dispensasi' size='small' color='info' variant='tonal' sx={{ fontSize: 10, flexShrink: 0 }} />
+                  <Box sx={{ bgcolor: '#E6F1FB', borderRadius: '5px', px: '6px', py: '2px', flexShrink: 0 }}>
+                    <Typography sx={{ fontSize: '9px', fontWeight: 500, color: '#185FA5' }}>Dispensasi</Typography>
+                  </Box>
                 )}
               </Box>
             ))}
-          </div>
+          </Box>
           {hasMore && (
-            <Box className='px-3 pb-3'>
-              <Button fullWidth variant='tonal' color='secondary' size='small'
-                      onClick={() => setExpanded(v => !v)}
-                      startIcon={<i className={expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} />}>
-                {expanded ? 'Sembunyikan' : `Lihat ${entries.length - MAX_VISIBLE} peserta lainnya`}
-              </Button>
+            <Box sx={{ px: 2, pb: '10px' }}>
+              <Box component='button' onClick={() => setExpanded(v => !v)} sx={{
+                width: '100%', py: '7px', borderRadius: '8px', cursor: 'pointer',
+                background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+              }}>
+                <i className={expanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'} style={{ fontSize: '14px', color: '#9A5A5A' }} />
+                <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+                  {expanded ? 'Sembunyikan' : `Lihat ${entries.length - MAX_VISIBLE} peserta lainnya`}
+                </Typography>
+              </Box>
             </Box>
           )}
         </>
@@ -199,7 +203,7 @@ const IndicatorSection = ({ indicatorName, categoryName, indicatorValue, entries
           )}
         </>
       )}
-    </Card>
+    </Box>
   )
 }
 
@@ -223,8 +227,8 @@ const NimenRekapView = () => {
   const [batchID, setBatchID]           = useState('')
   const [sourceFilter, setSourceFilter] = useState('')
   const [selectedStudents, setSelectedStudents] = useState([])
-  const [dateFrom, setDateFrom]         = useState('')
-  const [dateTo, setDateTo]             = useState('')
+  const [dateFrom, setDateFrom]         = useState(null)
+  const [dateTo, setDateTo]             = useState(null)
   const [students, setStudents]         = useState([])
   const [studentsLoading, setStudentsLoading] = useState(false)
   const [entries, setEntries]           = useState([])
@@ -286,8 +290,8 @@ const NimenRekapView = () => {
       const params = {}
       if (sourceFilter) params.source_type = sourceFilter
       if (selectedStudents.length === 1) params.student_id = selectedStudents[0].id
-      if (dateFrom) params.date_from = dateFrom
-      if (dateTo) params.date_to = dateTo
+      if (dateFrom) params.date_from = dayjs(dateFrom).format('YYYY-MM-DD')
+      if (dateTo) params.date_to = dayjs(dateTo).format('YYYY-MM-DD')
 
       const res = await nimenRankingApi.getBatchEntries(batchID, params)
       let data = res.data.data || []
@@ -357,11 +361,22 @@ const NimenRekapView = () => {
 
     return (
       <>
-        <div className='flex items-center gap-2 mb-6'>
-          <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-          <i className='ri-arrow-right-s-line text-sm opacity-50' />
-          <Typography variant='caption' fontWeight={500} color='text.primary'>Rekap Nilai Saya</Typography>
-        </div>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Rekap Nilai Saya</Typography>
+          </Box>
+        </Box>
 
         {myLoading ? (
           <div className='flex justify-center py-10'><CircularProgress /></div>
@@ -376,26 +391,22 @@ const NimenRekapView = () => {
           </Card>
         ) : (
           <>
-            <Grid container spacing={4} className='mb-6'>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
               {[
-                { label: 'Total Kegiatan', value: myGrouped.length, icon: 'ri-list-check-line', color: '#FF4C51', bg: '#FFE9EA' },
-                { label: 'Total Entri',    value: myEntries.length, icon: 'ri-medal-line',      color: '#28C76F', bg: '#E6F9EE' },
+                { label: 'Total Kegiatan', value: myGrouped.length, icon: 'ri-list-check-line' },
+                { label: 'Total Entri',    value: myEntries.length, icon: 'ri-medal-line' },
               ].map(s => (
-                <Grid item xs={6} key={s.label}>
-                  <Card>
-                    <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
-                      </div>
-                      <div>
-                        <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                        <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 11, sm: 13 } }}>{s.label}</Typography>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                <Box key={s.label} sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: '12px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', borderRadius: '12px 12px 0 0', background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)' } }}>
+                    <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>{s.value}</Typography>
+                    <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px' }}>{s.label}</Typography>
+                  </Box>
+                </Box>
               ))}
-            </Grid>
+            </Box>
 
             {pagedMyGrouped.map((g, idx) => (
               <IndicatorSection key={idx} {...g} isMobile={isMobile} showStudent={false} />
@@ -416,220 +427,185 @@ const NimenRekapView = () => {
 
   // ── ADMIN VIEW ──────────────────────────────────────────────────────────────
   return (
-    <>
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Rekap Nilai</Typography>
-      </div>
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='id'>
+      <>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Rekap Nilai</Typography>
+          </Box>
+        </Box>
 
-      {/* Filter Card */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Typography variant='subtitle1' fontWeight={600} className='mb-4'>Filter Rekap Nilai</Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Angkatan</InputLabel>
-                <Select
-                  label='Angkatan'
-                  value={batchID}
-                  onChange={e => { setBatchID(e.target.value); setHasLoaded(false) }}
-                  renderValue={val => {
-                    const b = batches.find(x => x.id === parseInt(val))
-                    if (!b) return ''
-                    return (
-                      <div className='flex items-center justify-between gap-2'>
-                        <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'}
-                              sx={{ flexShrink: 0 }} />
-                      </div>
-                    )
-                  }}>
-                  {batches.map(b => (
-                    <MenuItem key={b.id} value={b.id}>
-                      <div className='flex items-center justify-between w-full gap-2'>
-                        <div>
-                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
-                          <Typography variant='caption' color='text.secondary'>
-                            Angkatan ke-{b.batch_number} · {b.year}
-                          </Typography>
-                        </div>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'} />
-                      </div>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
+        {/* Filter Card — PWA native */}
+        <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px', mb: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#9A5A5A', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Filter Rekap Nilai
+          </Typography>
+          {/* Angkatan */}
+          <FormControl fullWidth size='small' error={false}>
+            <Select displayEmpty value={batchID}
+                    onChange={e => { setBatchID(e.target.value); setHasLoaded(false) }}
+                    renderValue={val => { const b = batches.find(x => x.id === parseInt(val)); return b ? `${b.name} (${b.year})` : 'Pilih Angkatan' }}
+                    sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0',
+                      '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' },
+                      '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+              {batches.map(b => (
+                <MenuItem key={b.id} value={b.id}>
+                  <Box><Typography variant='body2' fontWeight={500}>{b.name}</Typography><Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year}</Typography></Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {/* Sumber + Mahasiswa */}
+          <Box sx={{ display: 'flex', gap: '8px' }}>
+            <FormControl size='small' sx={{ flex: 1 }}>
+              <Select displayEmpty value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}
+                      renderValue={val => ({ SPRINT: 'Sprint', AUTOMATIC: 'Nilai Jabatan', SELF_SUBMISSION: 'Pengajuan' }[val] || 'Semua Sumber')}
+                      sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+                <MenuItem value=''>Semua Sumber</MenuItem>
+                <MenuItem value='SPRINT'>Sprint</MenuItem>
+                <MenuItem value='AUTOMATIC'>Nilai Jabatan</MenuItem>
+                <MenuItem value='SELF_SUBMISSION'>Pengajuan Mandiri</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          {/* Autocomplete mahasiswa */}
+          <Autocomplete multiple size='small' options={students} loading={studentsLoading}
+                        getOptionLabel={s => s.full_name || ''} isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                        value={selectedStudents} onChange={(_, val) => setSelectedStudents(val)} disabled={!batchID}
+                        renderOption={(props, option) => (
+                          <li {...props} key={option.id}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Avatar sx={{ width: 28, height: 28, fontSize: 10 }}>{getInitials(option.full_name || '')}</Avatar>
+                              <Box>
+                                <Typography variant='body2' fontWeight={500}>{option.full_name}</Typography>
+                                <Typography variant='caption' color='text.secondary'>{option.student_profile?.nim || '—'}</Typography>
+                              </Box>
+                            </Box>
+                          </li>
+                        )}
+                        renderTags={(value, getTagProps) => value.map((option, index) => {
+                          const tagProps = getTagProps({ index })
+                          return <Chip {...tagProps} key={option.id} label={option.full_name} size='small' color='primary' variant='tonal' />
+                        })}
+                        renderInput={params => (
+                          <TextField {...params} placeholder={batchID ? 'Cari mahasiswa...' : 'Pilih angkatan dulu'}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } } }}
+                                     InputProps={{ ...params.InputProps, endAdornment: <>{studentsLoading ? <CircularProgress size={14} /> : null}{params.InputProps.endAdornment}</> }}
+                          />
+                        )}
+          />
+          {/* Tanggal */}
+          <Box sx={{ display: 'flex', gap: '8px' }}>
+            <DatePicker
+              value={dateFrom}
+              onChange={val => setDateFrom(val)}
+              format='DD/MM/YYYY'
+              slotProps={{ textField: {
+                  size: 'small', placeholder: 'Dari Tanggal', fullWidth: true,
+                  sx: { flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '7px', px: '10px', fontSize: '12px' } }
+                }}}
+            />
+            <DatePicker
+              value={dateTo}
+              onChange={val => setDateTo(val)}
+              format='DD/MM/YYYY'
+              minDate={dateFrom || undefined}
+              slotProps={{ textField: {
+                  size: 'small', placeholder: 'Sampai Tanggal', fullWidth: true,
+                  sx: { flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '7px', px: '10px', fontSize: '12px' } }
+                }}}
+            />
+          </Box>
+          {/* Tombol Tampilkan */}
+          <Box component='button' onClick={handleTampilkan} disabled={loading || !batchID} sx={{
+            width: '100%', py: '10px', borderRadius: '10px', border: 'none',
+            cursor: (!batchID || loading) ? 'not-allowed' : 'pointer',
+            background: (!batchID || loading) ? 'rgba(180,100,100,0.2)' : 'linear-gradient(145deg, #E63946, #6D0E13)',
+            boxShadow: (!batchID || loading) ? 'none' : '0 4px 10px rgba(180,0,30,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+          }}>
+            {loading ? <CircularProgress size={14} sx={{ color: '#fff' }} /> : <i className='ri-search-line' style={{ fontSize: '14px', color: '#fff' }} />}
+            <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>{loading ? 'Memuat...' : 'Tampilkan'}</Typography>
+          </Box>
+        </Box>
 
-            <Grid item xs={12} md={6}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Sumber Nilai</InputLabel>
-                <Select label='Sumber Nilai' value={sourceFilter}
-                        onChange={e => setSourceFilter(e.target.value)}>
-                  <MenuItem value=''>Semua Sumber</MenuItem>
-                  <MenuItem value='SPRINT'>Sprint</MenuItem>
-                  <MenuItem value='AUTOMATIC'>Nilai Jabatan</MenuItem>
-                  <MenuItem value='SELF_SUBMISSION'>Pengajuan Mandiri</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
+        {/* Empty state awal */}
+        {!hasLoaded && !loading && (
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', py: '40px', px: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <i className='ri-bar-chart-grouped-line' style={{ fontSize: 40, opacity: 0.25 }} />
+              <Typography sx={{ fontSize: '12px', color: '#9A5A5A', textAlign: 'center' }}>
+                Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
+              </Typography>
+            </Box>
+          </Box>
+        )}
 
-            <Grid item xs={12}>
-              <Autocomplete
-                multiple
-                size='small'
-                options={students}
-                loading={studentsLoading}
-                getOptionLabel={s => s.full_name || ''}
-                isOptionEqualToValue={(opt, val) => opt.id === val.id}
-                value={selectedStudents}
-                onChange={(_, val) => setSelectedStudents(val)}
-                disabled={!batchID}
-                renderOption={(props, option) => (
-                  <li {...props} key={option.id}>
-                    <div className='flex items-center gap-2'>
-                      <Avatar sx={{ width: 28, height: 28, fontSize: 10 }}>
-                        {getInitials(option.full_name || '')}
-                      </Avatar>
-                      <div>
-                        <Typography variant='body2' fontWeight={500}>{option.full_name}</Typography>
-                        <Typography variant='caption' color='text.secondary'>
-                          {option.student_profile?.nim || '—'}
-                        </Typography>
-                      </div>
-                    </div>
-                  </li>
-                )}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => {
-                    const tagProps = getTagProps({ index })
-                    return (
-                      <Chip
-                        {...tagProps}
-                        key={option.id}
-                        label={option.full_name}
-                        size='small'
-                        color='primary'
-                        variant='tonal'
-                      />
-                    )
-                  })
-                }
-                renderInput={params => (
-                  <TextField {...params} label='Nama Mahasiswa'
-                             placeholder={batchID ? 'Pilih satu atau lebih mahasiswa...' : 'Pilih angkatan dulu'}
-                             InputProps={{
-                               ...params.InputProps,
-                               endAdornment: (
-                                 <>
-                                   {studentsLoading ? <CircularProgress size={14} /> : null}
-                                   {params.InputProps.endAdornment}
-                                 </>
-                               ),
-                             }}
-                  />
-                )}
-              />
-            </Grid>
+        {/* Info + Stats */}
+        {hasLoaded && (
+          <>
+            {infoMsg && (
+              <Alert severity='info' icon={<i className='ri-information-line' />} className='mb-4'>
+                {infoMsg}
+              </Alert>
+            )}
 
-            <Grid item xs={12} md={6}>
-              <TextField fullWidth size='small' type='date' label='Dari Tanggal'
-                         value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                         InputLabelProps={{ shrink: true }} />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField fullWidth size='small' type='date' label='Sampai Tanggal'
-                         value={dateTo} onChange={e => setDateTo(e.target.value)}
-                         InputLabelProps={{ shrink: true }}
-                         inputProps={{ min: dateFrom || undefined }} />
-            </Grid>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
+              {[
+                { label: 'Mahasiswa',      value: new Set(entries.map(e => e.student_id)).size, icon: 'ri-group-line' },
+                { label: 'Jenis Kegiatan', value: grouped.length,                               icon: 'ri-stack-line' },
+              ].map(s => (
+                <Box key={s.label} sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <Box sx={{ width: 44, height: 44, borderRadius: '12px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', borderRadius: '12px 12px 0 0', background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)' } }}>
+                    <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+                  </Box>
+                  <Box>
+                    <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>{s.value}</Typography>
+                    <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px' }}>{s.label}</Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          </>
+        )}
 
-            <Grid item xs={12}>
-              <Button fullWidth variant='contained' onClick={handleTampilkan}
-                      disabled={loading || !batchID}
-                      startIcon={loading ? <CircularProgress size={16} color='inherit' /> : <i className='ri-search-line' />}>
-                {loading ? 'Memuat...' : 'Tampilkan'}
-              </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+        {/* Empty result */}
+        {hasLoaded && entries.length === 0 && (
+          <Card>
+            <CardContent className='text-center py-12'>
+              <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
+              <Typography variant='body2' color='text.secondary'>
+                Tidak ada entri nilai yang ditemukan untuk filter yang dipilih.
+              </Typography>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* Empty state awal */}
-      {!hasLoaded && !loading && (
-        <Card>
-          <CardContent sx={{ py: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-            <i className='ri-bar-chart-grouped-line' style={{ fontSize: 48, opacity: 0.3 }} />
-            <Typography variant='body2' color='text.secondary' textAlign='center'>
-              Pilih angkatan dan klik <strong>Tampilkan</strong> untuk melihat rekap nilai.
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
+        {/* Grouped per indikator dengan pagination */}
+        {hasLoaded && pagedGrouped.map((g, idx) => (
+          <IndicatorSection key={idx} {...g} isMobile={isMobile} />
+        ))}
 
-      {/* Info + Stats */}
-      {hasLoaded && (
-        <>
-          {infoMsg && (
-            <Alert severity='info' icon={<i className='ri-information-line' />} className='mb-4'>
-              {infoMsg}
-            </Alert>
-          )}
-
-          <Grid container spacing={4} className='mb-6'>
-            {[
-              { label: 'Mahasiswa',      value: new Set(entries.map(e => e.student_id)).size, icon: 'ri-group-line',  color: '#FF4C51', bg: '#FFE9EA' },
-              { label: 'Jenis Kegiatan', value: grouped.length,                               icon: 'ri-stack-line', color: '#7367F0', bg: '#F3EDFF' },
-            ].map(s => (
-              <Grid item xs={6} key={s.label}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent className='flex items-center gap-3' sx={{ p: '12px !important' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
-                    </div>
-                    <div>
-                      <Typography variant='h4' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                      <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 10, sm: 12 } }}>
-                        {s.label}
-                      </Typography>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        </>
-      )}
-
-      {/* Empty result */}
-      {hasLoaded && entries.length === 0 && (
-        <Card>
-          <CardContent className='text-center py-12'>
-            <i className='ri-inbox-line text-5xl opacity-30 block mb-2' />
-            <Typography variant='body2' color='text.secondary'>
-              Tidak ada entri nilai yang ditemukan untuk filter yang dipilih.
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Grouped per indikator dengan pagination */}
-      {hasLoaded && pagedGrouped.map((g, idx) => (
-        <IndicatorSection key={idx} {...g} isMobile={isMobile} />
-      ))}
-
-      {hasLoaded && totalPages > 1 && (
-        <div className='flex justify-center mt-4 mb-6'>
-          <Pagination count={totalPages} page={page}
-                      onChange={(_, p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                      color='primary' shape='rounded' />
-        </div>
-      )}
-    </>
+        {hasLoaded && totalPages > 1 && (
+          <div className='flex justify-center mt-4 mb-6'>
+            <Pagination count={totalPages} page={page}
+                        onChange={(_, p) => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        color='primary' shape='rounded' />
+          </div>
+        )}
+      </>
+    </LocalizationProvider>
   )
 }
 

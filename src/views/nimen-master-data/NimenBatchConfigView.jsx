@@ -50,133 +50,138 @@ const fmtDate = (d) => d
 const STEPS = ['Pilih Angkatan', 'Konfigurasi Nilai', 'Setup Periode', 'Selesai']
 
 const Stepper = ({ current }) => (
-  <Card className='mb-6'>
-    <CardContent>
-      <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-        {STEPS.map((label, i) => {
-          const step = i + 1
-          const isDone = step < current
-          const isActive = step === current
-          return (
-            <Box key={label} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-              {i < STEPS.length - 1 && (
-                <Box sx={{
-                  position: 'absolute', top: 16, left: '50%', width: '100%', height: 2,
-                  bgcolor: isDone ? 'primary.main' : 'divider', zIndex: 0,
-                }} />
-              )}
+  <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px', mb: '12px' }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+      {STEPS.map((label, i) => {
+        const step = i + 1
+        const isDone = step < current
+        const isActive = step === current
+        return (
+          <Box key={label} sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+            {i < STEPS.length - 1 && (
               <Box sx={{
-                width: 32, height: 32, borderRadius: '50%', zIndex: 1,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 600,
-                bgcolor: isDone || isActive ? 'primary.main' : 'action.hover',
-                color: isDone || isActive ? '#fff' : 'text.secondary',
-                border: isDone || isActive ? 'none' : '1.5px solid',
-                borderColor: 'divider',
-              }}>
-                {isDone
-                  ? <i className='ri-check-line text-[14px]' style={{ color: '#fff' }} />
-                  : step}
-              </Box>
-              <Typography variant='caption' sx={{
-                mt: 0.75, textAlign: 'center',
-                color: isActive || isDone ? 'primary.main' : 'text.secondary',
-                fontWeight: isActive ? 600 : 400,
-                fontSize: { xs: 10, sm: 11 },
-              }}>
-                {label}
-              </Typography>
+                position: 'absolute', top: 14, left: '50%', width: '100%', height: '2px',
+                bgcolor: isDone ? '#EB3D47' : 'rgba(180,100,100,0.15)', zIndex: 0,
+              }} />
+            )}
+            <Box sx={{
+              width: 28, height: 28, borderRadius: '50%', zIndex: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 600,
+              background: isDone ? 'linear-gradient(145deg, #E63946, #6D0E13)' : isActive ? '#EB3D47' : '#F5F2F0',
+              color: isDone || isActive ? '#fff' : '#9A5A5A',
+              boxShadow: isDone || isActive ? '0 3px 8px rgba(180,0,30,0.2)' : 'none',
+            }}>
+              {isDone ? <i className='ri-check-line' style={{ fontSize: '12px', color: '#fff' }} /> : step}
             </Box>
-          )
-        })}
-      </Box>
-    </CardContent>
-  </Card>
+            <Typography sx={{
+              mt: '5px', textAlign: 'center', fontSize: '9px',
+              color: isActive ? '#EB3D47' : isDone ? '#3B1010' : '#9A5A5A',
+              fontWeight: isActive ? 600 : 400, lineHeight: 1.3,
+            }}>
+              {label}
+            </Typography>
+          </Box>
+        )
+      })}
+    </Box>
+  </Box>
 )
 
-// ── Batch Card (List Mode) ────────────────────────────────────────────────────
+// ── Batch Card — PWA native ───────────────────────────────────────────────────
 const BatchConfigCard = ({ batch, onEditNilai, onEditPeriod, onActivatePeriod }) => {
   const isS1 = (batch.program_type || 'S1') === 'S1'
-  const accentColor = isS1 ? '#28C76F' : '#00CFE8'
+  const accentColor = isS1 ? '#0F6E56' : '#185FA5'
+  const accentBg = isS1 ? '#E1F5EE' : '#E6F1FB'
   const periods = batch.periods || []
   const activePeriod = periods.find(p => p.is_active)
   const nextPeriod = periods.find(p => !p.is_active && p.period_number > (activePeriod?.period_number || 0))
 
   return (
-    <Card className='mb-4' sx={{ overflow: 'hidden' }}>
-      <Box sx={{ px: 2, py: 1.5, bgcolor: isS1 ? '#E6F9EE' : '#E0F9FC' }}>
-        <div className='flex items-start justify-between'>
-          <div>
-            <Typography variant='body2' fontWeight={600} sx={{ color: 'text.primary', mb: 0.3 }}>
-              {batch.name} · Angkatan ke-{batch.batch_number}
-            </Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {batch.year} · {batch.program_type || 'S1'}
-            </Typography>
-          </div>
-          <Chip label={batch.is_active ? 'Aktif' : 'Nonaktif'}
-                size='small' color={batch.is_active ? 'success' : 'default'} variant='tonal' />
-        </div>
-      </Box>
-      <CardContent>
-        {/* Mahasiswa */}
-        <div className='flex items-center gap-2 mb-3'>
-          <i className='ri-group-line text-sm' style={{ color: 'var(--mui-palette-text-secondary)' }} />
-          <Typography variant='caption' color='text.secondary'>
-            {batch.student_count ?? 0} mahasiswa
+    <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', mb: '10px' }}>
+      {/* Header */}
+      <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }}>
+            {batch.name}
           </Typography>
-        </div>
+          <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>
+            Angkatan ke-{batch.batch_number} · {batch.year} · {batch.program_type || 'S1'}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+          <Box sx={{ bgcolor: accentBg, borderRadius: '6px', px: '6px', py: '2px' }}>
+            <Typography sx={{ fontSize: '9px', fontWeight: 700, color: accentColor }}>{batch.program_type || 'S1'}</Typography>
+          </Box>
+          <Box sx={{ bgcolor: batch.is_active ? '#E1F5EE' : '#F1EFE8', borderRadius: '6px', px: '6px', py: '2px' }}>
+            <Typography sx={{ fontSize: '9px', fontWeight: 500, color: batch.is_active ? '#0F6E56' : '#5F5E5A' }}>
+              {batch.is_active ? 'Aktif' : 'Nonaktif'}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
-        {/* Periode list */}
+      {/* Body */}
+      <Box sx={{ px: 2, py: '10px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '5px', mb: '8px' }}>
+          <i className='ri-group-line' style={{ fontSize: '12px', color: '#9A5A5A' }} />
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{batch.student_count ?? 0} mahasiswa</Typography>
+        </Box>
+
         {periods.length > 0 ? (
-          <div className='flex flex-col gap-1 mb-3'>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: '4px', mb: '10px' }}>
             {periods.map(p => (
-              <div key={p.id} className='flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
-                  <Box sx={{
-                    width: 6, height: 6, borderRadius: '50%', flexShrink: 0,
-                    bgcolor: p.is_active ? accentColor : 'divider',
-                  }} />
-                  <Typography variant='caption'
-                              fontWeight={p.is_active ? 600 : 400}
-                              color={p.is_active ? 'text.primary' : 'text.secondary'}>
+              <Box key={p.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Box sx={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, bgcolor: p.is_active ? accentColor : 'rgba(180,100,100,0.2)' }} />
+                  <Typography sx={{ fontSize: '11px', fontWeight: p.is_active ? 600 : 400, color: p.is_active ? '#3B1010' : '#9A5A5A' }}>
                     {p.label}
                   </Typography>
-                </div>
-                <Typography variant='caption' color='text.secondary'>
+                </Box>
+                <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>
                   {fmtDate(p.start_date)} — {fmtDate(p.end_date)}
                 </Typography>
-              </div>
+              </Box>
             ))}
-          </div>
+          </Box>
         ) : (
-          <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 2, fontStyle: 'italic' }}>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A', fontStyle: 'italic', mb: '10px' }}>
             Periode belum di-setup
           </Typography>
         )}
 
-        <Divider className='mb-3' />
-
-        <div className='flex gap-2'>
-          <Button fullWidth variant='tonal' size='small' color='secondary'
-                  onClick={() => onEditNilai(batch)}>
-            Edit Nilai
-          </Button>
+        <Box sx={{ display: 'flex', gap: '6px', pt: '8px', borderTop: '0.5px solid rgba(180,100,100,0.1)' }}>
+          <Box component='button' onClick={() => onEditNilai(batch)} sx={{
+            flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+            border: '0.5px solid rgba(180,100,100,0.18)', background: 'rgba(255,255,255,0.72)',
+            boxShadow: '0 2px 6px rgba(139,0,0,0.07)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#444441',
+          }}>
+            <i className='ri-settings-3-line' style={{ fontSize: '11px' }} /> Edit Nilai
+          </Box>
           {periods.length > 0 && (
-            <Button fullWidth variant='tonal' size='small' color='secondary'
-                    onClick={() => onEditPeriod(batch)}>
-              Edit Periode
-            </Button>
+            <Box component='button' onClick={() => onEditPeriod(batch)} sx={{
+              flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+              border: '0.5px solid rgba(180,100,100,0.18)', background: 'rgba(255,255,255,0.72)',
+              boxShadow: '0 2px 6px rgba(139,0,0,0.07)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#444441',
+            }}>
+              <i className='ri-calendar-line' style={{ fontSize: '11px' }} /> Edit Periode
+            </Box>
           )}
           {isS1 && nextPeriod && (
-            <Button fullWidth variant='tonal' size='small' color='primary'
-                    onClick={() => onActivatePeriod(batch, nextPeriod)}>
-              Aktifkan {nextPeriod.label}
-            </Button>
+            <Box component='button' onClick={() => onActivatePeriod(batch, nextPeriod)} sx={{
+              flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 600,
+              border: 'none', background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+              boxShadow: '0 3px 8px rgba(180,0,30,0.2)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#fff',
+            }}>
+              <i className='ri-play-line' style={{ fontSize: '11px' }} /> {nextPeriod.label}
+            </Box>
           )}
-        </div>
-      </CardContent>
-    </Card>
+        </Box>
+      </Box>
+    </Box>
   )
 }
 
@@ -413,24 +418,40 @@ const NimenBatchConfigView = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='id'>
 
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>Master Data NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Konfigurasi Angkatan</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', mb: '14px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Master Data NIMEN</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Konfigurasi Angkatan</Typography>
+          </Box>
+        </Box>
+      </Box>
 
       {/* ══════════════ MODE LIST ══════════════ */}
       {mode === 'list' && (
         <>
-          <div className='flex items-center justify-between mb-6 flex-wrap gap-3'>
-            <div />
-            <Button variant='contained' startIcon={<i className='ri-add-line' />}
-                    onClick={() => { setMode('wizard'); setStep(1) }}
-                    sx={{ width: { xs: '100%', sm: 'auto' } }}>
-              Konfigurasi Angkatan Baru
-            </Button>
-          </div>
+          <Box sx={{ mb: '12px' }}>
+            <Box component='button' onClick={() => { setMode('wizard'); setStep(1) }} sx={{
+              width: '100%', py: '10px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+              background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+              boxShadow: '0 4px 10px rgba(180,0,30,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+            }}>
+              <i className='ri-add-line' style={{ fontSize: '14px', color: '#fff' }} />
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>Konfigurasi Angkatan Baru</Typography>
+            </Box>
+          </Box>
 
           {loading ? (
             <div className='flex justify-center py-10'><CircularProgress /></div>
@@ -489,13 +510,17 @@ const NimenBatchConfigView = () => {
       {/* ══════════════ MODE WIZARD ══════════════ */}
       {mode === 'wizard' && (
         <>
-          <div className='flex items-center gap-3 mb-6'>
-            <Button variant='tonal' color='secondary' size='small'
-                    startIcon={<i className='ri-arrow-left-line' />}
-                    onClick={handleResetWizard}>
-              Kembali ke Daftar
-            </Button>
-          </div>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+            <Box component='button' onClick={handleResetWizard} sx={{
+              display: 'flex', alignItems: 'center', gap: '6px', px: '12px', py: '6px',
+              borderRadius: '8px', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+              boxShadow: '0 2px 6px rgba(139,0,0,0.07)',
+            }}>
+              <i className='ri-arrow-left-s-line' style={{ fontSize: '14px', color: '#8B2020' }} />
+              <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#3B1010' }}>Kembali ke Daftar</Typography>
+            </Box>
+          </Box>
 
           <Stepper current={step} />
 
@@ -507,44 +532,34 @@ const NimenBatchConfigView = () => {
                 <Typography variant='body2' color='text.secondary' className='mb-4'>
                   Pilih angkatan yang akan dikonfigurasi
                 </Typography>
-                <FormControl fullWidth className='mb-6'>
-                  <InputLabel>Angkatan</InputLabel>
-                  <Select label='Angkatan' value={selectedBatch}
+                <FormControl fullWidth sx={{ mb: '16px' }}>
+                  <Select displayEmpty value={selectedBatch}
                           onChange={e => setSelectedBatch(e.target.value)}
                           renderValue={val => {
                             const b = allBatches.find(x => x.id === val || String(x.id) === String(val))
-                            if (!b) return ''
-                            return (
-                              <div className='flex items-center justify-between gap-2'>
-                                <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
-                                <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                                      color={b.program_type === 'S2' ? 'info' : 'success'} sx={{ flexShrink: 0 }} />
-                              </div>
-                            )
-                          }}>
+                            return b ? `${b.name} (${b.year})` : 'Pilih Angkatan'
+                          }}
+                          sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '10px', px: '12px' } }}>
                     {allBatches.map(b => (
                       <MenuItem key={b.id} value={b.id}>
-                        <div className='flex items-center justify-between w-full gap-2'>
-                          <div>
-                            <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
-                            <Typography variant='caption' color='text.secondary'>
-                              Angkatan ke-{b.batch_number} · {b.year}
-                            </Typography>
-                          </div>
-                          <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                                color={b.program_type === 'S2' ? 'info' : 'success'} />
-                        </div>
+                        <Box>
+                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                          <Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year} · {b.program_type || 'S1'}</Typography>
+                        </Box>
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-                <div className='flex justify-end'>
-                  <Button variant='contained' onClick={handleSelectBatch}
-                          disabled={!selectedBatch}
-                          endIcon={<i className='ri-arrow-right-line' />}>
-                    Lanjut
-                  </Button>
-                </div>
+                <Box component='button' onClick={handleSelectBatch} disabled={!selectedBatch} sx={{
+                  width: '100%', py: '10px', borderRadius: '10px', border: 'none',
+                  cursor: selectedBatch ? 'pointer' : 'not-allowed',
+                  background: selectedBatch ? 'linear-gradient(145deg, #E63946, #6D0E13)' : 'rgba(180,100,100,0.2)',
+                  boxShadow: selectedBatch ? '0 4px 10px rgba(180,0,30,0.25)' : 'none',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>Lanjut</Typography>
+                  <i className='ri-arrow-right-s-line' style={{ fontSize: '16px', color: '#fff' }} />
+                </Box>
               </CardContent>
             </Card>
           )}
