@@ -57,57 +57,79 @@ const DebouncedInput = ({ value: initial, onChange, debounce = 400, ...props }) 
   return <TextField {...props} value={value} onChange={e => setValue(e.target.value)} size='small' />
 }
 
-// ── Mobile Card ───────────────────────────────────────────────────────────────
+// ── Mobile Card — PWA native ─────────────────────────────────────────────────
 const RankingMobileCard = ({ row, onViewHistory }) => {
   const medal = MEDAL_COLORS[row.rank_position]
   const pct = Math.min((row.total_value / (row.max_value || 95)) * 100, 100)
+  const isTop3 = row.rank_position <= 3
 
   return (
-    <Card className='mb-3' sx={{ borderLeft: medal ? `4px solid ${medal}` : undefined }}>
-      <CardContent sx={{ p: '12px !important' }}>
-        <div className='flex items-start justify-between gap-2 mb-2'>
-          <div className='flex items-center gap-2 flex-1 min-w-0'>
-            <Box sx={{
-              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-              bgcolor: medal || 'primary.main',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              {row.rank_position <= 3 ? (
-                <Typography sx={{ fontSize: 16 }}>{MEDAL_EMOJI[row.rank_position]}</Typography>
-              ) : (
-                <Typography variant='caption' fontWeight={700} sx={{ color: '#fff' }}>
-                  {row.rank_position}
-                </Typography>
-              )}
-            </Box>
-            <div className='min-w-0'>
-              <Typography variant='body2' fontWeight={600} noWrap>{row.full_name || '—'}</Typography>
-              <Typography variant='caption' color='text.secondary'>
-                {row.nim || '—'} · {row.syndicate_name || '—'}
-              </Typography>
-            </div>
-          </div>
-          <div className='flex items-center gap-1 flex-shrink-0'>
-            <Typography variant='body2' fontWeight={700} color='primary.main'>
-              {row.total_value?.toFixed(2)}
-            </Typography>
-            <IconButton size='small' onClick={() => onViewHistory(row)}>
-              <i className='ri-history-line text-[18px]' />
-            </IconButton>
-          </div>
-        </div>
-        <LinearProgress
-          variant='determinate'
-          value={pct}
-          color={pct >= 100 ? 'success' : pct >= 70 ? 'primary' : 'warning'}
-          sx={{ height: 4, borderRadius: 2 }}
-        />
-        <div className='flex justify-between mt-1'>
-          <Typography variant='caption' color='text.secondary'>0</Typography>
-          <Typography variant='caption' color='text.secondary'>/ {row.max_value?.toFixed(0) || '—'}</Typography>
-        </div>
-      </CardContent>
-    </Card>
+    <Box sx={{
+      background: '#fff',
+      border: medal ? `1px solid rgba(180,100,100,0.15)` : '0.5px solid rgba(180,100,100,0.15)',
+      borderLeft: medal ? `3px solid ${medal}` : undefined,
+      borderRadius: '12px', padding: '12px', mb: '10px',
+    }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '10px' }}>
+        {/* Rank badge */}
+        <Box sx={{
+          width: 38, height: 38, borderRadius: '10px', flexShrink: 0,
+          background: isTop3
+            ? (row.rank_position === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+              : row.rank_position === 2 ? 'linear-gradient(135deg, #C0C0C0, #A8A8A8)'
+                : 'linear-gradient(135deg, #CD7F32, #A0522D)')
+            : 'linear-gradient(145deg, #E63946, #6D0E13)',
+          boxShadow: '0 3px 8px rgba(0,0,0,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {isTop3
+            ? <Typography sx={{ fontSize: '18px', lineHeight: 1 }}>{MEDAL_EMOJI[row.rank_position]}</Typography>
+            : <Typography sx={{ fontSize: '13px', fontWeight: 700, color: 'rgba(255,255,255,0.92)' }}>{row.rank_position}</Typography>
+          }
+        </Box>
+
+        {/* Info */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>
+            {row.full_name || '—'}
+          </Typography>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+            {row.nim || '—'} · {row.syndicate_name || '—'}
+          </Typography>
+        </Box>
+
+        {/* Nilai + history */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+          <Typography sx={{ fontSize: '14px', fontWeight: 700, color: '#EB3D47' }}>
+            {row.total_value?.toFixed(2)}
+          </Typography>
+          <Box component='button' onClick={() => onViewHistory(row)} sx={{
+            width: 28, height: 28, borderRadius: '8px', cursor: 'pointer',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 2px 6px rgba(139,0,0,0.07)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <i className='ri-history-line' style={{ fontSize: '14px', color: '#9A5A5A' }} />
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Progress bar */}
+      <LinearProgress variant='determinate' value={pct}
+                      sx={{
+                        height: 4, borderRadius: 2,
+                        bgcolor: 'rgba(180,100,100,0.1)',
+                        '& .MuiLinearProgress-bar': {
+                          bgcolor: pct >= 100 ? '#0F6E56' : pct >= 70 ? '#EB3D47' : '#BA7517',
+                          borderRadius: 2,
+                        }
+                      }}
+      />
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: '3px' }}>
+        <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>0</Typography>
+        <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>/ {row.max_value?.toFixed(0) || '—'}</Typography>
+      </Box>
+    </Box>
   )
 }
 
@@ -322,227 +344,214 @@ const RankingView = () => {
 
     return (
       <>
-        {/* Breadcrumb */}
-        <div className='flex items-center gap-2 mb-6'>
-          <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-          <i className='ri-arrow-right-s-line text-sm opacity-50' />
-          <Typography variant='caption' fontWeight={500} color='text.primary'>Peringkat Saya</Typography>
-        </div>
+        {/* Topbar PWA */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Peringkat Saya</Typography>
+          </Box>
+        </Box>
 
         {myLoading ? (
           <Box className='flex justify-center py-20'><CircularProgress /></Box>
         ) : (
           <Grid container spacing={4}>
 
-            {/* Hero Card — Posisi */}
+            {/* Hero Card — PWA native */}
             <Grid item xs={12}>
-              <Card sx={{
-                background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.primary.main}05 100%)`,
-                border: `1px solid ${theme.palette.primary.main}20`,
+              <Box sx={{
+                background: 'linear-gradient(135deg, #EB3D47 0%, #8B0000 100%)',
+                borderRadius: '12px', p: '16px', color: '#fff',
+                position: 'relative', overflow: 'hidden',
               }}>
-                <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
-                  <div className='flex items-start gap-4 flex-wrap'>
-                    {/* Ranking badge */}
-                    <Box sx={{
-                      width: isMobile ? 80 : 100, height: isMobile ? 80 : 100,
-                      borderRadius: 4, flexShrink: 0,
-                      background: rank === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)'
+                <Box sx={{ position: 'absolute', top: -20, right: 15, width: 90, height: 90, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.08)' }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  {/* Rank badge */}
+                  <Box sx={{
+                    width: 72, height: 72, borderRadius: '16px', flexShrink: 0,
+                    background: rank <= 3
+                      ? (rank === 1 ? 'linear-gradient(135deg, #FFD700, #FFA500)'
                         : rank === 2 ? 'linear-gradient(135deg, #C0C0C0, #A8A8A8)'
-                          : rank === 3 ? 'linear-gradient(135deg, #CD7F32, #A0522D)'
-                            : `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: 3,
-                    }}>
-                      {rank && rank <= 3 ? (
-                        <Typography sx={{ fontSize: isMobile ? 32 : 40 }}>
-                          {rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}
-                        </Typography>
-                      ) : (
-                        <>
-                          <Typography variant='caption' sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>
-                            PERINGKAT
-                          </Typography>
-                          <Typography variant='h4' fontWeight={800} sx={{ color: '#fff', lineHeight: 1 }}>
-                            {rank || '—'}
-                          </Typography>
-                          {totalStudents > 0 && (
-                            <Typography variant='caption' sx={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>
-                              dari {totalStudents}
-                            </Typography>
-                          )}
-                        </>
-                      )}
+                          : 'linear-gradient(135deg, #CD7F32, #A0522D)')
+                      : 'rgba(255,255,255,0.2)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 14px rgba(0,0,0,0.2)',
+                  }}>
+                    {rank && rank <= 3
+                      ? <Typography sx={{ fontSize: '36px', lineHeight: 1 }}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉'}</Typography>
+                      : <>
+                        <Typography sx={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Peringkat</Typography>
+                        <Typography sx={{ fontSize: '28px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>{rank || '—'}</Typography>
+                        {totalStudents > 0 && <Typography sx={{ fontSize: '9px', color: 'rgba(255,255,255,0.75)' }}>dari {totalStudents}</Typography>}
+                      </>
+                    }
+                  </Box>
+                  {/* Info */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: '6px', mb: '4px' }}>
+                      <Typography sx={{ fontSize: '28px', fontWeight: 800, color: '#fff', lineHeight: 1 }}>
+                        {totalValue.toFixed(2)}
+                      </Typography>
+                      <Typography sx={{ fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>/ {maxValue.toFixed(0)}</Typography>
                     </Box>
-
-                    {/* Info nilai */}
-                    <div className='flex-1 min-w-0'>
-                      <div className='flex items-center gap-2 mb-1 flex-wrap'>
-                        <Typography variant={isMobile ? 'h5' : 'h4'} fontWeight={800} color='primary.main'>
-                          {totalValue.toFixed(2)}
-                        </Typography>
-                        <Typography variant='body2' color='text.secondary'>/ {maxValue.toFixed(0)} poin</Typography>
-                      </div>
-                      {rank && rank <= 3 && (
-                        <Typography variant='caption' color='text.secondary'>
-                          Peringkat {rank} dari {totalStudents} mahasiswa
-                        </Typography>
-                      )}
-                      <Box sx={{ mt: 1.5, mb: 0.5 }}>
-                        <LinearProgress variant='determinate' value={pct}
-                                        color={pct >= 100 ? 'success' : pct >= 70 ? 'primary' : 'warning'}
-                                        sx={{ height: 10, borderRadius: 5 }} />
-                      </Box>
-                      <div className='flex justify-between'>
-                        <Typography variant='caption' color='text.secondary'>0</Typography>
-                        <Typography variant='caption' color='text.secondary' fontWeight={500}>
-                          {pct.toFixed(1)}% dari maksimum
-                        </Typography>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                    <LinearProgress variant='determinate' value={pct} sx={{
+                      height: 6, borderRadius: 3, mb: '4px',
+                      bgcolor: 'rgba(255,255,255,0.2)',
+                      '& .MuiLinearProgress-bar': { bgcolor: '#fff', borderRadius: 3 }
+                    }} />
+                    <Typography sx={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>
+                      {pct.toFixed(1)}% dari maksimum
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
             </Grid>
 
-            {/* Rincian per Sumber */}
+            {/* Rincian per Sumber — PWA native */}
             {Object.keys(bySource).length > 0 && (
               <Grid item xs={12} md={4}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant='subtitle1' fontWeight={700} className='mb-3'>
-                      Rincian per Sumber
-                    </Typography>
-                    <div className='flex flex-col gap-3'>
-                      {Object.entries(bySource).map(([src, val]) => {
-                        const cfg = SOURCE_CONFIG[src] || { label: src, color: 'default' }
-                        const srcPct = Math.min(Math.abs(val) / maxValue * 100, 100)
-                        return (
-                          <div key={src}>
-                            <div className='flex items-center justify-between mb-1'>
-                              <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' />
-                              <Typography variant='body2' fontWeight={700}
-                                          color={val >= 0 ? 'success.main' : 'error.main'}>
-                                {val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2)}
-                              </Typography>
-                            </div>
-                            <LinearProgress variant='determinate' value={srcPct}
-                                            color={val >= 0 ? 'success' : 'error'}
-                                            sx={{ height: 6, borderRadius: 3 }} />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </CardContent>
-                </Card>
+                <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+                  <Box sx={{ px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                    <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Rincian per Sumber</Typography>
+                  </Box>
+                  <Box sx={{ p: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {Object.entries(bySource).map(([src, val]) => {
+                      const cfg = SOURCE_CONFIG[src] || { label: src }
+                      const srcBadge = {
+                        SPRINT:          { bg: '#E6F1FB', color: '#185FA5' },
+                        SELF_SUBMISSION: { bg: '#EEEDFE', color: '#534AB7' },
+                        AUTOMATIC:       { bg: '#E1F5EE', color: '#0F6E56' },
+                        VIOLATION:       { bg: '#FCEBEB', color: '#A32D2D' },
+                      }[src] || { bg: '#F1EFE8', color: '#5F5E5A' }
+                      const srcPct = Math.min(Math.abs(val) / maxValue * 100, 100)
+                      return (
+                        <Box key={src}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '5px' }}>
+                            <Box sx={{ bgcolor: srcBadge.bg, borderRadius: '6px', px: '7px', py: '3px' }}>
+                              <Typography sx={{ fontSize: '10px', fontWeight: 500, color: srcBadge.color }}>{cfg.label}</Typography>
+                            </Box>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 700, color: val >= 0 ? '#0F6E56' : '#A32D2D' }}>
+                              {val >= 0 ? `+${val.toFixed(2)}` : val.toFixed(2)}
+                            </Typography>
+                          </Box>
+                          <LinearProgress variant='determinate' value={srcPct} sx={{
+                            height: 5, borderRadius: 2,
+                            bgcolor: 'rgba(180,100,100,0.1)',
+                            '& .MuiLinearProgress-bar': { bgcolor: val >= 0 ? '#0F6E56' : '#A32D2D', borderRadius: 2 }
+                          }} />
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                </Box>
               </Grid>
             )}
 
-            {/* Riwayat Nilai */}
+            {/* Riwayat Nilai — PWA native */}
             <Grid item xs={12} md={Object.keys(bySource).length > 0 ? 8 : 12}>
-              <Card>
-                <CardContent sx={{ pb: '8px !important' }}>
-                  <Typography variant='subtitle1' fontWeight={700} className='mb-3'>
-                    Riwayat Nilai
-                    <Chip label={myHistory.length} size='small' variant='tonal' sx={{ ml: 1 }} />
-                  </Typography>
-                  {myHistory.length === 0 ? (
-                    <Box className='flex flex-col items-center py-8 gap-2' sx={{ color: 'text.secondary' }}>
-                      <i className='ri-inbox-line text-5xl opacity-30' />
-                      <Typography variant='body2'>Belum ada riwayat nilai.</Typography>
-                    </Box>
-                  ) : isMobile ? (
-                    // Mobile: card list
-                    <div className='flex flex-col gap-2'>
+              <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Riwayat Nilai</Typography>
+                  <Box sx={{ bgcolor: '#F5F2F0', borderRadius: '6px', px: '8px', py: '2px' }}>
+                    <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#9A5A5A' }}>{myHistory.length} entri</Typography>
+                  </Box>
+                </Box>
+                {myHistory.length === 0 ? (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: '40px', gap: '8px' }}>
+                    <i className='ri-inbox-line' style={{ fontSize: '40px', opacity: 0.3 }} />
+                    <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Belum ada riwayat nilai.</Typography>
+                  </Box>
+                ) : isMobile ? (
+                  <Box>
+                    {myHistory.map((e, i) => {
+                      const isPlus = e.value >= 0
+                      const kegiatanLabel = e.source_type === 'AUTOMATIC'
+                        ? 'Otomatis'
+                        : e.source_type === 'SELF_SUBMISSION'
+                          ? 'Pengajuan Mandiri'
+                          : e.sprint_participant?.sprint?.title || '—'
+                      return (
+                        <Box key={e.id} sx={{
+                          py: '10px', px: 2,
+                          borderBottom: i < myHistory.length - 1 ? '0.5px solid rgba(180,100,100,0.08)' : 'none',
+                        }}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', mb: '4px' }}>
+                            <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#3B1010', flex: 1, minWidth: 0, lineHeight: 1.3 }} noWrap>
+                              {e.indicator?.name}
+                            </Typography>
+                            <Typography sx={{ fontSize: '13px', fontWeight: 700, flexShrink: 0, color: isPlus ? '#0F6E56' : '#A32D2D' }}>
+                              {isPlus ? `+${e.value}` : e.value}
+                            </Typography>
+                          </Box>
+                          <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>
+                            {e.indicator?.variable?.category?.name} · {new Date(e.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })} · {kegiatanLabel}
+                          </Typography>
+                        </Box>
+                      )
+                    })}
+                  </Box>
+                ) : (
+                  <Table size='small'>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: 'action.hover' }}>
+                        {['Tanggal', 'Indikator', 'Kategori', 'Kegiatan', 'Nilai'].map(h => (
+                          <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                            {h}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
                       {myHistory.map(e => {
                         const isPlus = e.value >= 0
-                        const kegiatanLabel = e.source_type === 'AUTOMATIC'
-                          ? 'Otomatis'
-                          : e.source_type === 'SELF_SUBMISSION'
-                            ? 'Pengajuan Mandiri'
-                            : e.sprint_participant?.sprint?.title || '—'
                         return (
-                          <Box key={e.id} sx={{ p: 1.5, borderRadius: 2, border: 1, borderColor: 'divider' }}>
-                            <div className='flex items-start justify-between gap-2'>
-                              <div className='flex-1 min-w-0'>
-                                <Typography variant='body2' fontWeight={600} noWrap>
-                                  {e.indicator?.name}
-                                </Typography>
-                                <Typography variant='caption' color='text.secondary'>
-                                  {e.indicator?.variable?.category?.name}
-                                </Typography>
-                              </div>
-                              <Typography variant='body2' fontWeight={700} flexShrink={0}
+                          <TableRow key={e.id} hover>
+                            <TableCell>
+                              <Typography variant='caption'>
+                                {new Date(e.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant='body2' fontWeight={500}>{e.indicator?.name}</Typography>
+                              <Typography variant='caption' color='text.secondary'>{e.indicator?.variable?.name}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant='caption' color='text.secondary'>
+                                {e.indicator?.variable?.category?.name}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant='caption' color='text.secondary'>
+                                {e.source_type === 'AUTOMATIC'
+                                  ? 'Otomatis'
+                                  : e.source_type === 'SELF_SUBMISSION'
+                                    ? 'Pengajuan Mandiri'
+                                    : e.sprint_participant?.sprint?.title || '—'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align='right'>
+                              <Typography variant='body2' fontWeight={700}
                                           color={isPlus ? 'success.main' : 'error.main'}>
                                 {isPlus ? `+${e.value}` : e.value}
                               </Typography>
-                            </div>
-                            <div className='flex items-center gap-2 mt-1 flex-wrap'>
-                              <Typography variant='caption' color='text.secondary'>
-                                {new Date(e.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                              </Typography>
-                              <Typography variant='caption' color='text.secondary'>
-                                · {kegiatanLabel}
-                              </Typography>
-                            </div>
-                          </Box>
+                            </TableCell>
+                          </TableRow>
                         )
                       })}
-                    </div>
-                  ) : (
-                    // Desktop: table
-                    <Table size='small'>
-                      <TableHead>
-                        <TableRow sx={{ bgcolor: 'action.hover' }}>
-                          {['Tanggal', 'Indikator', 'Kategori', 'Kegiatan', 'Nilai'].map(h => (
-                            <TableCell key={h} sx={{ fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                              {h}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {myHistory.map(e => {
-                          const isPlus = e.value >= 0
-                          const srcCfg = SOURCE_CONFIG[e.source_type] || { label: e.source_type, color: 'default' }
-                          return (
-                            <TableRow key={e.id} hover>
-                              <TableCell>
-                                <Typography variant='caption'>
-                                  {new Date(e.event_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                </Typography>
-                              </TableCell>
-                              <TableCell>
-                                <Typography variant='body2' fontWeight={500}>{e.indicator?.name}</Typography>
-                                <Typography variant='caption' color='text.secondary'>{e.indicator?.variable?.name}</Typography>
-                              </TableCell>
-                              <TableCell>
-                                <Typography variant='caption' color='text.secondary'>
-                                  {e.indicator?.variable?.category?.name}
-                                </Typography>
-                              </TableCell>
-                              <TableCell>
-                                <Typography variant='caption' color='text.secondary'>
-                                  {e.source_type === 'AUTOMATIC'
-                                    ? 'Otomatis'
-                                    : e.source_type === 'SELF_SUBMISSION'
-                                      ? 'Pengajuan Mandiri'
-                                      : e.sprint_participant?.sprint?.title || '—'}
-                                </Typography>
-                              </TableCell>
-                              <TableCell align='right'>
-                                <Typography variant='body2' fontWeight={700}
-                                            color={isPlus ? 'success.main' : 'error.main'}>
-                                  {isPlus ? `+${e.value}` : e.value}
-                                </Typography>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                    </TableBody>
+                  </Table>
+                )}
+              </Box>
             </Grid>
           </Grid>
         )}
@@ -552,149 +561,118 @@ const RankingView = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Peringkat</Typography>
-      </div>
+      {/* Topbar PWA admin */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', mb: '14px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Peringkat</Typography>
+          </Box>
+        </Box>
+        {/* Export buttons */}
+        {isAdmin && rows.length > 0 && (
+          <Box sx={{ display: 'flex', gap: '6px' }}>
+            <Box component='button' onClick={handleExportPDF} disabled={!!exportLoading} sx={{
+              display: 'flex', alignItems: 'center', gap: '4px', px: '10px', py: '6px',
+              borderRadius: '8px', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+              boxShadow: '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+            }}>
+              {exportLoading === 'pdf' ? <CircularProgress size={12} sx={{ color: '#A32D2D' }} /> : <i className='ri-file-pdf-line' style={{ fontSize: '14px', color: '#A32D2D' }} />}
+              <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#A32D2D' }}>PDF</Typography>
+            </Box>
+            <Box component='button' onClick={handleExportXLSX} disabled={!!exportLoading} sx={{
+              display: 'flex', alignItems: 'center', gap: '4px', px: '10px', py: '6px',
+              borderRadius: '8px', cursor: 'pointer',
+              background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+              boxShadow: '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+            }}>
+              {exportLoading === 'xlsx' ? <CircularProgress size={12} sx={{ color: '#0F6E56' }} /> : <i className='ri-file-excel-line' style={{ fontSize: '14px', color: '#0F6E56' }} />}
+              <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#0F6E56' }}>Excel</Typography>
+            </Box>
+          </Box>
+        )}
+      </Box>
 
-      {/* Filter Card */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Grid container spacing={3} alignItems='center'>
-            {/* Angkatan + Sindikat — hanya admin */}
-            {isAdmin && <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Angkatan</InputLabel>
-                <Select label='Angkatan' value={batchID}
-                        onChange={e => { setBatchID(e.target.value); setSyndicateID(''); setPage(0) }}
-                        renderValue={val => {
-                          const b = batches.find(x => x.id === val || String(x.id) === String(val))
-                          if (!b) return ''
-                          return (
-                            <div className='flex items-center justify-between gap-2'>
-                              <Typography variant='body2' fontWeight={500} noWrap>{b.name}</Typography>
-                              <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                                    color={b.program_type === 'S2' ? 'info' : 'success'}
-                                    sx={{ flexShrink: 0 }} />
-                            </div>
-                          )
-                        }}>
-                  {batches.map(b => (
-                    <MenuItem key={b.id} value={b.id}>
-                      <div className='flex items-center justify-between w-full gap-2'>
-                        <div>
-                          <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
-                          <Typography variant='caption' color='text.secondary'>
-                            Angkatan ke-{b.batch_number} · {b.year}
-                          </Typography>
-                        </div>
-                        <Chip label={b.program_type || 'S1'} size='small' variant='tonal'
-                              color={b.program_type === 'S2' ? 'info' : 'success'} />
-                      </div>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>}
+      {/* Filter — PWA native */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '10px 12px', mb: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {isAdmin && (
+          <FormControl fullWidth size='small'>
+            <Select displayEmpty value={batchID}
+                    onChange={e => { setBatchID(e.target.value); setSyndicateID(''); setPage(0) }}
+                    renderValue={val => { const b = batches.find(x => String(x.id) === String(val)); return b ? `${b.name} (${b.year})` : 'Pilih Angkatan' }}
+                    sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+              {batches.map(b => (
+                <MenuItem key={b.id} value={b.id}>
+                  <Box>
+                    <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                    <Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year} · {b.program_type || 'S1'}</Typography>
+                  </Box>
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+        {isAdmin && (
+          <FormControl fullWidth size='small'>
+            <Select displayEmpty value={syndicateID}
+                    onChange={e => { setSyndicateID(e.target.value); setPage(0) }}
+                    disabled={!batchID}
+                    renderValue={val => syndicates.find(s => String(s.id) === String(val))?.name || 'Semua Sindikat'}
+                    sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+              <MenuItem value=''>Semua Sindikat</MenuItem>
+              {syndicates.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
+            </Select>
+          </FormControl>
+        )}
+        <DebouncedInput fullWidth value={search}
+                        onChange={v => { setSearch(v); setPage(0) }}
+                        placeholder='Cari nama atau NIM...'
+                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& .MuiOutlinedInput-input': { py: '7px', px: '10px' } }}
+                        InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' style={{ color: '#9A5A5A', fontSize: '14px' }} /></InputAdornment> }}
+        />
+      </Box>
 
-            {isAdmin && <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Sindikat</InputLabel>
-                <Select label='Sindikat' value={syndicateID}
-                        onChange={e => { setSyndicateID(e.target.value); setPage(0) }}
-                        disabled={!batchID}>
-                  <MenuItem value=''>Semua Sindikat</MenuItem>
-                  {syndicates.map(s => (
-                    <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>}
-
-            <Grid item xs={12} sm={isAdmin ? 4 : 12}>
-              <DebouncedInput fullWidth value={search}
-                              onChange={v => { setSearch(v); setPage(0) }}
-                              placeholder='Cari nama atau NIM...'
-                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }}
-              />
-            </Grid>
-
-            {/* Export — hanya admin */}
-            {isAdmin && rows.length > 0 && (
-              <>
-                <Grid item xs={12} sm={8} sx={{ display: { xs: 'none', sm: 'block' } }} />
-                <Grid item xs={12} sm={4}>
-                  <ButtonGroup fullWidth variant='tonal' size='small' disabled={!!exportLoading}>
-                    <Tooltip title='Export PDF'>
-                      <Button color='error'
-                              startIcon={exportLoading === 'pdf'
-                                ? <CircularProgress size={12} color='inherit' />
-                                : <i className='ri-file-pdf-line' />}
-                              onClick={handleExportPDF}>PDF</Button>
-                    </Tooltip>
-                    <Tooltip title='Export Excel'>
-                      <Button color='success'
-                              startIcon={exportLoading === 'xlsx'
-                                ? <CircularProgress size={12} color='inherit' />
-                                : <i className='ri-file-excel-line' />}
-                              onClick={handleExportXLSX}>Excel</Button>
-                    </Tooltip>
-                  </ButtonGroup>
-                </Grid>
-              </>
-            )}
-          </Grid>
-        </CardContent>
-      </Card>
-
-      {/* Info angkatan untuk mahasiswa */}
-      {!isAdmin && selectedBatch && (
-        <Alert severity='info' icon={<i className='ri-group-line' />} className='mb-6'>
-          Menampilkan peringkat angkatan <strong>{selectedBatch.name}</strong>
-          {selectedBatch.program_type && ` · ${selectedBatch.program_type}`}
-        </Alert>
-      )}
-
-      {/* Stats */}
-      <Grid container spacing={4} className='mb-6'>
+      {/* Stats — crystal 2x2 */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
         {[
-          { label: 'Total Mahasiswa', value: total, icon: 'ri-group-line', color: '#FF4C51', bg: '#FFE9EA' },
+          { label: 'Total Mahasiswa', value: total, icon: 'ri-group-line' },
           {
             label: syndicateID
-              ? (syndicates.find(s => s.id === parseInt(syndicateID))?.name || 'Sindikat')
+              ? (syndicates.find(s => String(s.id) === String(syndicateID))?.name || 'Sindikat')
               : `${selectedBatch?.program_type || 'S1'} · ${selectedBatch?.year || '—'}`,
-            value: syndicateID ? 'Per Sindikat' : 'Per Angkatan',
+            value: syndicateID ? 'Sindikat' : 'Angkatan',
             icon: syndicateID ? 'ri-shield-star-line' : 'ri-building-line',
-            color: '#7367F0', bg: '#F3EDFF'
           },
         ].map(s => (
-          <Grid item xs={6} key={s.label}>
-            <Card sx={{ height: '100%' }}>
-              <CardContent sx={{ p: '12px !important', height: '100%' }}>
-                <div className='flex items-center gap-2'>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
-                  </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant='h5' fontWeight={600} lineHeight={1.2} noWrap>
-                      {s.value}
-                    </Typography>
-                    <Typography variant='caption' color='text.secondary'
-                                sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.label}
-                    </Typography>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Box key={s.label} sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Box sx={{
+              width: 44, height: 44, borderRadius: '12px', flexShrink: 0,
+              background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+              boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', overflow: 'hidden',
+              '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', borderRadius: '12px 12px 0 0', background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)' }
+            }}>
+              <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }} noWrap>{s.value}</Typography>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px', lineHeight: 1.3 }} noWrap>{s.label}</Typography>
+            </Box>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {/* Content */}
       {loading ? (
@@ -813,22 +791,31 @@ const RankingView = () => {
       <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth='md' fullWidth
               fullScreen={isMobile}>
         <DialogTitle sx={{ pb: 1 }}>
-          <div className='flex items-start justify-between gap-2'>
-            <div className='flex items-center gap-3'>
-              <Avatar sx={{ width: 44, height: 44, fontSize: 14, bgcolor: 'primary.main' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Avatar sx={{
+                width: 40, height: 40, fontSize: 12, borderRadius: '12px !important',
+                background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                boxShadow: '0 3px 8px rgba(180,0,30,0.22)',
+              }}>
                 {getInitials(historyStudent?.full_name || '')}
               </Avatar>
-              <div>
-                <Typography variant='h6' fontWeight={600}>{historyStudent?.full_name || '—'}</Typography>
-                <Typography variant='caption' color='text.secondary'>
-                  {historyStudent?.nim || '—'} · {historyStudent?.syndicate_name || '—'} · Peringkat #{historyStudent?.rank_position}
+              <Box>
+                <Typography sx={{ fontSize: '14px', fontWeight: 600, color: '#3B1010', lineHeight: 1.3 }}>
+                  {historyStudent?.full_name || '—'}
                 </Typography>
-              </div>
-            </div>
-            <IconButton onClick={() => setHistoryOpen(false)} sx={{ mt: -0.5 }}>
-              <i className='ri-close-line' />
-            </IconButton>
-          </div>
+                <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+                  {historyStudent?.nim || '—'} · #{historyStudent?.rank_position}
+                </Typography>
+              </Box>
+            </Box>
+            <Box component='button' onClick={() => setHistoryOpen(false)} sx={{
+              width: 30, height: 30, borderRadius: '8px', border: 'none', cursor: 'pointer',
+              background: '#F5F2F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <i className='ri-close-line' style={{ fontSize: '16px', color: '#9A5A5A' }} />
+            </Box>
+          </Box>
         </DialogTitle>
         <Divider />
         <DialogContent sx={{ p: 0 }}>
@@ -841,63 +828,72 @@ const RankingView = () => {
             </Box>
           ) : (
             <>
-              {/* Stats bar */}
-              <Grid container spacing={0} sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
+              {/* Stats bar — crystal */}
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', p: '14px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
                 {[
-                  { label: 'Total Nilai', value: historyStudent?.total_value?.toFixed(2), color: '#7367F0', bg: '#F3EDFF', icon: 'ri-medal-line' },
-                  { label: 'Jumlah Entri', value: history.length, color: '#00CFE8', bg: '#E0F9FC', icon: 'ri-list-check-line' },
-                  { label: 'Nilai Positif', value: `+${history.filter(h => h.value > 0).reduce((s, h) => s + h.value, 0).toFixed(2)}`, color: '#28C76F', bg: '#E6F9EE', icon: 'ri-arrow-up-circle-line' },
-                  { label: 'Nilai Negatif', value: history.filter(h => h.value < 0).reduce((s, h) => s + h.value, 0).toFixed(2) || '0.00', color: '#EA5455', bg: '#FFEDED', icon: 'ri-arrow-down-circle-line' },
-                ].map((s, i) => (
-                  <Grid item xs={6} sm={3} key={s.label}
-                        sx={{ borderRight: i < 3 ? '1px solid' : 'none', borderColor: 'divider', p: 2 }}>
-                    <div className='flex items-center gap-2'>
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                        background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
-                        <i className={s.icon} style={{ fontSize: 18, color: s.color }} />
-                      </div>
-                      <div>
-                        <Typography variant='caption' color='text.secondary' sx={{ display: 'block' }}>{s.label}</Typography>
-                        <Typography variant='body1' fontWeight={700} sx={{ color: s.color, lineHeight: 1.2 }}>{s.value}</Typography>
-                      </div>
-                    </div>
-                  </Grid>
+                  { label: 'Total Nilai',   value: historyStudent?.total_value?.toFixed(2), icon: 'ri-medal-line' },
+                  { label: 'Jumlah Entri',  value: history.length, icon: 'ri-list-check-line' },
+                  { label: 'Nilai Positif', value: `+${history.filter(h => h.value > 0).reduce((s, h) => s + h.value, 0).toFixed(2)}`, icon: 'ri-arrow-up-circle-line' },
+                  { label: 'Nilai Negatif', value: history.filter(h => h.value < 0).reduce((s, h) => s + h.value, 0).toFixed(2) || '0.00', icon: 'ri-arrow-down-circle-line' },
+                ].map(s => (
+                  <Box key={s.label} sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Box sx={{
+                      width: 40, height: 40, borderRadius: '10px', flexShrink: 0,
+                      background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                      boxShadow: '0 3px 8px rgba(180,0,30,0.2), inset 0 1px 0 rgba(255,180,180,0.4)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      position: 'relative', overflow: 'hidden',
+                      '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,200,200,0.25) 0%, transparent 100%)' }
+                    }}>
+                      <i className={s.icon} style={{ fontSize: '18px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{s.label}</Typography>
+                      <Typography sx={{ fontSize: '16px', fontWeight: 600, color: '#3B1010', lineHeight: 1.2 }}>{s.value}</Typography>
+                    </Box>
+                  </Box>
                 ))}
-              </Grid>
+              </Box>
 
               {isMobile ? (
-                // Mobile history — card list
-                <div className='p-3 flex flex-col gap-2'>
-                  {history.map(entry => (
-                    <Card key={entry.id} variant='outlined'>
-                      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <div className='flex items-start justify-between gap-2'>
-                          <div className='flex-1'>
-                            <Typography variant='body2' fontWeight={500}>{entry.indicator?.name}</Typography>
-                            <Typography variant='caption' color='text.secondary'>
-                              {entry.indicator?.variable?.category?.name} · {fmtDate(entry.event_date)}
+                // Mobile history — PWA native list
+                <Box sx={{ px: '14px', py: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {history.map(entry => {
+                    const isPlus = entry.value >= 0
+                    const srcBadge = {
+                      SPRINT:          { bg: '#E6F1FB', color: '#185FA5' },
+                      SELF_SUBMISSION: { bg: '#EEEDFE', color: '#534AB7' },
+                      AUTOMATIC:       { bg: '#E1F5EE', color: '#0F6E56' },
+                    }[entry.source_type] || { bg: '#F1EFE8', color: '#5F5E5A' }
+                    const srcLabel = { SPRINT: 'Sprint', SELF_SUBMISSION: 'Pengajuan', AUTOMATIC: 'Otomatis' }[entry.source_type] || entry.source_type
+                    return (
+                      <Box key={entry.id} sx={{
+                        background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+                        borderRadius: '10px', padding: '10px 12px',
+                      }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', mb: '5px' }}>
+                          <Typography sx={{ fontSize: '12px', fontWeight: 500, color: '#3B1010', flex: 1, lineHeight: 1.3 }} noWrap>
+                            {entry.indicator?.name}
+                          </Typography>
+                          <Typography sx={{ fontSize: '13px', fontWeight: 700, flexShrink: 0, color: isPlus ? '#0F6E56' : '#A32D2D' }}>
+                            {isPlus ? `+${entry.value}` : entry.value}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>{fmtDate(entry.event_date)}</Typography>
+                          <Box sx={{ bgcolor: srcBadge.bg, borderRadius: '5px', px: '6px', py: '2px' }}>
+                            <Typography sx={{ fontSize: '9px', fontWeight: 500, color: srcBadge.color }}>{srcLabel}</Typography>
+                          </Box>
+                          <Box sx={{ bgcolor: entry.status === 'VALID' ? '#E1F5EE' : '#E6F1FB', borderRadius: '5px', px: '6px', py: '2px' }}>
+                            <Typography sx={{ fontSize: '9px', fontWeight: 500, color: entry.status === 'VALID' ? '#0F6E56' : '#185FA5' }}>
+                              {entry.status === 'VALID' ? 'Valid' : 'Dispensasi'}
                             </Typography>
-                          </div>
-                          <div className='flex items-center gap-1 flex-shrink-0'>
-                            <Chip
-                              label={entry.value >= 0 ? `+${entry.value}` : entry.value}
-                              size='small' variant='tonal'
-                              color={entry.value >= 0 ? 'success' : 'error'}
-                              sx={{ fontWeight: 700 }}
-                            />
-                            <Chip
-                              label={entry.status === 'VALID' ? 'Valid' : 'Dispensasi'}
-                              size='small' variant='tonal'
-                              color={entry.status === 'VALID' ? 'success' : 'info'}
-                            />
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                          </Box>
+                        </Box>
+                      </Box>
+                    )
+                  })}
+                </Box>
               ) : (
                 // Desktop history — table redesign
                 <Table size='small'>
