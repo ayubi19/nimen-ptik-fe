@@ -52,43 +52,89 @@ import { getInitials } from '@/utils/getInitials'
 
 dayjs.locale('id')
 
-// ── Assignment Mobile Card ────────────────────────────────────────────────────
-const AssignmentMobileCard = ({ a, onEdit, onDelete }) => (
-  <Card className='mb-3'>
-    <CardContent>
-      <div className='flex items-start justify-between mb-2'>
-        <div className='flex items-center gap-2 flex-1 min-w-0'>
-          <Avatar sx={{ width: 36, height: 36, fontSize: 12, flexShrink: 0 }}>
-            {getInitials(a.user?.full_name || '')}
-          </Avatar>
-          <div className='min-w-0'>
-            <Typography variant='body2' fontWeight={600} noWrap>{a.user?.full_name || '—'}</Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {a.user?.student_profile?.nim || '—'}
-            </Typography>
-          </div>
-        </div>
-        <Chip label={a.is_active ? 'Aktif' : 'Nonaktif'}
-              color={a.is_active ? 'success' : 'secondary'} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
-      </div>
-      <div className='flex flex-wrap gap-2 mb-2'>
-        <Chip label={a.position?.display_name || '—'} size='small' color='primary' variant='tonal' />
-      </div>
-      <Typography variant='caption' color='text.secondary'>
-        <i className='ri-calendar-line mr-1' />
-        {a.period_start ? dayjs(a.period_start).format('DD/MM/YYYY') : '—'}
-        {a.period_end ? ` – ${dayjs(a.period_end).format('DD/MM/YYYY')}` : ' — sekarang'}
-      </Typography>
-      <Divider className='my-2' />
-      <div className='flex gap-2'>
-        <Button size='small' variant='tonal' color='secondary' fullWidth
-                startIcon={<i className='ri-edit-line' />} onClick={() => onEdit(a)}>Edit</Button>
-        <Button size='small' variant='tonal' color='error' fullWidth
-                startIcon={<i className='ri-delete-bin-line' />} onClick={() => onDelete(a)}>Hapus</Button>
-      </div>
-    </CardContent>
-  </Card>
-)
+// ── Assignment Mobile Card — PWA Native style ─────────────────────────────────
+const AssignmentMobileCard = ({ a, onEdit, onDelete }) => {
+  const isActive = a.is_active
+  return (
+    <Box sx={{
+      background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+      borderRadius: '12px', padding: '12px', mb: '10px',
+    }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '10px' }}>
+        <Avatar sx={{
+          width: 40, height: 40, borderRadius: '12px !important',
+          background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+          boxShadow: '0 3px 8px rgba(180,0,30,0.22), inset 0 1px 0 rgba(255,180,180,0.35)',
+          fontSize: 11, fontWeight: 500, flexShrink: 0,
+        }}>
+          {getInitials(a.user?.full_name || '')}
+        </Avatar>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>
+            {a.user?.full_name || '—'}
+          </Typography>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+            {a.user?.student_profile?.nim || '—'}
+          </Typography>
+        </Box>
+        <Box sx={{
+          bgcolor: isActive ? '#E1F5EE' : '#F1EFE8',
+          borderRadius: '6px', px: 1, py: '3px', flexShrink: 0,
+        }}>
+          <Typography sx={{ fontSize: '10px', fontWeight: 500, color: isActive ? '#0F6E56' : '#5F5E5A' }}>
+            {isActive ? 'Aktif' : 'Nonaktif'}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Meta */}
+      <Box sx={{
+        py: '8px',
+        borderTop: '0.5px solid rgba(180,100,100,0.1)',
+        borderBottom: '0.5px solid rgba(180,100,100,0.1)',
+        mb: '10px', display: 'flex', flexDirection: 'column', gap: '4px',
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <i className='ri-shield-star-line' style={{ fontSize: '12px', color: '#9A5A5A', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#3B1010' }}>
+            {a.position?.display_name || '—'}
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <i className='ri-calendar-line' style={{ fontSize: '12px', color: '#9A5A5A', flexShrink: 0 }} />
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>
+            {a.period_start ? dayjs(a.period_start).format('DD/MM/YYYY') : '—'}
+            {a.period_end ? ` – ${dayjs(a.period_end).format('DD/MM/YYYY')}` : ' – sekarang'}
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Actions */}
+      <Box sx={{ display: 'flex', gap: '6px' }}>
+        <Box component='button' onClick={() => onEdit(a)} sx={{
+          flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+          border: '0.5px solid rgba(180,100,100,0.18)',
+          background: 'rgba(255,255,255,0.72)',
+          boxShadow: '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+          color: '#444441',
+        }}>
+          <i className='ri-edit-line' style={{ fontSize: '11px' }} /> Edit
+        </Box>
+        <Box component='button' onClick={() => onDelete(a)} sx={{
+          flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+          border: '0.5px solid rgba(163,45,45,0.2)',
+          background: '#FCEBEB', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+          color: '#A32D2D',
+        }}>
+          <i className='ri-delete-bin-line' style={{ fontSize: '11px' }} /> Hapus
+        </Box>
+      </Box>
+    </Box>
+  )
+}
 
 // ── Tab Struktur Organisasi ───────────────────────────────────────────────────
 const OrganizationStructureTab = () => {
@@ -222,46 +268,84 @@ const OrganizationStructureTab = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='id'>
 
-      {/* Filter + Tombol */}
-      <div className='flex flex-wrap items-center justify-between gap-3 mb-4'>
-        <FormControl size='small' sx={{ minWidth: { xs: '100%', sm: 220 } }}>
-          <InputLabel>Pilih Angkatan</InputLabel>
-          <Select label='Pilih Angkatan' value={selectedBatch}
-                  onChange={e => { setSelectedBatch(e.target.value); setPage(0) }}>
-            {batches.map(b => <MenuItem key={b.id} value={b.id}>{b.name} ({b.year})</MenuItem>)}
+      {/* Filter PWA + Tombol */}
+      <Box sx={{
+        background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+        borderRadius: '12px', p: '10px 12px', mb: '10px',
+        display: 'flex', gap: '8px', alignItems: 'center',
+      }}>
+        <FormControl size='small' sx={{ flex: 1 }}>
+          <Select
+            displayEmpty
+            value={selectedBatch}
+            onChange={e => { setSelectedBatch(e.target.value); setPage(0) }}
+            renderValue={val => {
+              const b = batches.find(x => x.id === val)
+              return b ? `${b.name} (${b.year})` : 'Pilih Angkatan'
+            }}
+            sx={{
+              borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0',
+              '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15)' },
+              '& .MuiSelect-select': { py: '7px', px: '10px' },
+            }}
+          >
+            {batches.map(b => (
+              <MenuItem key={b.id} value={b.id}>
+                <Box>
+                  <Typography variant='body2' fontWeight={500}>{b.name}</Typography>
+                  <Typography variant='caption' color='text.secondary'>Angkatan ke-{b.batch_number} · {b.year}</Typography>
+                </Box>
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         {selectedBatch && (
-          <Button variant='contained' startIcon={<i className='ri-user-star-line' />}
-                  onClick={handleOpenCreate}
-                  sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            Assign Jabatan
-          </Button>
+          <Box component='button' onClick={handleOpenCreate} sx={{
+            display: 'flex', alignItems: 'center', gap: '4px',
+            px: '10px', py: '7px', borderRadius: '8px', cursor: 'pointer',
+            background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+            boxShadow: '0 4px 10px rgba(180,0,30,0.25)',
+            border: 'none', flexShrink: 0,
+          }}>
+            <i className='ri-user-star-line' style={{ fontSize: '14px', color: '#fff' }} />
+            <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#fff' }}>Assign</Typography>
+          </Box>
         )}
-      </div>
+      </Box>
 
-      {/* Stats — hanya tampil kalau sudah pilih angkatan */}
+      {/* Stats crystal — hanya tampil kalau sudah pilih angkatan */}
       {selectedBatch && assignments.length > 0 && (
-        <Grid container spacing={3} className='mb-4'>
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
           {[
-            { label: 'Total Pejabat', value: total, icon: 'ri-group-line', color: '#FF4C51', bg: '#FFE9EA' },
-            { label: 'Aktif', value: totalAktif, icon: 'ri-checkbox-circle-line', color: '#28C76F', bg: '#E6F9EE' },
+            { label: 'Total Pejabat', value: total,      icon: 'ri-group-line' },
+            { label: 'Aktif',         value: totalAktif, icon: 'ri-checkbox-circle-line' },
           ].map(s => (
-            <Grid item xs={6} key={s.label}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent sx={{ p: '12px !important', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 8, flexShrink: 0, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
-                  </div>
-                  <div>
-                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                    <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 11, sm: 12 } }}>{s.label}</Typography>
-                  </div>
-                </CardContent>
-              </Card>
-            </Grid>
+            <Box key={s.label} sx={{
+              background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+              borderRadius: '12px', padding: '10px 12px',
+              display: 'flex', alignItems: 'center', gap: '10px',
+            }}>
+              <Box sx={{
+                width: 44, height: 44, borderRadius: '12px', flexShrink: 0,
+                background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+                boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', overflow: 'hidden',
+                '&::before': {
+                  content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+                  borderRadius: '12px 12px 0 0',
+                  background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)',
+                }
+              }}>
+                <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+              </Box>
+              <Box>
+                <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>{s.value}</Typography>
+                <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px', lineHeight: 1.3 }}>{s.label}</Typography>
+              </Box>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       )}
 
       {/* Content */}
@@ -562,43 +646,76 @@ const PositionMasterTab = () => {
 
   return (
     <>
-      <div className='flex items-center justify-between mb-4'>
-        <Typography variant='body2' color='text.secondary'>{positions.length} jabatan terdaftar</Typography>
-        <Button variant='contained' size='small' startIcon={<i className='ri-add-line' />}
-                onClick={handleOpenCreate}>
-          Tambah Jabatan
-        </Button>
-      </div>
+      <Box sx={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        mb: '10px',
+      }}>
+        <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>
+          {positions.length} jabatan terdaftar
+        </Typography>
+        <Box component='button' onClick={handleOpenCreate} sx={{
+          display: 'flex', alignItems: 'center', gap: '4px',
+          px: '12px', py: '7px', borderRadius: '8px', cursor: 'pointer',
+          background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+          boxShadow: '0 4px 10px rgba(180,0,30,0.25)',
+          border: 'none',
+        }}>
+          <i className='ri-add-line' style={{ fontSize: '14px', color: '#fff' }} />
+          <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#fff' }}>Tambah Jabatan</Typography>
+        </Box>
+      </Box>
 
       {loading ? (
         <Box className='flex justify-center py-10'><CircularProgress /></Box>
       ) : (
         <div className='flex flex-col gap-3'>
           {positions.map(pos => (
-            <Card key={pos.id} variant='outlined'>
-              <CardContent sx={{ p: '12px !important' }}>
-                <div className='flex items-center justify-between'>
-                  <div>
-                    <div className='flex items-center gap-2 flex-wrap'>
-                      <Typography variant='body2' fontWeight={600}>{pos.display_name}</Typography>
-                      <Chip label={pos.is_active ? 'Aktif' : 'Nonaktif'}
-                            color={pos.is_active ? 'success' : 'secondary'} size='small' variant='tonal' />
-                      {pos.indicator_id
-                        ? <Chip label='Ada nilai bulanan' color='info' size='small' variant='tonal' icon={<i className='ri-calendar-check-line' />} />
-                        : <Chip label='Belum ada nilai bulanan' color='warning' size='small' variant='tonal' icon={<i className='ri-alert-line' />} />
-                      }
-                    </div>
-                    <Typography variant='caption' color='text.secondary'>
-                      <code>{pos.name}</code>
-                      {pos.description && ` — ${pos.description}`}
+            <Box key={pos.id} sx={{
+              background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+              borderRadius: '12px', padding: '12px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+            }}>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                {/* Nama + status */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', mb: '4px' }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010' }}>
+                    {pos.display_name}
+                  </Typography>
+                  <Box sx={{
+                    bgcolor: pos.is_active ? '#E1F5EE' : '#F1EFE8',
+                    borderRadius: '6px', px: '6px', py: '2px',
+                  }}>
+                    <Typography sx={{ fontSize: '9px', fontWeight: 500, color: pos.is_active ? '#0F6E56' : '#5F5E5A' }}>
+                      {pos.is_active ? 'Aktif' : 'Nonaktif'}
                     </Typography>
-                  </div>
-                  <IconButton size='small' onClick={() => handleOpenEdit(pos)}>
-                    <i className='ri-edit-line' />
-                  </IconButton>
-                </div>
-              </CardContent>
-            </Card>
+                  </Box>
+                  {pos.indicator_id
+                    ? <Box sx={{ bgcolor: '#E6F1FB', borderRadius: '6px', px: '6px', py: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <i className='ri-calendar-check-line' style={{ fontSize: '9px', color: '#185FA5' }} />
+                      <Typography sx={{ fontSize: '9px', fontWeight: 500, color: '#185FA5' }}>Ada nilai bulanan</Typography>
+                    </Box>
+                    : <Box sx={{ bgcolor: '#FAEEDA', borderRadius: '6px', px: '6px', py: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <i className='ri-alert-line' style={{ fontSize: '9px', color: '#BA7517' }} />
+                      <Typography sx={{ fontSize: '9px', fontWeight: 500, color: '#BA7517' }}>Belum ada nilai</Typography>
+                    </Box>
+                  }
+                </Box>
+                {/* Kode jabatan */}
+                <Typography sx={{ fontSize: '10px', color: '#9A5A5A', fontFamily: 'monospace' }}>
+                  {pos.name}{pos.description ? ` — ${pos.description}` : ''}
+                </Typography>
+              </Box>
+              {/* Edit button */}
+              <Box component='button' onClick={() => handleOpenEdit(pos)} sx={{
+                width: 32, height: 32, borderRadius: '8px', flexShrink: 0,
+                background: 'rgba(255,255,255,0.72)',
+                border: '0.5px solid rgba(180,100,100,0.18)',
+                boxShadow: '0 2px 6px rgba(139,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.9)',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <i className='ri-edit-line' style={{ fontSize: '14px', color: '#8B2020' }} />
+              </Box>
+            </Box>
           ))}
         </div>
       )}
@@ -701,38 +818,59 @@ const OrganizationView = () => {
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>Mahasiswa</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Struktur Organisasi</Typography>
-      </div>
+      {/* Topbar PWA style */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{
+          width: 34, height: 34, borderRadius: '10px',
+          background: 'rgba(255,255,255,0.72)',
+          border: '0.5px solid rgba(180,100,100,0.18)',
+          boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+          '&::before': {
+            content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)',
+          }
+        }} onClick={() => window.history.back()}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Mahasiswa</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Struktur Organisasi</Typography>
+        </Box>
+      </Box>
 
-      <Card>
-        <CardContent sx={{ pb: 0 }}>
-          <Typography variant='h5' fontWeight={700} className='mb-1'>Struktur Organisasi Mahasiswa</Typography>
-        </CardContent>
-        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}
-              variant='fullWidth'
-              sx={{ px: { xs: 0, sm: 4 }, borderBottom: 1, borderColor: 'divider' }}>
-          <Tab
-            label='Struktur Organisasi'
-            icon={<i className='ri-organization-chart' />}
-            iconPosition='start'
-            sx={{ fontSize: { xs: 12, sm: 14 }, minHeight: 48, px: { xs: 1, sm: 3 } }}
-          />
-          <Tab
-            label='Master Jabatan'
-            icon={<i className='ri-list-settings-line' />}
-            iconPosition='start'
-            sx={{ fontSize: { xs: 12, sm: 14 }, minHeight: 48, px: { xs: 1, sm: 3 } }}
-          />
-        </Tabs>
-        <CardContent>
-          {activeTab === 0 && <OrganizationStructureTab />}
-          {activeTab === 1 && <PositionMasterTab />}
-        </CardContent>
-      </Card>
+      {/* Tab — PWA native style */}
+      <Box sx={{
+        display: 'flex', gap: '8px', mb: '12px',
+        background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)',
+        borderRadius: '12px', p: '6px',
+      }}>
+        {[
+          { label: 'Struktur Organisasi', icon: 'ri-organization-chart' },
+          { label: 'Master Jabatan',      icon: 'ri-list-settings-line' },
+        ].map((t, i) => (
+          <Box key={t.label} onClick={() => setActiveTab(i)} sx={{
+            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: '6px', py: '8px', borderRadius: '8px', cursor: 'pointer',
+            background: activeTab === i
+              ? 'linear-gradient(145deg, #E63946, #6D0E13)'
+              : 'transparent',
+            boxShadow: activeTab === i
+              ? '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)'
+              : 'none',
+            transition: 'all 0.2s',
+          }}>
+            <i className={t.icon} style={{ fontSize: '14px', color: activeTab === i ? 'rgba(255,255,255,0.92)' : '#9A5A5A' }} />
+            <Typography sx={{ fontSize: '11px', fontWeight: 500, color: activeTab === i ? '#fff' : '#9A5A5A' }}>
+              {t.label}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
+      {activeTab === 0 && <OrganizationStructureTab />}
+      {activeTab === 1 && <PositionMasterTab />}
     </>
   )
 }
