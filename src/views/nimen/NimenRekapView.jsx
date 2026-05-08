@@ -393,7 +393,7 @@ const NimenRekapView = () => {
           <>
             <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
               {[
-                { label: 'Total Kegiatan', value: myGrouped.length, icon: 'ri-list-check-line' },
+                { label: 'Total Kegiatan', value: myGrouped.length, icon: 'ri-todo-line' },
                 { label: 'Total Entri',    value: myEntries.length, icon: 'ri-medal-line' },
               ].map(s => (
                 <Box key={s.label} sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
