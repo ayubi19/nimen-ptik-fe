@@ -64,46 +64,51 @@ const fileIcon = (name) => {
   return 'ri-file-line'
 }
 
-// ── Submission History Card (Mobile) ─────────────────────────────────────────
+// ── Submission Card — PWA native ─────────────────────────────────────────────
+const STATUS_BADGE = {
+  PENDING:  { bg: '#FAEEDA', color: '#BA7517' },
+  APPROVED: { bg: '#E1F5EE', color: '#0F6E56' },
+  REJECTED: { bg: '#FCEBEB', color: '#A32D2D' },
+}
+
 const SubmissionCard = ({ submission, onDetail, onCancel }) => {
-  const cfg = STATUS_CONFIG[submission.status] || { label: submission.status, color: 'default' }
+  const cfg   = STATUS_CONFIG[submission.status] || { label: submission.status }
+  const badge = STATUS_BADGE[submission.status]  || { bg: '#F1EFE8', color: '#5F5E5A' }
+  const docCount = submission.documents?.length || 0
   return (
-    <Card variant='outlined' className='mb-3'>
-      <CardContent sx={{ p: '12px !important' }}>
-        <div className='flex items-start justify-between gap-2 mb-2'>
-          <div className='flex-1 min-w-0'>
-            <Typography variant='body2' fontWeight={600} noWrap>{submission.indicator?.name}</Typography>
-            <Typography variant='caption' color='text.secondary'>
-              {fmtDate(submission.event_date)}
-            </Typography>
-          </div>
-          <Chip label={cfg.label} color={cfg.color} size='small' variant='tonal' sx={{ flexShrink: 0 }} />
-        </div>
-        {submission.status === 'REJECTED' && submission.rejection_reason && (
-          <Alert severity='error' sx={{ py: 0.5, mb: 1, fontSize: 12 }}>
-            {submission.rejection_reason}
-          </Alert>
+    <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px', mb: '10px' }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', mb: '8px' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{submission.indicator?.name}</Typography>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{fmtDate(submission.event_date)}</Typography>
+        </Box>
+        <Box sx={{ bgcolor: badge.bg, borderRadius: '6px', px: '8px', py: '3px', flexShrink: 0 }}>
+          <Typography sx={{ fontSize: '10px', fontWeight: 500, color: badge.color }}>{cfg.label}</Typography>
+        </Box>
+      </Box>
+      {submission.status === 'REJECTED' && submission.rejection_reason && (
+        <Box sx={{ bgcolor: '#FCEBEB', borderRadius: '7px', px: '10px', py: '6px', mb: '8px' }}>
+          <Typography sx={{ fontSize: '11px', color: '#A32D2D' }}>{submission.rejection_reason}</Typography>
+        </Box>
+      )}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '6px', pt: '8px', borderTop: '0.5px solid rgba(180,100,100,0.1)' }}>
+        <Box sx={{ bgcolor: docCount > 0 ? '#E6F1FB' : '#F1EFE8', borderRadius: '6px', px: '8px', py: '3px' }}>
+          <Typography sx={{ fontSize: '10px', fontWeight: 500, color: docCount > 0 ? '#185FA5' : '#5F5E5A' }}>{docCount} dokumen</Typography>
+        </Box>
+        {docCount > 0 && (
+          <Box component='button' onClick={() => onDetail(submission)} sx={{ display: 'flex', alignItems: 'center', gap: '3px', px: '8px', py: '3px', borderRadius: '6px', cursor: 'pointer', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)' }}>
+            <i className='ri-folder-open-line' style={{ fontSize: '12px', color: '#9A5A5A' }} />
+            <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#3B1010' }}>Lihat</Typography>
+          </Box>
         )}
-        <div className='flex items-center gap-2 mt-1'>
-          <Chip label={`${submission.documents?.length || 0} dokumen`} size='small'
-                color={submission.documents?.length > 0 ? 'info' : 'default'} variant='tonal' />
-          {submission.documents?.length > 0 && (
-            <Button size='small' variant='tonal' color='secondary'
-                    startIcon={<i className='ri-folder-open-line' />}
-                    onClick={() => onDetail(submission)}>
-              Lihat
-            </Button>
-          )}
-          {submission.status === 'PENDING' && (
-            <Button size='small' variant='tonal' color='error'
-                    startIcon={<i className='ri-close-circle-line' />}
-                    onClick={() => onCancel(submission)}>
-              Batal
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        {submission.status === 'PENDING' && (
+          <Box component='button' onClick={() => onCancel(submission)} sx={{ display: 'flex', alignItems: 'center', gap: '3px', px: '8px', py: '3px', borderRadius: '6px', border: 'none', cursor: 'pointer', bgcolor: '#FCEBEB' }}>
+            <i className='ri-close-circle-line' style={{ fontSize: '12px', color: '#A32D2D' }} />
+            <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#A32D2D' }}>Batal</Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
   )
 }
 
@@ -248,151 +253,111 @@ const SelfSubmissionStudentView = () => {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='id'>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>NIMEN</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Pengajuan Nilai Mandiri</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px', mb: '14px' }}>
+        <Box sx={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' } }} onClick={() => window.history.back()}>
+          <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+        </Box>
+        <Box>
+          <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>NIMEN</Typography>
+          <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Pengajuan Nilai Mandiri</Typography>
+        </Box>
+      </Box>
 
-      {/* Stats */}
-      <Grid container spacing={4} className='mb-6'>
+      {/* Stats — 2x2 crystal */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
         {[
-          { label: 'Total Pengajuan',    value: submissions.length, icon: 'ri-file-list-3-line',     color: '#7367F0', bg: '#F3EDFF' },
-          { label: 'Menunggu Review',    value: pendingCount,       icon: 'ri-time-line',             color: '#FF9F43', bg: '#FFF3E8' },
-          { label: 'Nilai Masuk',        value: approvedCount,      icon: 'ri-checkbox-circle-line',  color: '#28C76F', bg: '#E6F9EE' },
-          { label: 'Bisa Diajukan',      value: availableIndicators.length, icon: 'ri-hand-coin-line', color: '#00CFE8', bg: '#E0F9FC' },
+          { label: 'Total Pengajuan', value: submissions.length,         icon: 'ri-file-list-3-line' },
+          { label: 'Menunggu Review', value: pendingCount,               icon: 'ri-time-line' },
+          { label: 'Nilai Masuk',     value: approvedCount,              icon: 'ri-checkbox-circle-line' },
+          { label: 'Bisa Diajukan',   value: availableIndicators.length, icon: 'ri-hand-coin-line' },
         ].map(s => (
-          <Grid item xs={6} sm={3} key={s.label}>
-            <Card>
-              <CardContent sx={{ p: "0 !important" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: "12px", p: "12px" }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 8, flexShrink: 0,
-                    background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <i className={s.icon} style={{ fontSize: 20, color: s.color }} />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <Typography variant='h5' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                    <Typography variant='caption' color='text.secondary'
-                                sx={{ display: 'block', fontSize: { xs: 10, sm: 12 }, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {s.label}
-                    </Typography>
-                  </div>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* Indikator tersedia */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Typography variant='subtitle1' fontWeight={600} className='mb-1'>
-            Indikator yang Bisa Diajukan
-          </Typography>
-          <Typography variant='caption' color='text.secondary' sx={{ display: 'block', mb: 2 }}>
-            Ajukan nilai untuk kegiatan yang kamu lakukan di luar sprint
-          </Typography>
-
-          {indicators.length === 0 ? (
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, py: 6 }}>
-              <i className='ri-inbox-line text-4xl opacity-30 block mb-2' />
-              <Typography variant='body2' color='text.secondary'>
-                Tidak ada indikator yang tersedia untuk pengajuan mandiri.
-              </Typography>
+          <Box key={s.label} sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Box sx={{ width: 44, height: 44, borderRadius: '12px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', borderRadius: '12px 12px 0 0', background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)' } }}>
+              <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
             </Box>
-          ) : (
-            <div className='flex flex-col gap-3'>
-              {/* Tersedia */}
-              {availableIndicators.map(ind => (
-                <div key={ind.indicator_id} style={{
-                  border: '1px solid var(--mui-palette-divider)',
-                  borderRadius: 8, padding: '12px 16px',
-                  borderLeft: '3px solid #28C76F',
-                }}>
-                  <div className='flex items-center justify-between gap-3'>
-                    <div className='flex-1 min-w-0'>
-                      <Typography variant='body2' fontWeight={600} noWrap>{ind.indicator_name}</Typography>
-                      <Typography variant='caption' color='text.secondary' noWrap sx={{ display: 'block' }}>
-                        {ind.category_name} · {ind.variable_name}
-                      </Typography>
-                      <div className='flex items-center gap-1 mt-0.5'>
-                        <i className='ri-refresh-line text-xs' style={{ color: 'var(--mui-palette-text-secondary)', flexShrink: 0 }} />
-                        <Typography variant='caption' color='text.secondary' noWrap>
-                          Cooldown {ind.cooldown_days} hari
-                        </Typography>
-                      </div>
-                    </div>
-                    <div className='flex items-center gap-2 flex-shrink-0'>
-                      <Chip label={`+${ind.value}`} color='success' variant='tonal' size='small' sx={{ fontWeight: 700 }} />
-                      <Button variant='contained' size='small'
-                              onClick={() => { setSelectedIndicator(ind); setCreateOpen(true) }}>
-                        Ajukan
-                      </Button>
-                    </div>
-                  </div>
-                  {ind.description && (
-                    <Typography variant='caption' color='text.secondary'
-                                sx={{ display: 'block', mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {ind.description}
+            <Box>
+              <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>{s.value}</Typography>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px' }}>{s.label}</Typography>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+
+      {/* Indikator section — native */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', mb: '10px' }}>
+        <Box sx={{ px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Indikator yang Bisa Diajukan</Typography>
+          <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Ajukan nilai untuk kegiatan di luar sprint</Typography>
+        </Box>
+        {indicators.length === 0 ? (
+          <Box sx={{ py: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <i className='ri-inbox-line' style={{ fontSize: 36, opacity: 0.25 }} />
+            <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Tidak ada indikator tersedia.</Typography>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            {/* Tersedia */}
+            {availableIndicators.map((ind, i) => (
+              <Box key={ind.indicator_id} sx={{ px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }} noWrap>{ind.indicator_name}</Typography>
+                  <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '1px' }} noWrap>{ind.category_name} · {ind.variable_name}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '3px', mt: '3px' }}>
+                    <i className='ri-refresh-line' style={{ fontSize: '10px', color: '#9A5A5A' }} />
+                    <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Cooldown {ind.cooldown_days} hari</Typography>
+                  </Box>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                  <Box sx={{ bgcolor: '#E1F5EE', borderRadius: '6px', px: '8px', py: '3px' }}>
+                    <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#0F6E56' }}>+{ind.value}</Typography>
+                  </Box>
+                  <Box component='button' onClick={() => { setSelectedIndicator(ind); setCreateOpen(true) }} sx={{ px: '12px', py: '6px', borderRadius: '8px', border: 'none', cursor: 'pointer', background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 3px 8px rgba(180,0,30,0.2)' }}>
+                    <Typography sx={{ fontSize: '11px', fontWeight: 600, color: '#fff' }}>Ajukan</Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+            {/* Cooldown */}
+            {cooldownIndicators.map(ind => (
+              <Box key={ind.indicator_id} sx={{ px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', opacity: 0.75, borderLeft: '3px solid #BA7517' }}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010' }}>{ind.indicator_name}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: '4px', mt: '3px' }}>
+                    <i className='ri-time-line' style={{ fontSize: '11px', color: '#BA7517' }} />
+                    <Typography sx={{ fontSize: '10px', color: '#BA7517' }}>
+                      Cooldown aktif · bisa diajukan {new Date(ind.cooldown_until).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} ({ind.days_until_allowed} hari lagi)
                     </Typography>
-                  )}
-                </div>
-              ))}
+                  </Box>
+                </Box>
+                <Box sx={{ bgcolor: '#F1EFE8', borderRadius: '6px', px: '8px', py: '3px', flexShrink: 0 }}>
+                  <Typography sx={{ fontSize: '11px', fontWeight: 700, color: '#5F5E5A' }}>+{ind.value}</Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
 
-              {/* Cooldown */}
-              {cooldownIndicators.map(ind => (
-                <div key={ind.indicator_id} style={{
-                  border: '1px solid var(--mui-palette-divider)',
-                  borderRadius: 8, padding: '12px 16px',
-                  borderLeft: '3px solid #FF9F43',
-                  opacity: 0.7,
-                }}>
-                  <div className='flex items-start justify-between gap-3'>
-                    <div className='flex-1 min-w-0'>
-                      <Typography variant='body2' fontWeight={600}>{ind.indicator_name}</Typography>
-                      <div className='flex items-center gap-1 mt-0.5'>
-                        <i className='ri-time-line text-xs' style={{ color: '#FF9F43' }} />
-                        <Typography variant='caption' sx={{ color: '#FF9F43' }}>
-                          Cooldown aktif · bisa diajukan{' '}
-                          {new Date(ind.cooldown_until).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}
-                          {' '}({ind.days_until_allowed} hari lagi)
-                        </Typography>
-                      </div>
-                    </div>
-                    <Chip label={`+${ind.value}`} color='default' variant='tonal' sx={{ fontWeight: 700, flexShrink: 0 }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Riwayat Pengajuan */}
-      <Card>
-        <CardContent sx={{ pb: 1 }}>
-          <Typography variant='subtitle1' fontWeight={600}>Riwayat Pengajuan Saya</Typography>
-        </CardContent>
-        <Divider />
+      {/* Riwayat Pengajuan — native */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden' }}>
+        <Box sx={{ px: 2, py: '12px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
+          <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>Riwayat Pengajuan Saya</Typography>
+        </Box>
         {submissions.length === 0 ? (
-          <Box className='flex flex-col items-center py-10 gap-2' sx={{ color: 'text.secondary' }}>
-            <i className='ri-inbox-line text-5xl opacity-30' />
-            <Typography variant='body2'>Belum ada pengajuan.</Typography>
+          <Box sx={{ py: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <i className='ri-inbox-line' style={{ fontSize: 36, opacity: 0.25 }} />
+            <Typography sx={{ fontSize: '12px', color: '#9A5A5A' }}>Belum ada pengajuan.</Typography>
           </Box>
         ) : isMobile ? (
-          // Mobile — Card list
-          <div className='p-3'>
+          <Box sx={{ p: '12px' }}>
             {submissions.map(s => (
               <SubmissionCard key={s.id} submission={s}
                               onDetail={sub => { setDetailSubmission(sub); setDetailOpen(true) }}
                               onCancel={setCancelTarget}
               />
             ))}
-          </div>
+          </Box>
         ) : (
           // Desktop — Table
           <Table>
@@ -452,7 +417,7 @@ const SelfSubmissionStudentView = () => {
             </TableBody>
           </Table>
         )}
-      </Card>
+      </Box>
 
       {/* Dialog Buat Pengajuan */}
       <Dialog open={createOpen}
