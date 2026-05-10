@@ -185,6 +185,7 @@ const UserManagementView = () => {
   const [toggleLoading, setToggleLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
 
   const showToast = useCallback((msg, severity = 'success') =>
@@ -213,12 +214,14 @@ const UserManagementView = () => {
 
   const handleOpenCreate = useCallback(() => {
     setEditData(null)
+    setShowPassword(false)
     reset({ full_name: '', email: '', username: '', password: '', role: 'viewer' })
     setDrawerOpen(true)
   }, [reset])
 
   const handleOpenEdit = useCallback((user) => {
     setEditData(user)
+    setShowPassword(false)
     reset({
       full_name: user.full_name || '',
       email:     user.email || '',
@@ -492,15 +495,54 @@ const UserManagementView = () => {
                           )}
               />
             )}
-            <Controller name='password' control={control}
-                        rules={editData ? {} : { required: 'Password wajib diisi', minLength: { value: 6, message: 'Minimal 6 karakter' } }}
-                        render={({ field }) => (
-                          <TextField {...field} fullWidth size='small'
-                                     placeholder={editData ? 'Password Baru (opsional)' : 'Password'}
-                                     type='password' error={!!errors.password} helperText={errors.password?.message}
-                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
-                        )}
-            />
+
+            {/* Password field */}
+            {!editData ? (
+              /* Tambah user: tampilkan password sementara, disabled, dengan show/hide */
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  fullWidth size='small'
+                  placeholder='Password Sementara'
+                  value='Nimen@2025'
+                  disabled
+                  type={showPassword ? 'text' : 'password'}
+                  helperText='User wajib mengganti password saat login pertama'
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position='end'>
+                        <IconButton size='small' onClick={() => setShowPassword(p => !p)} edge='end'
+                                    sx={{ color: '#9A5A5A' }}>
+                          <i className={`ri-${showPassword ? 'eye-off' : 'eye'}-line`} style={{ fontSize: '16px' }} />
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }}
+                />
+              </Box>
+            ) : (
+              /* Edit user: password opsional dengan show/hide */
+              <Controller name='password' control={control} rules={{}}
+                          render={({ field }) => (
+                            <TextField {...field} fullWidth size='small'
+                                       placeholder='Password Baru (opsional)'
+                                       type={showPassword ? 'text' : 'password'}
+                                       error={!!errors.password} helperText={errors.password?.message}
+                                       InputProps={{
+                                         endAdornment: (
+                                           <InputAdornment position='end'>
+                                             <IconButton size='small' onClick={() => setShowPassword(p => !p)} edge='end'
+                                                         sx={{ color: '#9A5A5A' }}>
+                                               <i className={`ri-${showPassword ? 'eye-off' : 'eye'}-line`} style={{ fontSize: '16px' }} />
+                                             </IconButton>
+                                           </InputAdornment>
+                                         )
+                                       }}
+                                       sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                          )}
+              />
+            )}
+
             <Controller name='role' control={control} rules={{ required: 'Role wajib dipilih' }}
                         render={({ field }) => (
                           <FormControl fullWidth size='small'>
