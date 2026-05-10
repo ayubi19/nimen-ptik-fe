@@ -438,7 +438,7 @@ export default function StudentDashboardView({ hasPosition }) {
 
       <Snackbar open={toast.open} autoHideDuration={4000}
                 onClose={() => setToast(p => ({ ...p, open: false }))}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}>
         <Alert severity={toast.severity} onClose={() => setToast(p => ({ ...p, open: false }))}>
           {toast.message}
         </Alert>
