@@ -13,6 +13,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Alert from '@mui/material/Alert'
 import Snackbar from '@mui/material/Snackbar'
 import Chip from '@mui/material/Chip'
+import Autocomplete from '@mui/material/Autocomplete'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
@@ -25,7 +26,7 @@ import DialogActions from '@mui/material/DialogActions'
 import DialogContentText from '@mui/material/DialogContentText'
 import { useForm, Controller } from 'react-hook-form'
 import { batchApi } from '@/libs/api/masterDataApi'
-import { batchNimenConfigApi } from '@/libs/api/nimenMasterDataApi'
+import { batchNimenConfigApi, nimenIndicatorApi } from '@/libs/api/nimenMasterDataApi'
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
 import { DatePicker } from '@mui/x-date-pickers/DatePicker'
@@ -228,6 +229,7 @@ const NimenBatchConfigView = () => {
   const [periods, setPeriods] = useState([])
   const [periodInputs, setPeriodInputs] = useState([])
   const [saveLoading, setSaveLoading] = useState(false)
+  const [indicators, setIndicators] = useState([])
   const [setupLoading, setSetupLoading] = useState(false)
 
   const [toast, setToast] = useState({ open: false, message: '', severity: 'success' })
@@ -236,7 +238,7 @@ const NimenBatchConfigView = () => {
   }, [])
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
-    defaultValues: { max_nimen_value: 95, initial_nimen_value: 73 }
+    defaultValues: { max_nimen_value: 95, initial_nimen_value: 73, non_position_indicator_id: '' }
   })
 
   // Fetch batches dengan periods
@@ -255,6 +257,13 @@ const NimenBatchConfigView = () => {
   }, [showToast])
 
   useEffect(() => { fetchBatches() }, [fetchBatches])
+
+  // Load indikator aktif untuk pilihan non-pejabat
+  useEffect(() => {
+    nimenIndicatorApi.getAll({ page: 1, page_size: 100 })
+      .then(res => setIndicators(res.data.data?.data || []))
+      .catch(() => {})
+  }, [])
 
   // Aktifkan periode
   const handleActivatePeriod = useCallback(async () => {
@@ -280,6 +289,7 @@ const NimenBatchConfigView = () => {
       reset({
         max_nimen_value: d.max_nimen_value || 95,
         initial_nimen_value: d.initial_nimen_value || 73,
+        non_position_indicator_id: d.non_position_indicator_id || '',
       })
       setEditNilaiTarget(batch)
     } catch {
@@ -293,6 +303,7 @@ const NimenBatchConfigView = () => {
       await batchNimenConfigApi.updateConfig(editNilaiTarget.id, {
         max_nimen_value: parseFloat(values.max_nimen_value),
         initial_nimen_value: parseFloat(values.initial_nimen_value),
+        non_position_indicator_id: values.non_position_indicator_id ? parseInt(values.non_position_indicator_id) : null,
       })
       showToast('Konfigurasi nilai berhasil diperbarui')
       setEditNilaiTarget(null)
@@ -348,7 +359,7 @@ const NimenBatchConfigView = () => {
       setBatchData(batch)
       if (configRes.status === 'fulfilled') {
         const d = configRes.value.data.data
-        reset({ max_nimen_value: d.max_nimen_value || 95, initial_nimen_value: d.initial_nimen_value || 73 })
+        reset({ max_nimen_value: d.max_nimen_value || 95, initial_nimen_value: d.initial_nimen_value || 73, non_position_indicator_id: d.non_position_indicator_id || '' })
       }
       const existingPeriods = periodsRes.status === 'fulfilled' ? periodsRes.value.data.data || [] : []
       setPeriods(existingPeriods)
@@ -370,6 +381,7 @@ const NimenBatchConfigView = () => {
       await batchNimenConfigApi.updateConfig(selectedBatch, {
         max_nimen_value: parseFloat(values.max_nimen_value),
         initial_nimen_value: parseFloat(values.initial_nimen_value),
+        non_position_indicator_id: values.non_position_indicator_id ? parseInt(values.non_position_indicator_id) : null,
       })
       showToast('Konfigurasi nilai berhasil disimpan')
       setStep(3)
@@ -602,6 +614,34 @@ const NimenBatchConfigView = () => {
                                   )}
                       />
                     </Grid>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 1 }} />
+                      <Controller name='non_position_indicator_id' control={control}
+                                  render={({ field }) => (
+                                    <Autocomplete
+                                      options={indicators.filter(i => parseFloat(i.value) > 0)}
+                                      getOptionLabel={opt => `${opt.name} (+${parseFloat(opt.value)})`}
+                                      isOptionEqualToValue={(opt, val) => opt.id === val?.id}
+                                      value={indicators.find(i => i.id === field.value) || null}
+                                      onChange={(_, val) => field.onChange(val ? val.id : '')}
+                                      renderInput={params => (
+                                        <TextField {...params} label='Indikator Nilai Non-Pejabat'
+                                                   helperText='Nilai flat untuk mahasiswa tanpa jabatan aktif setiap bulan' />
+                                      )}
+                                      renderOption={(props, opt) => (
+                                        <li {...props} key={opt.id}>
+                                          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 1 }}>
+                                            <Typography variant='body2'>{opt.name}</Typography>
+                                            <Typography variant='caption' color='success.main' sx={{ flexShrink: 0 }}>+{parseFloat(opt.value)}</Typography>
+                                          </Box>
+                                        </li>
+                                      )}
+                                      noOptionsText='Tidak ada indikator'
+                                      clearText='Hapus pilihan'
+                                    />
+                                  )}
+                      />
+                    </Grid>
                   </Grid>
                 </CardContent>
               </Card>
@@ -776,6 +816,34 @@ const NimenBatchConfigView = () => {
                             render={({ field }) => (
                               <TextField {...field} fullWidth label='Nilai Awal Mahasiswa' type='number'
                                          error={!!errors.initial_nimen_value} helperText={errors.initial_nimen_value?.message} />
+                            )}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Divider sx={{ mb: 1 }} />
+                <Controller name='non_position_indicator_id' control={control}
+                            render={({ field }) => (
+                              <Autocomplete
+                                options={indicators.filter(i => parseFloat(i.value) > 0)}
+                                getOptionLabel={opt => `${opt.name} (+${parseFloat(opt.value)})`}
+                                isOptionEqualToValue={(opt, val) => opt.id === val?.id}
+                                value={indicators.find(i => i.id === field.value) || null}
+                                onChange={(_, val) => field.onChange(val ? val.id : '')}
+                                renderInput={params => (
+                                  <TextField {...params} label='Indikator Nilai Non-Pejabat'
+                                             helperText='Nilai flat untuk mahasiswa tanpa jabatan aktif setiap bulan' />
+                                )}
+                                renderOption={(props, opt) => (
+                                  <li {...props} key={opt.id}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 1 }}>
+                                      <Typography variant='body2'>{opt.name}</Typography>
+                                      <Typography variant='caption' color='success.main' sx={{ flexShrink: 0 }}>+{parseFloat(opt.value)}</Typography>
+                                    </Box>
+                                  </li>
+                                )}
+                                noOptionsText='Tidak ada indikator'
+                                clearText='Hapus pilihan'
+                              />
                             )}
                 />
               </Grid>

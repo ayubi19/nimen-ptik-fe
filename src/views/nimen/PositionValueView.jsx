@@ -97,14 +97,14 @@ const PositionValueView = () => {
       .map(([k]) => parseInt(k))
 
     if (studentIDs.length === 0) {
-      showToast('Pilih minimal 1 pejabat untuk diberikan nilai', 'error')
+      showToast('Pilih minimal 1 mahasiswa untuk diberikan nilai', 'error')
       return
     }
 
     setGrantLoading(true)
     try {
       await nimenPositionValueApi.grant({ month, batch_id: parseInt(batchID), student_ids: studentIDs })
-      showToast(`Nilai jabatan berhasil diberikan ke ${studentIDs.length} pejabat`)
+      showToast(`Nilai berhasil diberikan ke ${studentIDs.length} mahasiswa`)
       handlePreview()
     } catch (err) {
       showToast(err.response?.data?.message || err.message || 'Gagal memberikan nilai', 'error')
@@ -113,8 +113,10 @@ const PositionValueView = () => {
     }
   }, [checked, month, batchID, handlePreview, showToast])
 
-  const eligibleItems = preview?.items?.filter(i => !i.already_granted) || []
-  const grantedItems = preview?.items?.filter(i => i.already_granted) || []
+  const eligibleItems    = preview?.items?.filter(i => !i.already_granted) || []
+  const grantedItems     = preview?.items?.filter(i => i.already_granted) || []
+  const eligiblePejabat  = eligibleItems.filter(i => !i.is_non_position)
+  const eligibleNonPos   = eligibleItems.filter(i => i.is_non_position)
   const checkedCount = Object.values(checked).filter(Boolean).length
   const allChecked = eligibleItems.length > 0 && eligibleItems.every(i => checked[i.user_id])
   const someChecked = eligibleItems.some(i => checked[i.user_id])
@@ -241,7 +243,7 @@ const PositionValueView = () => {
                   : <i className='ri-gift-line' style={{ fontSize: '14px', color: '#fff' }} />
                 }
                 <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>
-                  {grantLoading ? 'Memberikan...' : `Berikan Nilai ke ${checkedCount} Pejabat`}
+                  {grantLoading ? 'Memberikan...' : `Berikan Nilai ke ${checkedCount} Mahasiswa`}
                 </Typography>
               </Box>
             )}
@@ -270,9 +272,21 @@ const PositionValueView = () => {
           {eligibleItems.length > 0 && (
             <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', overflow: 'hidden', mb: '10px' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: '10px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
-                <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>
-                  Belum Mendapat Nilai ({eligibleItems.length})
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#3B1010' }}>
+                    Belum Mendapat Nilai ({eligibleItems.length})
+                  </Typography>
+                  {eligiblePejabat.length > 0 && (
+                    <Box sx={{ bgcolor: '#EAF3DE', borderRadius: '6px', px: '6px', py: '2px' }}>
+                      <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#27500A' }}>{eligiblePejabat.length} pejabat</Typography>
+                    </Box>
+                  )}
+                  {eligibleNonPos.length > 0 && (
+                    <Box sx={{ bgcolor: '#FAEEDA', borderRadius: '6px', px: '6px', py: '2px' }}>
+                      <Typography sx={{ fontSize: '10px', fontWeight: 500, color: '#633806' }}>{eligibleNonPos.length} non-pejabat</Typography>
+                    </Box>
+                  )}
+                </Box>
                 <FormControlLabel
                   control={
                     <Checkbox checked={allChecked} indeterminate={someChecked && !allChecked}
