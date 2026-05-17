@@ -291,3 +291,134 @@ export const exportBatchXLSX = async (rows, batch) => {
   XLSX.utils.book_append_sheet(wb, ws, `Rekap ${batch.name}`)
   XLSX.writeFile(wb, `NIMEN_Rekap_${batch.name.replace(/\s+/g, '_')}.xlsx`)
 }
+
+// ─── Export Rekap Nilai (multi-filter) ───────────────────────────────────────
+
+const SOURCE_LABEL_REKAP = {
+  SPRINT:          'Sprint',
+  SELF_SUBMISSION: 'Pengajuan Mandiri',
+  AUTOMATIC:       'Otomatis/Jabatan',
+}
+
+/**
+ * exportRekapPDF — rekap nilai dengan filter (angkatan, sumber, mahasiswa, tanggal)
+ */
+export const exportRekapPDF = async (entries, grouped, filterInfo) => {
+  const { jsPDF } = await import('jspdf')
+  const { default: autoTable } = await import('jspdf-autotable')
+
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+
+  // ── Header ──
+  doc.setFontSize(14)
+  doc.setFont(undefined, 'bold')
+  doc.text('REKAP NILAI MENTAL MAHASISWA (NIMEN)', pageW / 2, 16, { align: 'center' })
+  doc.setFontSize(9)
+  doc.setFont(undefined, 'normal')
+
+  const filterLines = [
+    `Angkatan: ${filterInfo.batchName || '—'}`,
+    filterInfo.source ? `Sumber: ${SOURCE_LABEL_REKAP[filterInfo.source] || filterInfo.source}` : null,
+    filterInfo.students?.length > 0 ? `Mahasiswa: ${filterInfo.students.map(s => s.full_name).join(', ')}` : null,
+    filterInfo.dateFrom ? `Periode: ${filterInfo.dateFrom}${filterInfo.dateTo ? ' s/d ' + filterInfo.dateTo : ''}` : null,
+    `Dicetak: ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`,
+  ].filter(Boolean)
+
+  filterLines.forEach((line, i) => doc.text(line, pageW / 2, 22 + i * 5, { align: 'center' }))
+  const headerEndY = 22 + filterLines.length * 5 + 2
+  doc.line(14, headerEndY, pageW - 14, headerEndY)
+
+  // ── Tabel per indikator ──
+  const tableRows = entries.map(e => [
+    formatDate(e.event_date),
+    e.full_name || '—',
+    e.nim || '—',
+    e.indicator_name || e.indicator?.name || '—',
+    e.category_name || e.indicator?.variable?.category?.name || '—',
+    SOURCE_LABEL_REKAP[e.source_type] || e.source_type || '—',
+    formatValue(e.value),
+    e.status === 'VALID' ? 'Valid' : e.status === 'DISPENSED' ? 'Dispensasi' : e.status || '—',
+  ])
+
+  autoTable(doc, {
+    startY: headerEndY + 3,
+    head: [['Tanggal', 'Nama', 'NIM', 'Indikator', 'Kategori', 'Sumber', 'Nilai', 'Status']],
+    body: tableRows,
+    theme: 'striped',
+    headStyles: { fillColor: [114, 103, 240], textColor: 255, fontSize: 8 },
+    bodyStyles: { fontSize: 8 },
+    columnStyles: {
+      0: { cellWidth: 22 },
+      6: { halign: 'right', cellWidth: 14 },
+      7: { cellWidth: 18 },
+    },
+    margin: { left: 14, right: 14 },
+  })
+
+  // ── Summary di akhir ──
+  const finalY = doc.lastAutoTable.finalY + 5
+  doc.setFontSize(9)
+  doc.setFont(undefined, 'bold')
+  doc.text(`Total Entri: ${entries.length} | Total Jenis Kegiatan: ${grouped.length}`, 14, finalY)
+
+  // ── Footer ──
+  const pageCount = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFontSize(8)
+    doc.setFont(undefined, 'normal')
+    doc.text(`Halaman ${i} dari ${pageCount}`, pageW / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' })
+  }
+
+  const safeName = filterInfo.batchName.replace(/\s+/g, '_') || 'Rekap'
+  doc.save(`NIMEN_Rekap_Nilai_${safeName}.pdf`)
+}
+
+/**
+ * exportRekapXLSX — rekap nilai dengan filter ke XLSX (2 sheet)
+ */
+export const exportRekapXLSX = async (entries, grouped, filterInfo) => {
+  const XLSX = await import('xlsx')
+  const wb = XLSX.utils.book_new()
+
+  // Sheet 1: Info filter
+  const filterRows = [
+    ['REKAP NILAI MENTAL MAHASISWA (NIMEN)'],
+    [],
+    ['Angkatan',    filterInfo.batchName || '—'],
+    ['Sumber',      filterInfo.source ? (SOURCE_LABEL_REKAP[filterInfo.source] || filterInfo.source) : 'Semua'],
+    ['Mahasiswa',   filterInfo.students?.length > 0 ? filterInfo.students.map(s => s.full_name).join(', ') : 'Semua'],
+    ['Dari Tanggal', filterInfo.dateFrom || '—'],
+    ['Sampai Tanggal', filterInfo.dateTo || '—'],
+    ['Total Entri', entries.length],
+    ['Total Jenis Kegiatan', grouped.length],
+    ['Dicetak', new Date().toLocaleDateString('id-ID')],
+  ]
+  const wsInfo = XLSX.utils.aoa_to_sheet(filterRows)
+  wsInfo['!cols'] = [{ wch: 22 }, { wch: 50 }]
+  XLSX.utils.book_append_sheet(wb, wsInfo, 'Info Filter')
+
+  // Sheet 2: Detail entri
+  const header = ['Tanggal', 'Nama', 'NIM', 'Sindikat', 'Indikator', 'Kategori', 'Sumber', 'Nilai', 'Status']
+  const rows = entries.map(e => [
+    formatDate(e.event_date),
+    e.full_name || '—',
+    e.nim || '—',
+    e.syndicate_name || '—',
+    e.indicator_name || e.indicator?.name || '—',
+    e.category_name || e.indicator?.variable?.category?.name || '—',
+    SOURCE_LABEL_REKAP[e.source_type] || e.source_type || '—',
+    parseFloat(e.value),
+    e.status === 'VALID' ? 'Valid' : e.status === 'DISPENSED' ? 'Dispensasi' : e.status || '—',
+  ])
+  const wsDetail = XLSX.utils.aoa_to_sheet([header, ...rows])
+  wsDetail['!cols'] = [
+    { wch: 14 }, { wch: 28 }, { wch: 14 }, { wch: 16 },
+    { wch: 36 }, { wch: 20 }, { wch: 18 }, { wch: 10 }, { wch: 12 },
+  ]
+  XLSX.utils.book_append_sheet(wb, wsDetail, 'Detail Rekap')
+
+  const safeName = filterInfo.batchName.replace(/\s+/g, '_') || 'Rekap'
+  XLSX.writeFile(wb, `NIMEN_Rekap_Nilai_${safeName}.xlsx`)
+}

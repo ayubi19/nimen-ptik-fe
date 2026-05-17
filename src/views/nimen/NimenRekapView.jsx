@@ -35,6 +35,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/id'
 import { studentsApi } from '@/libs/api/studentsApi'
 import { nimenRankingApi } from '@/libs/api/nimenRankingApi'
+import { exportRekapPDF, exportRekapXLSX } from '@/utils/exportUtils'
 import { getInitials } from '@/utils/getInitials'
 
 const SOURCE_CONFIG = {
@@ -240,6 +241,7 @@ const NimenRekapView = () => {
   const [myEntries, setMyEntries]       = useState([])
   const [myLoading, setMyLoading]       = useState(false)
   const [myPage, setMyPage]             = useState(1)
+  const [exportLoading, setExportLoading] = useState('')
 
   useEffect(() => {
     if (isAdmin) {
@@ -356,6 +358,41 @@ const NimenRekapView = () => {
   const totalMyPages = Math.ceil(myGrouped.length / PAGE_SIZE)
   const pagedMyGrouped = myGrouped.slice((myPage - 1) * PAGE_SIZE, myPage * PAGE_SIZE)
 
+  // ── Export handlers — harus di atas conditional return ─────────────────────
+  const handleExportPDF = useCallback(async () => {
+    if (!entries.length || exportLoading) return
+    setExportLoading('pdf')
+    try {
+      const batch = batches.find(b => b.id === parseInt(batchID))
+      const filterInfo = {
+        batchName: batch?.name || '',
+        source:    sourceFilter,
+        students:  selectedStudents,
+        dateFrom:  dateFrom ? dateFrom.format('YYYY-MM-DD') : '',
+        dateTo:    dateTo   ? dateTo.format('YYYY-MM-DD')   : '',
+      }
+      await exportRekapPDF(entries, grouped, filterInfo)
+    } catch (e) { console.error(e) }
+    finally { setExportLoading('') }
+  }, [entries, grouped, batches, batchID, sourceFilter, selectedStudents, dateFrom, dateTo, exportLoading])
+
+  const handleExportXLSX = useCallback(async () => {
+    if (!entries.length || exportLoading) return
+    setExportLoading('xlsx')
+    try {
+      const batch = batches.find(b => b.id === parseInt(batchID))
+      const filterInfo = {
+        batchName: batch?.name || '',
+        source:    sourceFilter,
+        students:  selectedStudents,
+        dateFrom:  dateFrom ? dateFrom.format('YYYY-MM-DD') : '',
+        dateTo:    dateTo   ? dateTo.format('YYYY-MM-DD')   : '',
+      }
+      await exportRekapXLSX(entries, grouped, filterInfo)
+    } catch (e) { console.error(e) }
+    finally { setExportLoading('') }
+  }, [entries, grouped, batches, batchID, sourceFilter, selectedStudents, dateFrom, dateTo, exportLoading])
+
   // ── MAHASISWA VIEW ──────────────────────────────────────────────────────────
   if (!isAdmin) {
 
@@ -445,6 +482,31 @@ const NimenRekapView = () => {
             <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Rekap Nilai</Typography>
           </Box>
         </Box>
+        {/* Export buttons — hanya tampil setelah ada data */}
+        {hasLoaded && entries.length > 0 && (
+          <Box sx={{ display: 'flex', gap: '6px', mb: '10px', justifyContent: 'flex-end' }}>
+            <Box component='button' onClick={handleExportPDF} disabled={!!exportLoading} sx={{
+              display: 'flex', alignItems: 'center', gap: '5px', px: '10px', py: '6px',
+              borderRadius: '8px', cursor: 'pointer', border: '0.5px solid rgba(163,45,45,0.25)',
+              background: '#FFF0F0', opacity: exportLoading ? 0.6 : 1,
+            }}>
+              {exportLoading === 'pdf'
+                ? <CircularProgress size={12} sx={{ color: '#A32D2D' }} />
+                : <i className='ri-file-pdf-line' style={{ fontSize: '14px', color: '#A32D2D' }} />}
+              <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#A32D2D' }}>PDF</Typography>
+            </Box>
+            <Box component='button' onClick={handleExportXLSX} disabled={!!exportLoading} sx={{
+              display: 'flex', alignItems: 'center', gap: '5px', px: '10px', py: '6px',
+              borderRadius: '8px', cursor: 'pointer', border: '0.5px solid rgba(15,110,86,0.25)',
+              background: '#F0FBF6', opacity: exportLoading ? 0.6 : 1,
+            }}>
+              {exportLoading === 'xlsx'
+                ? <CircularProgress size={12} sx={{ color: '#0F6E56' }} />
+                : <i className='ri-file-excel-line' style={{ fontSize: '14px', color: '#0F6E56' }} />}
+              <Typography sx={{ fontSize: '11px', fontWeight: 500, color: '#0F6E56' }}>Excel</Typography>
+            </Box>
+          </Box>
+        )}
 
         {/* Filter Card — PWA native */}
         <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px', mb: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
