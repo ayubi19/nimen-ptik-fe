@@ -832,7 +832,7 @@ const RankingView = () => {
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', p: '14px', borderBottom: '0.5px solid rgba(180,100,100,0.1)' }}>
                 {[
                   { label: 'Total Nilai',   value: historyStudent?.total_value?.toFixed(2), icon: 'ri-medal-line' },
-                  { label: 'Jumlah Entri',  value: history.length, icon: 'ri-list-check-line' },
+                  { label: 'Jumlah Entri',  value: history.length, icon: 'ri-file-list-3-line' },
                   { label: 'Nilai Positif', value: `+${history.filter(h => h.value > 0).reduce((s, h) => s + h.value, 0).toFixed(2)}`, icon: 'ri-arrow-up-circle-line' },
                   { label: 'Nilai Negatif', value: history.filter(h => h.value < 0).reduce((s, h) => s + h.value, 0).toFixed(2) || '0.00', icon: 'ri-arrow-down-circle-line' },
                 ].map(s => (

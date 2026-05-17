@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import Button from '@mui/material/Button'
 import Box from '@mui/material/Box'
 import Card from '@mui/material/Card'
 import CardContent from '@mui/material/CardContent'
@@ -14,12 +13,10 @@ import DialogContentText from '@mui/material/DialogContentText'
 import DialogTitle from '@mui/material/DialogTitle'
 import Divider from '@mui/material/Divider'
 import Drawer from '@mui/material/Drawer'
-import FormControlLabel from '@mui/material/FormControlLabel'
 import FormControl from '@mui/material/FormControl'
-import Grid from '@mui/material/Grid'
+import FormControlLabel from '@mui/material/FormControlLabel'
 import IconButton from '@mui/material/IconButton'
 import InputAdornment from '@mui/material/InputAdornment'
-import InputLabel from '@mui/material/InputLabel'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import Switch from '@mui/material/Switch'
@@ -31,6 +28,7 @@ import TableCell from '@mui/material/TableCell'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import Alert from '@mui/material/Alert'
+import Button from '@mui/material/Button'
 import Snackbar from '@mui/material/Snackbar'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
@@ -49,37 +47,45 @@ const DebouncedInput = ({ value: initial, onChange, debounce = 400, ...props }) 
   return <TextField {...props} value={value} onChange={e => setValue(e.target.value)} size='small' />
 }
 
-// ── Mobile Card ───────────────────────────────────────────────────────────────
+// ── Mobile Card — PWA native ─────────────────────────────────────────────────
 const StatusMobileCard = ({ status, onEdit, onDelete }) => (
-  <Card className='mb-3'>
-    <CardContent>
-      <div className='flex items-start justify-between mb-2'>
-        <div>
-          <Typography variant='body2' fontWeight={600}>{status.name}</Typography>
-          {status.code && (
-            <Typography variant='caption' color='text.secondary'>Kode: {status.code}</Typography>
-          )}
-        </div>
-        <Chip
-          label={status.is_active ? 'Aktif' : 'Nonaktif'}
-          size='small'
-          color={status.is_active ? 'success' : 'default'}
-          variant='tonal'
-        />
-      </div>
-      <Divider className='mb-3' />
-      <div className='flex gap-2'>
-        <Button fullWidth variant='tonal' size='small' color='secondary'
-                startIcon={<i className='ri-edit-line' />} onClick={() => onEdit(status)}>
-          Edit
-        </Button>
-        <Button fullWidth variant='tonal' size='small' color='error'
-                startIcon={<i className='ri-delete-bin-line' />} onClick={() => onDelete(status)}>
-          Hapus
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
+  <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '12px', mb: '10px' }}>
+    {/* Header */}
+    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '8px' }}>
+      <Box>
+        <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#3B1010', lineHeight: 1.3 }}>
+          {status.name}
+        </Typography>
+        {status.code && (
+          <Typography sx={{ fontSize: '10px', color: '#9A5A5A' }}>Kode: {status.code}</Typography>
+        )}
+      </Box>
+      <Box sx={{ bgcolor: status.is_active ? '#E1F5EE' : '#F1EFE8', borderRadius: '6px', px: 1, py: '3px', flexShrink: 0 }}>
+        <Typography sx={{ fontSize: '10px', fontWeight: 500, color: status.is_active ? '#0F6E56' : '#5F5E5A' }}>
+          {status.is_active ? 'Aktif' : 'Nonaktif'}
+        </Typography>
+      </Box>
+    </Box>
+
+    {/* Actions */}
+    <Box sx={{ display: 'flex', gap: '6px', borderTop: '0.5px solid rgba(180,100,100,0.1)', pt: '8px', mt: '4px' }}>
+      <Box component='button' onClick={() => onEdit(status)} sx={{
+        flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+        border: '0.5px solid rgba(180,100,100,0.18)', background: 'rgba(255,255,255,0.72)',
+        boxShadow: '0 2px 6px rgba(139,0,0,0.07)', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#444441',
+      }}>
+        <i className='ri-edit-line' style={{ fontSize: '11px' }} /> Edit
+      </Box>
+      <Box component='button' onClick={() => onDelete(status)} sx={{
+        flex: 1, py: '5px', borderRadius: '8px', fontSize: '10px', fontWeight: 500,
+        border: '0.5px solid rgba(163,45,45,0.2)', background: '#FCEBEB', cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', color: '#A32D2D',
+      }}>
+        <i className='ri-delete-bin-line' style={{ fontSize: '11px' }} /> Hapus
+      </Box>
+    </Box>
+  </Box>
 )
 
 // ── Main View ─────────────────────────────────────────────────────────────────
@@ -87,12 +93,12 @@ const AcademicStatusesView = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [search, setSearch] = useState('')
+  const [data, setData]               = useState([])
+  const [loading, setLoading]         = useState(false)
+  const [search, setSearch]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editData, setEditData] = useState(null)
+  const [drawerOpen, setDrawerOpen]   = useState(false)
+  const [editData, setEditData]       = useState(null)
   const [saveLoading, setSaveLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -171,98 +177,91 @@ const AcademicStatusesView = () => {
     return matchSearch && matchStatus
   }), [data, search, statusFilter])
 
-  const totalAktif = data.filter(s => s.is_active).length
+  const totalAktif    = data.filter(s => s.is_active).length
   const totalNonaktif = data.filter(s => !s.is_active).length
 
   return (
     <>
-      {/* Breadcrumb */}
-      <div className='flex items-center gap-2 mb-6'>
-        <Typography variant='caption' color='text.secondary'>Master Data</Typography>
-        <i className='ri-arrow-right-s-line text-sm opacity-50' />
-        <Typography variant='caption' fontWeight={500} color='text.primary'>Status Akademik</Typography>
-      </div>
+      {/* Topbar PWA */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', mb: '14px' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Box sx={{
+            width: 34, height: 34, borderRadius: '10px',
+            background: 'rgba(255,255,255,0.72)', border: '0.5px solid rgba(180,100,100,0.18)',
+            boxShadow: '0 3px 10px rgba(139,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+            '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)' }
+          }} onClick={() => window.history.back()}>
+            <i className='ri-arrow-left-s-line' style={{ fontSize: '20px', color: '#8B2020', position: 'relative', zIndex: 1 }} />
+          </Box>
+          <Box>
+            <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>Master Data</Typography>
+            <Typography sx={{ fontSize: '16px', fontWeight: 500, color: '#3B1010' }}>Status Akademik</Typography>
+          </Box>
+        </Box>
+        <Box component='button' onClick={handleOpenCreate} sx={{
+          display: 'flex', alignItems: 'center', gap: '5px', px: '12px', py: '7px',
+          borderRadius: '10px', border: 'none', cursor: 'pointer',
+          background: 'linear-gradient(145deg, #E63946, #6D0E13)',
+          boxShadow: '0 4px 10px rgba(180,0,30,0.25)',
+        }}>
+          <i className='ri-add-line' style={{ fontSize: '14px', color: '#fff' }} />
+          <Typography sx={{ fontSize: '12px', fontWeight: 600, color: '#fff' }}>Tambah</Typography>
+        </Box>
+      </Box>
 
-      {/* Header */}
-      <div className='flex items-center justify-between mb-6 gap-3 flex-wrap'>
-        <div />
-        <Button variant='contained' startIcon={<i className='ri-add-line' />}
-                onClick={handleOpenCreate}
-                sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          Tambah Status
-        </Button>
-      </div>
-
-      {/* Stats */}
-      <Grid container spacing={4} className='mb-6'>
+      {/* Stats — 2 crystal cards */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', mb: '10px' }}>
         {[
-          { label: 'Aktif', value: totalAktif, icon: 'ri-checkbox-circle-line', color: '#28C76F', bg: '#E6F9EE' },
-          { label: 'Nonaktif', value: totalNonaktif, icon: 'ri-close-circle-line', color: '#A8AAAE', bg: '#F4F4F4' },
+          { label: 'Aktif',    value: totalAktif,    icon: 'ri-checkbox-circle-line' },
+          { label: 'Nonaktif', value: totalNonaktif, icon: 'ri-close-circle-line' },
         ].map(s => (
-          <Grid item xs={6} key={s.label}>
-            <Card sx={{ height: '100%' }}>
-              <CardContent className='flex items-center gap-3'>
-                <div style={{
-                  width: 44, height: 44, borderRadius: 8, flexShrink: 0,
-                  background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <i className={s.icon} style={{ fontSize: 22, color: s.color }} />
-                </div>
-                <div>
-                  <Typography variant='h4' fontWeight={600} lineHeight={1.2}>{s.value}</Typography>
-                  <Typography variant='body2' color='text.secondary' sx={{ fontSize: { xs: 11, sm: 13 } }}>
-                    {s.label}
-                  </Typography>
-                </div>
-              </CardContent>
-            </Card>
-          </Grid>
+          <Box key={s.label} sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Box sx={{ width: 44, height: 44, borderRadius: '12px', flexShrink: 0, background: 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25), inset 0 1px 0 rgba(255,180,180,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', '&::before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: '45%', borderRadius: '12px 12px 0 0', background: 'linear-gradient(180deg, rgba(255,200,200,0.32) 0%, transparent 100%)' } }}>
+              <i className={s.icon} style={{ fontSize: '20px', color: 'rgba(255,255,255,0.92)', position: 'relative', zIndex: 1 }} />
+            </Box>
+            <Box>
+              <Typography sx={{ fontSize: '20px', fontWeight: 500, color: '#3B1010', lineHeight: 1 }}>{s.value}</Typography>
+              <Typography sx={{ fontSize: '10px', color: '#9A5A5A', mt: '2px' }}>{s.label}</Typography>
+            </Box>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
-      {/* Filter */}
-      <Card className='mb-6'>
-        <CardContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={8}>
-              <DebouncedInput fullWidth value={search} onChange={setSearch}
-                              placeholder='Cari nama status...'
-                              InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' /></InputAdornment> }} />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth size='small'>
-                <InputLabel>Status</InputLabel>
-                <Select label='Status' value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                  <MenuItem value=''>Semua Status</MenuItem>
-                  <MenuItem value='aktif'>Aktif</MenuItem>
-                  <MenuItem value='nonaktif'>Nonaktif</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+      {/* Filter — PWA native */}
+      <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '10px 12px', mb: '10px', display: 'flex', gap: '8px' }}>
+        <DebouncedInput fullWidth value={search} onChange={setSearch}
+                        placeholder='Cari nama status...'
+                        sx={{ flex: 1, '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15) !important' } }, '& input': { py: '7px', px: '10px', fontSize: '12px' } }}
+                        InputProps={{ startAdornment: <InputAdornment position='start'><i className='ri-search-line' style={{ color: '#9A5A5A', fontSize: '14px' }} /></InputAdornment> }}
+        />
+        <FormControl size='small' sx={{ flexShrink: 0, minWidth: 110 }}>
+          <Select displayEmpty value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+                  renderValue={val => val === 'aktif' ? 'Aktif' : val === 'nonaktif' ? 'Nonaktif' : 'Semua'}
+                  sx={{ borderRadius: '8px', fontSize: '12px', bgcolor: '#F5F2F0', '& .MuiOutlinedInput-notchedOutline': { border: '0.5px solid rgba(180,100,100,0.15) !important' }, '& .MuiSelect-select': { py: '7px', px: '10px' } }}>
+            <MenuItem value=''>Semua</MenuItem>
+            <MenuItem value='aktif'>Aktif</MenuItem>
+            <MenuItem value='nonaktif'>Nonaktif</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
 
       {/* Content */}
       {loading ? (
-        <div className='flex justify-center py-10'><CircularProgress /></div>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>
       ) : isMobile ? (
-        // Mobile — Card List
         filtered.length === 0 ? (
-          <Card>
-            <CardContent sx={{ py: 6 }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                <i className='ri-graduation-cap-line' style={{ fontSize: 48, opacity: 0.3 }} />
-                <Typography variant='body2' color='text.secondary'>Tidak ada status akademik ditemukan</Typography>
-              </Box>
-            </CardContent>
-          </Card>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', py: 8 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <i className='ri-graduation-cap-line' style={{ fontSize: 48, opacity: 0.3 }} />
+              <Typography variant='body2' color='text.secondary'>Tidak ada status akademik ditemukan</Typography>
+            </Box>
+          </Box>
         ) : filtered.map(s => (
-          <StatusMobileCard key={s.id} status={s}
-                            onEdit={handleOpenEdit} onDelete={setDeleteTarget} />
+          <StatusMobileCard key={s.id} status={s} onEdit={handleOpenEdit} onDelete={setDeleteTarget} />
         ))
       ) : (
-        // Desktop — Table
         <Card>
           <Table>
             <TableHead>
@@ -295,12 +294,8 @@ const AcademicStatusesView = () => {
                       : <Typography variant='caption' color='text.secondary'>—</Typography>}
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={s.is_active ? 'Aktif' : 'Nonaktif'}
-                      size='small'
-                      color={s.is_active ? 'success' : 'default'}
-                      variant='tonal'
-                    />
+                    <Chip label={s.is_active ? 'Aktif' : 'Nonaktif'} size='small'
+                          color={s.is_active ? 'success' : 'default'} variant='tonal' />
                   </TableCell>
                   <TableCell>
                     <div className='flex items-center gap-1'>
@@ -319,47 +314,66 @@ const AcademicStatusesView = () => {
         </Card>
       )}
 
-      {/* Drawer */}
+      {/* Drawer Create/Edit — PWA native */}
       <Drawer anchor='right' open={drawerOpen} onClose={() => setDrawerOpen(false)}
-              PaperProps={{ sx: { width: { xs: '100%', sm: 380 } } }}>
-        <div className='flex items-center justify-between p-4 border-b'>
-          <Typography variant='h6'>{editData ? 'Edit Status Akademik' : 'Tambah Status Akademik'}</Typography>
-          <IconButton onClick={() => setDrawerOpen(false)}><i className='ri-close-line' /></IconButton>
-        </div>
-        <form onSubmit={handleSubmit(handleSave)} className='flex flex-col gap-4 p-4'>
-          <Controller name='name' control={control}
-                      rules={{ required: 'Nama status wajib diisi' }}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth label='Nama Status' placeholder='Contoh: Aktif, Cuti, Lulus'
-                                   error={!!errors.name} helperText={errors.name?.message} />
-                      )}
-          />
-          <Controller name='code' control={control}
-                      render={({ field }) => (
-                        <TextField {...field} fullWidth label='Kode (opsional)' placeholder='Contoh: AKT'
-                                   inputProps={{ maxLength: 20 }}
-                                   helperText='Kode singkat sebagai identifikasi' />
-                      )}
-          />
-          {editData && (
-            <Controller name='is_active' control={control}
+              PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, bgcolor: '#F5F2F0' } }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '14px 16px', bgcolor: '#fff', borderBottom: '0.5px solid rgba(180,100,100,0.15)' }}>
+          <Box>
+            <Typography sx={{ fontSize: '15px', fontWeight: 600, color: '#3B1010' }}>
+              {editData ? 'Edit Status Akademik' : 'Tambah Status Akademik'}
+            </Typography>
+            {editData && <Typography sx={{ fontSize: '11px', color: '#9A5A5A' }}>{editData.name}</Typography>}
+          </Box>
+          <Box component='button' onClick={() => setDrawerOpen(false)} sx={{ width: 30, height: 30, borderRadius: '8px', border: 'none', cursor: 'pointer', background: '#F5F2F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <i className='ri-close-line' style={{ fontSize: '16px', color: '#9A5A5A' }} />
+          </Box>
+        </Box>
+
+        <Box component='form' onSubmit={handleSubmit(handleSave)} sx={{ display: 'flex', flexDirection: 'column', gap: '10px', p: '14px', overflowY: 'auto' }}>
+          <Box sx={{ background: '#fff', border: '0.5px solid rgba(180,100,100,0.15)', borderRadius: '12px', p: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Controller name='name' control={control} rules={{ required: 'Nama status wajib diisi' }}
                         render={({ field }) => (
-                          <FormControlLabel
-                            control={<Switch checked={field.value} onChange={e => field.onChange(e.target.checked)} />}
-                            label='Status Aktif'
-                          />
+                          <TextField {...field} fullWidth size='small' placeholder='Nama Status (contoh: Aktif, Cuti, Lulus)'
+                                     label='Nama Status'
+                                     error={!!errors.name} helperText={errors.name?.message}
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
                         )}
             />
-          )}
-          <div className='flex gap-2 mt-2'>
-            <Button fullWidth variant='tonal' color='secondary'
-                    onClick={() => setDrawerOpen(false)} disabled={saveLoading}>Batal</Button>
-            <Button fullWidth variant='contained' type='submit' disabled={saveLoading}
-                    startIcon={saveLoading ? <CircularProgress size={16} color='inherit' /> : null}>
-              {saveLoading ? 'Menyimpan...' : 'Simpan'}
-            </Button>
-          </div>
-        </form>
+            <Controller name='code' control={control}
+                        render={({ field }) => (
+                          <TextField {...field} fullWidth size='small' placeholder='Kode (opsional, contoh: AKT)'
+                                     label='Kode'
+                                     inputProps={{ maxLength: 20 }}
+                                     helperText='Kode singkat sebagai identifikasi'
+                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#F5F2F0', '& fieldset': { border: '0.5px solid rgba(180,100,100,0.15)' } }, '& input': { py: '10px', px: '12px', fontSize: '12px' } }} />
+                        )}
+            />
+            {editData && (
+              <Controller name='is_active' control={control}
+                          render={({ field }) => (
+                            <FormControlLabel
+                              control={<Switch checked={field.value} onChange={e => field.onChange(e.target.checked)} />}
+                              label={<Typography sx={{ fontSize: '13px', color: '#3B1010' }}>Status Aktif</Typography>}
+                            />
+                          )}
+              />
+            )}
+          </Box>
+
+          <Box sx={{ display: 'flex', gap: '8px' }}>
+            <Box component='button' type='button' onClick={() => setDrawerOpen(false)} disabled={saveLoading}
+                 sx={{ flex: 1, py: '10px', borderRadius: '10px', cursor: 'pointer', background: '#fff', border: '0.5px solid rgba(180,100,100,0.18)', boxShadow: '0 2px 6px rgba(139,0,0,0.07)' }}>
+              <Typography sx={{ fontSize: '13px', fontWeight: 500, color: '#9A5A5A' }}>Batal</Typography>
+            </Box>
+            <Box component='button' type='submit' disabled={saveLoading}
+                 sx={{ flex: 2, py: '10px', borderRadius: '10px', cursor: 'pointer', border: 'none', background: saveLoading ? '#ccc' : 'linear-gradient(145deg, #E63946, #6D0E13)', boxShadow: '0 4px 10px rgba(180,0,30,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              {saveLoading && <CircularProgress size={14} sx={{ color: '#fff' }} />}
+              <Typography sx={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
+                {saveLoading ? 'Menyimpan...' : editData ? 'Simpan Perubahan' : 'Buat Status'}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
       </Drawer>
 
       {/* Dialog Hapus */}
